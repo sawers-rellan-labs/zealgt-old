@@ -241,6 +241,18 @@ Rules proposed for v2:
 Per run: own launch dir and `workDir`; a post-run check (work size, failed tasks, published outputs); monitors, not sleep loops; long runs
 watched with the session kept open (`/loop`), acting only as the run card allows.
 
+### Testing ladder (gates, from zealbc1; climb only when the current gate passes)
+- **Gate −1 · CodeRabbit** (optional, local, before push, substantive changes only): `coderabbit review --committed --base main --agent`.
+  It catches code/API bugs, not environment/data bugs; every finding is checked against the code before it is applied.
+- **Gate 0 · `-stub-run`** (short QOS): every module's `stub:` touches its outputs, so the whole DAG runs in seconds and proves wiring,
+  channel joins and filenames. Stub `work/` is cleaned afterwards (§5 rule 4, with the user's consent).
+- **Gate 1 · tiny real subset** (short QOS): real tools on toy inputs (~1M read pairs of one library, a few samples, one donor × a
+  small region).
+- **Gate 2 · one full unit**, the benchmark (cpu/ram/time/disk per module, recorded in `docs/REQUIREMENTS.md`). *Proposed, not
+  decided:* workflow 1 = one full library (e.g. BC1_1B) on compute/normal; workflow 2 = one donor × chr10 on short QOS. Nothing
+  full-scale runs before this passes.
+- **Gate 3 · full run**, once Gate 2's numbers justify the allocation.
+
 ## 7. Open decisions (summary)
 §4 #2, #3, #5–#7, #12; storage rules of §5; which existing CRAMs and tables are reused vs regenerated after MARKDUP.
 

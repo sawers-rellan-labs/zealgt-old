@@ -1,0 +1,232 @@
+---
+title: "Marker union rarefaction"
+subtitle: "How the non-informative share and the founder missing data change as donors are added to the union (sampling simulation, no reads)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    code-fold: true
+    code-summary: "code"
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+**What this is.** A fast sampling simulation of the marker union + gap filling as the number of donors grows from 2 (the zealbc1
+notebook 06 pilot) to 95 (all ZEAL donors). No sequences and no reads: each site gets a population allele frequency, each donor
+haplotype draws its allele, discovery and gap filling act as probabilities. It answers two questions before any genotyping run:
+does each donor end up non-informative (REF) at ~70 % of union sites, as on the SNP50K positions, and how much founder missing data
+does the union carry at 95 donors.
+
+::: {.callout-note}
+## Outcome (2026-09-26)
+- With standing variation dominated by rare alleles (neutral spectrum) and the measured discovery sensitivity (~10 % of the
+  AnchorWave SNPs), each donor is **non-informative at ~68 % of the union at 95 donors**, in line with the SNP50K expectation.
+  A flat allele-frequency spectrum never gets there (< 50 %).
+- Founder missing data per donor at 95 donors is **20–30 % of union sites**, depending on how often gaps where the donor is truly
+  REF end up missing. In the genotype matrix that is **~3–5 % of cells**, because a missing founder allele only blanks lines that carry
+  the donor segment there.
+:::
+
+```{r setup}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+set.seed(20260926)
+theme_set(theme_bw(base_size = 11))
+```
+
+## 1. Measured inputs
+
+All numbers are chr10. The low-copy ranges are the lowcopy BED: 8,095 intervals, 26.0 Mb.
+
+**Ceiling for discovery: the AnchorWave SNPs.** The pairwise AnchorWave alignment of each founder assembly against B73 is the
+reference variant space; no discovery method can find more. Source: `qcset_designB/chr10/build_founder_gvcf/<F>_PERFECT.summary.txt`.
+
+```{r ceiling}
+ceiling_tbl <- tibble(
+  founder = c("Gigi (Zd)", "TIL18 (Zx)"),
+  snps_chr10 = c(2090083, 2031229),
+  snps_lowcopy = c(412493, 444982)
+)
+knitr::kable(ceiling_tbl, format.args = list(big.mark = ","),
+             col.names = c("founder", "AnchorWave SNPs vs B73, chr10", "in the low-copy ranges"))
+```
+
+**Discovered per donor (pilot).** Own tier-A sites of the two mexicana donors of zealbc1 notebook 06; sensitivity is measured against
+the TIL18 (mexicana) ceiling.
+
+```{r sensitivity}
+pilot <- tibble(
+  donor = c("Zx.0540_P3", "Zx.0570_P2"),
+  own_alt = c(40874, 54328),
+  gaps = c(41832, 28378),
+  gap_ref = c(12496, 11531),
+  gap_alt = c(17517, 7768),
+  gap_missing = c(11819, 9079)
+) |>
+  mutate(union = own_alt + gaps,
+         sensitivity = own_alt / ceiling_tbl$snps_lowcopy[2],
+         missing_of_union = gap_missing / union,
+         missing_of_gaps = gap_missing / gaps)
+knitr::kable(pilot |> select(donor, own_alt, sensitivity, union, gaps, gap_ref, gap_alt, gap_missing, missing_of_union),
+             digits = 3, format.args = list(big.mark = ","))
+```
+
+**Usable sequence after mapping.** Reads simulated from each chr10 assembly (wgsim 2×150), mapped to the whole B73 with minibwa, kept at
+MAPQ ≥ 20 (`qcset_designB/chr10/alignment_sim/*.flagstat.txt`; simulated pairs = length × depth / 300).
+
+```{r mapping}
+mapping <- tibble(
+  source = c("B73", "TIL18 (mexicana)", "Gigi (diploperennis)"),
+  length_bp = c(152435371, 144.6e6, 147.2e6),
+  depth = c(20, 22, 22),
+  kept = c(17560561, 9076719, 7250233)
+) |>
+  mutate(simulated = 2 * floor(length_bp * depth / 300), share_kept = kept / simulated)
+knitr::kable(mapping |> select(source, simulated, kept, share_kept), digits = 3, format.args = list(big.mark = ","))
+```
+
+## 2. Model
+
+- **Standing variation.** Site $s$ has population ALT frequency $p_s$, drawn from the neutral spectrum $f(p) \propto 1/p$ on
+  $\{1/2000, \dots, 1999/2000\}$, or from a flat spectrum $p_s \sim U(0.001, 0.999)$ as the contrast.
+- **Donors.** Donor haplotype $H_d$ carries ALT at $s$ with probability $p_s$, independently across donors.
+- **Discovery.** A donor finds each of its own ALT sites with sensitivity $r$ (measured ≈ 0.1; 0.05 and 0.15 as the range).
+- **Union and gaps.** The union $U_n$ of $n$ donors is every site found in at least one of them. For donor $d$, own sites are those it
+  found; gaps are $U_n$ minus own. A gap is truly REF (non-informative) or truly ALT (an allele the donor carries but did not find).
+- **Gap filling.** A gap ends up missing with rate $m_\mathrm{REF}$ if truly REF and $m_\mathrm{ALT}$ if truly ALT. Two models, each
+  calibrated so that **2 donors give 15 % missing** (the pilot):
+  - *flat*: $m_\mathrm{REF} = m_\mathrm{ALT} = m$;
+  - *REF easy*: $m_\mathrm{REF} = 0.05$, $m_\mathrm{ALT}$ calibrated.
+- **Reported per donor**, averaged over donors: non-informative share of $U_n$ (donor truly REF), own and gap shares, missing share.
+  Donors are added one at a time to the same simulated set, so each curve is a rarefaction curve.
+
+```{r model}
+n_sites <- 2e5
+n_max <- 95
+donor_steps <- c(2:10, 15, 20, 30, 40, 60, 80, 95)
+pilot_missing <- 0.15
+m_ref_easy <- 0.05
+
+draw_freqs <- function(sfs, n_sites) {
+  if (sfs == "neutral 1/p") {
+    i <- 1:1999
+    sample(i / 2000, n_sites, replace = TRUE, prob = 1 / i)
+  } else {
+    runif(n_sites, 0.001, 0.999)
+  }
+}
+
+rarefy <- function(p, r, steps) {
+  alt <- matrix(runif(n_max * length(p)) < rep(p, each = n_max), nrow = n_max)
+  found <- alt & matrix(runif(n_max * length(p)) < r, nrow = n_max)
+  bind_rows(lapply(steps, function(n) {
+    fo <- found[1:n, , drop = FALSE]
+    in_union <- colSums(fo) > 0
+    own_m <- fo[, in_union, drop = FALSE]
+    tru_m <- alt[1:n, in_union, drop = FALSE]
+    tibble(donors = n, union_sites = sum(in_union),
+           noninformative = mean(!tru_m), own = mean(own_m),
+           gap_ref = mean(!own_m & !tru_m), gap_alt = mean(!own_m & tru_m))
+  }))
+}
+
+scenarios <- expand_grid(sfs = c("neutral 1/p", "flat p"), r = c(0.05, 0.1, 0.15))
+sim <- scenarios |>
+  group_by(sfs) |>
+  group_modify(function(g, key) {
+    p <- draw_freqs(key$sfs, n_sites)
+    bind_rows(lapply(g$r, function(r) rarefy(p, r, donor_steps) |> mutate(r = r)))
+  }) |>
+  ungroup() |>
+  mutate(gap = gap_ref + gap_alt)
+```
+
+```{r calibrate}
+calib <- sim |>
+  filter(donors == 2) |>
+  transmute(sfs, r,
+            m_flat = pilot_missing / gap,
+            m_alt_ref_easy = (pilot_missing - gap_ref * m_ref_easy) / gap_alt)
+
+res <- sim |>
+  left_join(calib, by = c("sfs", "r")) |>
+  mutate(missing_flat = gap * m_flat,
+         missing_ref_easy = if_else(m_alt_ref_easy <= 1, gap_ref * m_ref_easy + gap_alt * m_alt_ref_easy, NA_real_))
+
+knitr::kable(calib, digits = 2, col.names = c("SFS", "sensitivity r", "m (flat)", "m_ALT (REF easy)"),
+             caption = "Gap missing rates calibrated to 15 % missing at 2 donors. A value above 1 means the model cannot reproduce the pilot.")
+```
+
+## 3. Non-informative share
+
+```{r fig-noninf, fig.width = 8, fig.height = 4}
+ggplot(res, aes(donors, noninformative, colour = factor(r))) +
+  geom_hline(yintercept = 0.7, linetype = "dashed", colour = "grey40") +
+  annotate("text", x = 3, y = 0.72, label = "SNP50K: ~70 % non-informative", hjust = 0, size = 3, colour = "grey30") +
+  geom_line() + geom_point(size = 1) +
+  facet_wrap(~sfs) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  labs(x = "donors in the union", y = "non-informative share of the union (per donor)", colour = "sensitivity r")
+```
+
+## 4. Founder missing data
+
+```{r fig-missing, fig.width = 8, fig.height = 4}
+res |>
+  select(sfs, r, donors, flat = missing_flat, `REF easy` = missing_ref_easy) |>
+  pivot_longer(c(flat, `REF easy`), names_to = "missing model", values_to = "missing") |>
+  filter(!is.na(missing)) |>
+  ggplot(aes(donors, missing, colour = factor(r), linetype = `missing model`)) +
+  geom_hline(yintercept = pilot_missing, colour = "grey60") +
+  geom_line() +
+  facet_wrap(~sfs) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.4)) +
+  labs(x = "donors in the union", y = "founder missing, share of the union (per donor)", colour = "sensitivity r")
+```
+
+**Where the union sites come from** (neutral spectrum, $r = 0.1$): as donors are added, own sites shrink to a few percent and gaps
+dominate; most new gaps are sites where the donor is REF.
+
+```{r fig-composition, fig.width = 7, fig.height = 4}
+res |>
+  filter(sfs == "neutral 1/p", r == 0.1) |>
+  select(donors, own, `gap, truly ALT` = gap_alt, `gap, truly REF` = gap_ref) |>
+  pivot_longer(-donors, names_to = "class", values_to = "share") |>
+  mutate(class = factor(class, levels = c("gap, truly REF", "gap, truly ALT", "own"))) |>
+  ggplot(aes(donors, share, fill = class)) +
+  geom_area() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "donors in the union", y = "share of the union (per donor)", fill = NULL)
+```
+
+## 5. What it means for the genotype matrix
+
+A missing founder allele $D_{ds}$ only blanks the genotype of a line where the line carries the donor segment at $s$
+($G_s = x \cdot D_{ds}$, math supplement Eq. S5.1). In BC$_2$S$_3$ that is $1 - 55/64 = 14.1\,\%$ of lines at a site, so the share of
+missing genotype cells is roughly the founder missing share × 0.141.
+
+```{r matrix}
+carrier <- 1 - 55 / 64
+res |>
+  filter(sfs == "neutral 1/p", r == 0.1, donors %in% c(2, 10, 20, 40, 95)) |>
+  transmute(donors, noninformative, missing_flat, missing_ref_easy,
+            cells_flat = missing_flat * carrier, cells_ref_easy = missing_ref_easy * carrier) |>
+  knitr::kable(digits = 3, col.names = c("donors", "non-informative", "founder missing (flat)", "founder missing (REF easy)",
+                                         "missing cells (flat)", "missing cells (REF easy)"))
+```
+
+## 6. Checks and caveats
+
+- **Pilot check at 2 donors.** The simulation gives gaps at ~49 % of the union with ~23 % of the union truly-ALT gaps ($r = 0.1$); the pilot
+  has gaps at 51 % and 34 % of the union, with 42 % and 27 % of gaps filled ALT.
+- **Sensitivity is a ceiling-relative figure.** $r$ is measured against the AnchorWave SNPs, the ceiling for any discovery method.
+- **Assumptions:** one panmictic mexicana population (no structure among donors), donors independent, the same sensitivity for every
+  donor and every allele frequency, and a missing rate that depends only on whether the gap is truly REF or ALT. A real union across taxa
+  would behave differently; this simulates a same-taxon union.
+- **Absolute union sizes are arbitrary** (they scale with the 200,000 simulated sites); only the shares are meaningful.
