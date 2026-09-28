@@ -188,7 +188,7 @@
                 },
                 "trim_args": {
                     "type": "string",
-                    "default": "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 -phred33",
+                    "default": "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36",
                     "description": "Trimmomatic steps after ILLUMINACLIP (batch 1's parameters, PLAN §3 row 1b)."
                 },
                 "align_args": {

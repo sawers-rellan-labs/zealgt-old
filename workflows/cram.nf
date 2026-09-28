@@ -305,7 +305,8 @@ workflow CRAM {
                     store_dir  : stored_dir,
                     origin     : origin[m.id],
                     trimming   : entry == 'read_alignment' ? 'not done by zealgt (trimmed FASTQs given)' :
-                                 [tool: "trimmomatic", version: trim_version, illuminaclip: params.trim_illuminaclip, args: params.trim_args, adapters: params.trim_adapters],
+                                 [tool: "trimmomatic", version: trim_version, illuminaclip: params.trim_illuminaclip, args: params.trim_args, adapters: params.trim_adapters,
+                                  phred: 'auto-detected'],  // no -phred33: nf-core TRIMMOMATIC appends ext.args after the outputs
                     alignment  : [tool: 'minibwa map', args: params.align_args, read_group: m.read_group],
                 ]]
             }
