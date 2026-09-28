@@ -25,3 +25,4 @@ DONOR_FOUNDER	pooled_likelihood_tiers
 RASTERIZE	pooled_likelihood_tiers
 GENOTYPE_SUMMARY	pooled_likelihood_tiers
 BED_CLIP	bcftools_view
+SAMPLE_LABELS	pooled_likelihood_tiers

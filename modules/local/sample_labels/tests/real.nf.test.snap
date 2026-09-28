@@ -1,0 +1,71 @@
+{
+    "Zx.0001_P1.chrA_1-5000": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.genotypes.tsv.gz:md5,1a7ab11ed6e1b3e59364ad15bb0b3e90"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.genotypes.matrix.tsv.gz:md5,fbcdc59f847e698baebab7096ed69ed9"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.segments.csv:md5,87ff1d386ab5ba3bca1f880b054e8beb"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.line_qc.tsv:md5,245572bb8c8edb0aa548c29ab97a58a8"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.exclusions.tsv:md5,b12189000d3345c5991b14db95929276"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,4f192119f049260c32c0ed01f8d843cb"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T14:35:15.747798",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

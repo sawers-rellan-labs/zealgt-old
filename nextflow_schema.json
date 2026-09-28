@@ -835,6 +835,17 @@
                     "pattern": "^-?\\d+$",
                     "default": 500,
                     "description": "8: window (markers) around a RTIGER breakpoint for the breakpoint-density check (review #12)."
+                },
+                "registry": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "default": "${projectDir}/meta/samples.csv",
+                    "fa_icon": "fas fa-file-csv",
+                    "description": "8: sample registry for the edge translation (meta/PROVENANCE.md \"Identifiers\"): final outputs carry nil_id, else pedigree, else sample_id.",
+                    "help_text": "SAMPLE_LABELS joins the internal sample_id on it once, at reporting. Its path, sha256 and the repo commit are recorded in <unit>.sample_labels.tsv; it is not part of the settings guard, so a registry commit does not refuse a rerun under the same key."
                 }
             }
         },

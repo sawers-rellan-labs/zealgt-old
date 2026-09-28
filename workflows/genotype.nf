@@ -19,8 +19,9 @@ include { DONOR_ALLELE_CALLING   } from '../subworkflows/local/donor_allele_call
 include { GENOTYPE_IMPUTATION    } from '../subworkflows/local/genotype_imputation'
 include { GENOTYPE_REPORTING     } from '../subworkflows/local/genotype_reporting'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { zgCodeVersion          } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { zgDonors; zgRegions; zgStorePath; zgFlag; zgMappabilityPrior; zgReferenceDonorTables; zgAnnotationPanels } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
-include { zgRoleGroup; zgQcKeep; zgDropSamples; zgLineQcFailures; zgExclusionTable; zgReferenceDonorTaxa; zgPriorDonorTaxa } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
+include { zgRoleGroup; zgQcKeep; zgDropSamples; zgLineQcFailures; zgExclusionTable; zgReferenceDonorTaxa; zgPriorDonorTaxa; zgRegistrySource } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
 
 workflow GENOTYPE {
 
@@ -114,15 +115,26 @@ workflow GENOTYPE {
         ch_versions = GENOTYPE_IMPUTATION.out.versions
     }
     else if (entry == 'reporting') {
+        // exclusion table of each unit (sample_id), relabelled and published by SAMPLE_LABELS
+        def ch_excl = ch_units.map { u -> ["${u.id}.exclusions.tsv", zgExclusionTable(u)] }
+            .collectFile { item -> item }
+            .map { f -> [f.name - ~/\.exclusions\.tsv$/, f] }
+        // sample ids of each unit for the labels table: the donor's sheet samples and the B73 controls
+        def ch_ids = ch_genotype_samples.map { s -> s[0] }.toList()
+            .flatMap { ms -> units.collect { u -> [u.id, ms.findAll { m -> m.donor == u.donor || m.role == 'b73_control' }.collect { m -> m.id }.sort()] } }
+        def ch_report = ch_units
+            .map { u -> [u.id, u, zgStorePath('genotypes', u.donor, u.region), zgStorePath('genotypes_matrix', u.donor, u.region), zgStorePath('segments', u.donor, u.region), zgStorePath('donor_alleles', u.donor, u.region), zgStorePath('line_qc', u.donor, u.region)] }
+            .join(ch_excl)
+            .join(ch_ids)
+            .map { _id, u, gt, mx, seg, da, lq, ex, ids -> [u, gt, mx, seg, da, lq, ex, ids] }
         GENOTYPE_REPORTING(
-            ch_units.map { u -> [u, zgStorePath('genotypes', u.donor, u.region), zgStorePath('segments', u.donor, u.region), zgStorePath('donor_alleles', u.donor, u.region), zgStorePath('line_qc', u.donor, u.region)] },
+            ch_report,
+            channel.value([file(params.registry, checkIfExists: true), zgRegistrySource(), zgCodeVersion()]),
             rpq ? ch_groups.filter { g, _c, _i, _ids, _m -> g.role != 'b73_control' } : channel.empty(),
             ch_units.map { u -> [u, zgStorePath('markers', u.donor, u.region)] },
             rpq ? ch_regions : channel.empty(), ch_lowcopy, ch_ref,
         )
         ch_versions = GENOTYPE_REPORTING.out.versions
-        ch_units.map { u -> ["${u.id}.exclusions.tsv", zgExclusionTable(u)] }
-            .collectFile(storeDir: "${params.outdir}/genotype/${params.genotype_store_key}/reporting/${dset}") { item -> item }
     }
     else {
         error("--workflow genotype: unknown --entry '${entry}'")

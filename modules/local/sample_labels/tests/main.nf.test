@@ -1,0 +1,47 @@
+nextflow_process {
+
+    name "Test Process SAMPLE_LABELS"
+    script "../main.nf"
+    process "SAMPLE_LABELS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "sample_labels"
+    tag "stub"
+
+    test("Zx.0001_P1.chrA_1-5000 - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                def d = "${projectDir}/modules/local/sample_labels/tests/data/"
+                def u = 'Zx.0001_P1.chrA_1-5000'
+                input[0] = channel.of([
+                    [ id: u, donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file(d + u + '.genotypes.tsv.gz', checkIfExists: true),
+                    file(d + u + '.genotypes.matrix.tsv.gz', checkIfExists: true),
+                    file(d + u + '.segments.csv', checkIfExists: true),
+                    file(d + u + '.line_qc.tsv', checkIfExists: true),
+                    file(d + u + '.exclusions.tsv', checkIfExists: true),
+                    'Zx.0001_P1',
+                    ['B73_X']
+                ])
+                input[1] = file(d + 'samples.csv', checkIfExists: true)
+                input[2] = 'tests/data/samples.csv'
+                input[3] = 'abc123'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.genotypes[0][1]).name == "Zx.0001_P1.chrA_1-5000.genotypes.tsv.gz" },
+                { assert file(process.out.labels[0][1]).name == "Zx.0001_P1.chrA_1-5000.sample_labels.tsv" }
+            )
+        }
+    }
+}

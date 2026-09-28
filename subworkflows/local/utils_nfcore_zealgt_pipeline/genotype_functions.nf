@@ -64,7 +64,7 @@ def zgStageModules() {
         donor_allele_calling  : lcl.call(['region_bed', 'mask_read_starts', 'allele_counts', 'pooled_likelihood_tiers',
                                      'gap_filling_bc1', 'gap_filling_lines', 'donor_founder']),
         genotype_imputation   : lcl.call(['rasterize']),
-        reporting             : lcl.call(['genotype_summary', 'chromosome_painting', 'read_position_qc']),
+        reporting             : lcl.call(['sample_labels', 'genotype_summary', 'chromosome_painting', 'read_position_qc']),
     ]
 }
 
@@ -93,14 +93,14 @@ def zgUpstreamKinds() {
         marker_union        : ['step4'],
         donor_allele_calling: ['sample_qc', 'step4', 'segments', 'line_qc', 'union', 'union_sites'],
         genotype_imputation : ['donor_alleles', 'segments', 'line_qc', 'union'],
-        reporting           : ['sample_qc', 'genotypes', 'segments', 'line_qc', 'donor_alleles'],
+        reporting           : ['sample_qc', 'genotypes', 'genotypes_matrix', 'segments', 'line_qc', 'donor_alleles'],
     ]
 }
 
 def zgKindProducer() {
     return [sample_qc: 'sample_quality_control', step4: 'variant_discovery', segments: 'ancestry_inference',
             line_qc: 'ancestry_inference', markers: 'ancestry_inference', union: 'marker_union', union_sites: 'marker_union',
-            donor_alleles: 'donor_allele_calling', genotypes: 'genotype_imputation']
+            donor_alleles: 'donor_allele_calling', genotypes: 'genotype_imputation', genotypes_matrix: 'genotype_imputation']
 }
 
 /*
@@ -175,6 +175,7 @@ def zgStoreRel(String kind, String donor, String label) {
         union_sites  : "union/${dset}.${label}.union_sites.tsv",
         donor_alleles: "donor_alleles/${dset}/${donor}.${label}.tsv.gz",
         genotypes    : "genotypes/${dset}/${donor}.${label}.genotypes.tsv.gz",
+        genotypes_matrix: "genotypes/${dset}/${donor}.${label}.genotypes.matrix.tsv.gz",
     ][kind]
     return rel ? rel.toString() : error("zgStoreRel: unknown kind '${kind}'")
 }
@@ -205,6 +206,15 @@ def zgPriorDonorTaxa(Map run_taxa, Map reference_taxa) {
 // --annotation_panels -> [[name, file], ...]
 def zgAnnotationPanels() {
     return zgNamedPaths('annotation_panels').collect { n, p -> [n, file(p)] }
+}
+
+// --registry as recorded in the reporting labels table (SAMPLE_LABELS): relative to the pipeline directory when inside it,
+// so a second clone records (and hashes) the same value. The registry is recorded, not guarded (zgStageParamNames): the
+// edge translation uses the current registry, and a registry commit must not refuse a rerun under the same key.
+def zgRegistrySource() {
+    def reg = file(params.registry).toAbsolutePath().normalize()
+    def root = file(projectDir.toString()).toAbsolutePath().normalize()
+    return (reg.startsWith(root) ? root.relativize(reg) : reg).toString()
 }
 
 // Mappability prior of a taxon: <mappability_priors>/<taxon>.prior.tsv

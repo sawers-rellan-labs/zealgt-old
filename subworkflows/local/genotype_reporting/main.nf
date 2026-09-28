@@ -1,13 +1,20 @@
 //
 // GENOTYPE_REPORTING (stage 8, entry `reporting`; PLAN §3 row 8, §4 #12; genotype design §2.7), per unit (donor x region);
 // nothing goes to the store, every output is published (conf/genotype_modules.config):
+//   SAMPLE_LABELS         first: the edge translation (meta/PROVENANCE.md "Identifiers"), one join of the internal sample_id
+//                         on the registry -> final <donor>.<label>.genotypes.tsv.gz / .genotypes.matrix.tsv.gz,
+//                         .exclusions.tsv and .sample_labels.tsv with the short label (nil_id, else pedigree, else
+//                         sample_id); its relabelled segments / line_qc feed the two reports below, so the summary and the
+//                         painting carry the label too
 //   GENOTYPE_SUMMARY      genotype_summary.tsv, single_locus.tsv, breakpoint_density.tsv (the design's BREAKPOINT_DENSITY is
 //                         folded into this module)
 //   CHROMOSOME_PAINTING   <donor>.<label>.painting.png / .pdf
 //   READ_POSITION_QC      (params.read_position_qc) REF / ALT / other by read cycle at the donor's own tier-A sites, per role
 //                         group (BC1, lines), on the stored CRAMs (label raw) and on MASK_READ_STARTS output (label masked):
 //                         the before / after view of the 5' mask. The workflow passes empty group / region channels to skip it.
+//                         (internal QC: stays on sample_id)
 //
+include { SAMPLE_LABELS       } from '../../../modules/local/sample_labels/main'
 include { GENOTYPE_SUMMARY    } from '../../../modules/local/genotype_summary/main'
 include { CHROMOSOME_PAINTING } from '../../../modules/local/chromosome_painting/main'
 include { REGION_BED          } from '../../../modules/local/region_bed/main'
@@ -21,16 +28,27 @@ def zgBamIds(bams) {
 workflow GENOTYPE_REPORTING {
 
     take:
-    ch_inputs  // channel: [ val(unit), genotypes <donor>.<label>.tsv.gz, segments.csv, donor_alleles tsv.gz, line_qc.tsv ]  (store)
-    ch_groups  // channel: [ val(gmeta), [ crams ], [ crais ], val([ ids ]), val([ masks ]) ]  BC1 and line groups (empty: no read-position QC)
-    ch_markers // channel: [ val(unit), <donor>.<label>.tierA_sites.tsv ]  (store, ancestry/)
-    ch_regions // channel: [ val(rmeta), val(region) ]  (empty: no read-position QC)
-    ch_lowcopy // channel: value [ val(meta), bed ]
-    ch_ref     // channel: value [ val(meta), fasta, fai ]
+    ch_inputs   // channel: [ val(unit), genotypes .genotypes.tsv.gz, matrix .genotypes.matrix.tsv.gz, segments.csv, donor_alleles tsv.gz, line_qc.tsv, exclusions.tsv, val([ sample_ids ]) ]  (store; exclusions from the workflow)
+    ch_registry // channel: value [ registry csv, val(registry_source), val(code_version) ]
+    ch_groups   // channel: [ val(gmeta), [ crams ], [ crais ], val([ ids ]), val([ masks ]) ]  BC1 and line groups (empty: no read-position QC)
+    ch_markers  // channel: [ val(unit), <donor>.<label>.tierA_sites.tsv ]  (store, ancestry/)
+    ch_regions  // channel: [ val(rmeta), val(region) ]  (empty: no read-position QC)
+    ch_lowcopy  // channel: value [ val(meta), bed ]
+    ch_ref      // channel: value [ val(meta), fasta, fai ]
 
     main:
-    GENOTYPE_SUMMARY(ch_inputs)
-    CHROMOSOME_PAINTING(ch_inputs.map { u, _gt, seg, _da, lq -> [u, seg, lq] })
+    SAMPLE_LABELS(
+        ch_inputs.map { u, gt, mx, seg, _da, lq, ex, ids -> [u, gt, mx, seg, lq, ex, u.donor, ids] },
+        ch_registry.map { reg, _src, _cv -> reg },
+        ch_registry.map { _reg, src, _cv -> src },
+        ch_registry.map { _reg, _src, cv -> cv },
+    )
+    def ch_labelled = SAMPLE_LABELS.out.genotypes
+        .join(SAMPLE_LABELS.out.segments)
+        .join(SAMPLE_LABELS.out.line_qc)
+        .join(ch_inputs.map { u, _gt, _mx, _seg, da, _lq, _ex, _ids -> [u, da] })
+    GENOTYPE_SUMMARY(ch_labelled.map { u, gt, seg, lq, da -> [u, gt, seg, da, lq] })
+    CHROMOSOME_PAINTING(ch_labelled.map { u, _gt, seg, lq, _da -> [u, seg, lq] })
 
     def ch_rb = ch_regions.combine(ch_lowcopy).multiMap { rmeta, region, _lmeta, bed ->
         bed: [rmeta, bed]
@@ -61,11 +79,15 @@ workflow GENOTYPE_REPORTING {
     READ_POSITION_QC(ch_rpq.aln, ch_rpq.sites, ch_ref, ch_rpq.region, ch_rpq.label)
 
     emit:
+    genotypes          = SAMPLE_LABELS.out.genotypes             // channel: [ val(unit), .genotypes.tsv.gz ] (final, labelled)
+    matrix             = SAMPLE_LABELS.out.matrix                // channel: [ val(unit), .genotypes.matrix.tsv.gz ] (final, labelled)
+    exclusions         = SAMPLE_LABELS.out.exclusions            // channel: [ val(unit), .exclusions.tsv ] (labelled)
+    labels             = SAMPLE_LABELS.out.labels                // channel: [ val(unit), .sample_labels.tsv ]
     summary            = GENOTYPE_SUMMARY.out.summary            // channel: [ val(unit), genotype_summary.tsv ]
     single_locus       = GENOTYPE_SUMMARY.out.single_locus       // channel: [ val(unit), single_locus.tsv ]
     breakpoint_density = GENOTYPE_SUMMARY.out.breakpoint_density // channel: [ val(unit), breakpoint_density.tsv ]
     painting           = CHROMOSOME_PAINTING.out.png             // channel: [ val(unit), painting.png ]
     read_position_qc   = READ_POSITION_QC.out.tsv                // channel: [ val(gmeta), read_position_qc.tsv ]
-    versions           = GENOTYPE_SUMMARY.out.versions.mix(CHROMOSOME_PAINTING.out.versions, REGION_BED.out.versions,
+    versions           = SAMPLE_LABELS.out.versions.mix(GENOTYPE_SUMMARY.out.versions, CHROMOSOME_PAINTING.out.versions, REGION_BED.out.versions,
                                                            MASK_READ_STARTS.out.versions, READ_POSITION_QC.out.versions) // channel: versions.yml
 }

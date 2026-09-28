@@ -48,6 +48,7 @@ lint:
         - params.registry_seed
         - params.trim_adapters
         - params.genotype_input
+        - params.registry
     # zealgt: resources are set per process in conf/hazel.config and read from Slurm at run time
     # (bin/export_slurm_resources.sh, PLAN §2 rule 4), not as process.cpus / memory / time defaults.
     - process.cpus

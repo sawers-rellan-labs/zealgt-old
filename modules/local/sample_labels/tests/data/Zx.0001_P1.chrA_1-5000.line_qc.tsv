@@ -1,0 +1,5 @@
+sample	contig	markers	markers_kept	covered	reads	mean_depth	floor	contig_pass	line_pass	reason
+PN1_SID1	chrA	1500	1400	1200	2400	2.0000	500	true	true	.
+PN1_SID2	chrA	1500	1400	1200	2400	2.0000	500	true	true	.
+PN1_SID3	chrA	1500	1400	1200	2400	2.0000	500	true	true	.
+PN1_SID4	chrA	1500	1400	40	40	1.0000	500	false	false	below_marker_floor

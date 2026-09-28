@@ -295,6 +295,9 @@
                 "REGION_BED": {
                     "python": "3.12.14"
                 },
+                "SAMPLE_LABELS": {
+                    "python": "3.12.14"
+                },
                 "Workflow": {
                     "sawers-rellan-labs/zealgt": "v0.1.0dev"
                 }
@@ -307,8 +310,11 @@
                 "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.breakpoint_density.tsv",
                 "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.exclusions.tsv",
                 "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.genotype_summary.tsv",
+                "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.genotypes.matrix.tsv.gz",
+                "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz",
                 "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.painting.pdf",
                 "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.painting.png",
+                "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.sample_labels.tsv",
                 "genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.single_locus.tsv",
                 "genotype/test/reporting/test_set/read_position_qc",
                 "genotype/test/reporting/test_set/read_position_qc/Zx.9001_P1.chr10_1-16000.bc1.masked.read_position_qc.tsv",
@@ -349,8 +355,11 @@
                 "Zx.9001_P1.chr10_1-16000.breakpoint_density.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "Zx.9001_P1.chr10_1-16000.exclusions.tsv:md5,0b3145bc53680758b7016af7f6b0e463",
                 "Zx.9001_P1.chr10_1-16000.genotype_summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "Zx.9001_P1.chr10_1-16000.genotypes.matrix.tsv.gz:md5,2969e4ebb9caaab84dd3e184ed62a6a7",
+                "Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz:md5,827178c5ac2af24438fbe833bdb58281",
                 "Zx.9001_P1.chr10_1-16000.painting.pdf:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "Zx.9001_P1.chr10_1-16000.painting.png:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "Zx.9001_P1.chr10_1-16000.sample_labels.tsv:md5,152088e5d62df97f4d7f7c1ccb2e6377",
                 "Zx.9001_P1.chr10_1-16000.single_locus.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "Zx.9001_P1.chr10_1-16000.bc1.masked.read_position_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "Zx.9001_P1.chr10_1-16000.bc1.raw.read_position_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
@@ -373,7 +382,7 @@
                 "test_set.chr10_1-16000.union_sites.tsv:md5,514b6552f8d71d54b59330db10168828"
             ]
         ],
-        "timestamp": "2026-09-28T08:33:17.111801",
+        "timestamp": "2026-09-28T14:38:37.174661",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
