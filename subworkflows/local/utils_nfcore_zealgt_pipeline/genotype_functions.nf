@@ -247,9 +247,16 @@ def zgReadTsv(path) {
 }
 
 // Lines excluded by LINE_MARKER_QC in one unit: [ sample: reason ] (line_qc.tsv has one row per line x contig)
+// line_qc.tsv contract (LINE_MARKER_QC): columns sample and line_pass (true|false), one row per contig; the reasons of the
+// failing contigs are joined.
 def zgLineQcFailures(path) {
-    return zgReadTsv(path).findAll { r -> (r.line_pass ?: r.pass ?: 'true').toLowerCase() != 'true' }
-        .collectEntries { r -> [(r.sample): r.reason ?: 'line_qc'] }
+    def rows = zgReadTsv(path)
+    if (rows && !(rows[0].containsKey('sample') && rows[0].containsKey('line_pass'))) {
+        error("line_qc ${path}: needs the LINE_MARKER_QC columns sample and line_pass")
+    }
+    return rows.findAll { r -> r.line_pass.toLowerCase() != 'true' }
+        .groupBy { r -> r.sample }
+        .collectEntries { s, rs -> [(s): rs.collect { r -> r.reason }.findAll { w -> w && w != '.' }.unique().join(',') ?: 'line_qc'] }
 }
 
 // Exclusion table of one unit for reporting: every sample of the donor dropped at 2b or at stage 4, with stage and reason

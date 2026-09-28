@@ -40,7 +40,7 @@ input:
         ontologies: []
     - line_qc:
         type: file
-        description: LINE_MARKER_QC table (sample + pass or excluded column); [] = every line with segments is used
+        description: LINE_MARKER_QC line_qc.tsv (columns sample and line_pass = true|false, one row per contig); [] = every line with segments is used
         pattern: "*.tsv"
         ontologies: []
     - c_prior:

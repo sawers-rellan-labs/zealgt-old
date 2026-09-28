@@ -178,7 +178,7 @@ class Run(unittest.TestCase):
                 fh.write("RTIGER,D,L1,10,1,150,2\nRTIGER,D,L1,10,180,300,0\nRTIGER,D,L2,10,1,300,0\nRTIGER,D,L3,10,1,300,2\n")
             qc = os.path.join(d, "line_qc.tsv")
             with open(qc, "w") as fh:
-                fh.write("sample\tpass\nL1\tTRUE\nL2\tTRUE\nL3\tFALSE\n")
+                fh.write("sample\tcontig\tline_pass\nL1\tchr10\ttrue\nL2\tchr10\ttrue\nL3\tchr10\tfalse\n")
             rows = [cand(0.5, 2.0), {"key": ("chr10", 200, "C", "T"), "src": "own", "state": "ALT", "reason": "own",
                                      "flags": ".", "prior": None, "llr": None, "n0": None, "a0": None}]
             names, t = M.read_ad(ad)

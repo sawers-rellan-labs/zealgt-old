@@ -8,7 +8,7 @@
                         "donor": "Zx.0001_P1",
                         "region": "chrA_1-5000"
                     },
-                    "Zx.0001_P1.chrA_1-5000.tsv.gz:md5,6f8323f2e71f917e02b4c23978fc55b9"
+                    "Zx.0001_P1.chrA_1-5000.genotypes.tsv.gz:md5,6f8323f2e71f917e02b4c23978fc55b9"
                 ]
             ],
             [
@@ -18,11 +18,11 @@
                         "donor": "Zx.0001_P1",
                         "region": "chrA_1-5000"
                     },
-                    "Zx.0001_P1.chrA_1-5000.matrix.tsv.gz:md5,d66845b73ddf33265666cd5ecb94998e"
+                    "Zx.0001_P1.chrA_1-5000.genotypes.matrix.tsv.gz:md5,d66845b73ddf33265666cd5ecb94998e"
                 ]
             ]
         ],
-        "timestamp": "2026-09-28T07:57:59.259936",
+        "timestamp": "2026-09-28T08:45:25.779655",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

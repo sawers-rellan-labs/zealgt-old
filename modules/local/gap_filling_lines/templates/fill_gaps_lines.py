@@ -54,7 +54,6 @@ TAB = chr(9)
 NL = chr(10)
 NA = "NA"
 DOT = "."
-TRUE = {"true", "t", "pass", "passed", "1", "yes", "y", "ok"}
 
 
 def log(msg):
@@ -230,22 +229,21 @@ def ancestry(seg, line, pos):
 
 
 def read_line_qc(path):
-    """{line: passes} from LINE_MARKER_QC (columns sample|line|name|sample_id and pass|status|include|passed|excluded)."""
+    """{sample: line_pass} from LINE_MARKER_QC's line_qc.tsv: columns sample and line_pass (true|false), one row per contig."""
     out = {}
     if not path:
         return out
     with open_text(path) as fh:
         rd = csv.DictReader(fh, delimiter=TAB)
         cols = rd.fieldnames or []
-        idc = next((c for c in ("sample", "line", "name", "sample_id") if c in cols), None)
-        pc = next((c for c in ("pass", "status", "include", "passed") if c in cols), None)
-        if idc is None or (pc is None and "excluded" not in cols):
-            raise SystemExit(f"GAP_FILLING_LINES: line_qc {path} needs a sample and a pass/excluded column, has {cols}")
+        if "sample" not in cols or "line_pass" not in cols:
+            raise SystemExit(f"GAP_FILLING_LINES: line_qc {path} needs the LINE_MARKER_QC columns sample and line_pass, has {cols}")
         for r in rd:
-            if pc is not None:
-                out[r[idc]] = r[pc].strip().lower() in TRUE
-            else:
-                out[r[idc]] = r["excluded"].strip().lower() not in TRUE
+            v = r["line_pass"].strip().lower()
+            if v not in ("true", "false"):
+                raise SystemExit(f"GAP_FILLING_LINES: line_qc {path}: line_pass of {r['sample']} is {r['line_pass']!r}, not true/false")
+            if out.setdefault(r["sample"], v == "true") != (v == "true"):
+                raise SystemExit(f"GAP_FILLING_LINES: line_qc {path}: line_pass of {r['sample']} differs between its contig rows")
     return out
 
 

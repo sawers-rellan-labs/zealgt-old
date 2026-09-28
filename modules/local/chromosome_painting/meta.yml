@@ -41,7 +41,7 @@ input:
         ontologies: []
     - line_qc:
         type: file
-        description: LINE_MARKER_QC table (sample + pass or excluded column); [] = no line excluded
+        description: LINE_MARKER_QC line_qc.tsv (columns sample and line_pass = true|false, one row per contig); [] = no line excluded
         pattern: "*.tsv"
         ontologies: []
 output:

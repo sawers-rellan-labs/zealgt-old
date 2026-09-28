@@ -9,6 +9,7 @@ nextflow_process {
     tag "modules_local"
     tag "rasterize"
     tag "real"
+    tag "line_marker_qc"
 
     // Donor alleles (tests/data, = DONOR_FOUNDER's result on the chain fixture): 100 ALT (own), 300 ALT (step 2), 400 REF,
     // 500 NA; 200 multiallelic (dropped). Segments: L1 x = 2 on 1-350, x = 0 on 380-5000; L2 x = 0; L3 excluded by line QC.
@@ -42,6 +43,56 @@ nextflow_process {
                 { assert long_rows.size() == 12 },
                 { assert long_rows.find { it[0] == 'L1' && it[2] == '300' }[8] == '1.9999864' },
                 { assert long_rows.find { it[0] == 'L3' && it[2] == '100' }[5..8] == [ 'NA', 'ALT', 'NA', 'NA' ] }
+            )
+        }
+    }
+
+    // line_qc contract (review fix a): the table written by the real LINE_MARKER_QC (columns sample ... line_pass reason,
+    // one row per contig; its fixture gives L1-L3 true, L4 false) is read as is, with no column renaming.
+    test("line_qc from the real LINE_MARKER_QC") {
+
+        setup {
+            run("LINE_MARKER_QC") {
+                script "../../line_marker_qc/main.nf"
+                process {
+                    """
+                    input[0] = channel.of([
+                        [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.tierA_sites.tsv", checkIfExists: true)
+                    ])
+                    input[1] = 10
+                    input[2] = 2
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                genotype_store_key = 'test'
+            }
+            process {
+                """
+                input[0] = LINE_MARKER_QC.out.line_qc.map { _m, qc -> [
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    qc
+                ] }
+                """
+            }
+        }
+
+        then {
+            def matrix = path(process.out.matrix[0][1]).linesGzip
+            assertAll(
+                { assert process.success },
+                // L3 passes here (it has x = 2 segments), L4 is excluded (line_pass false, no segments): NA everywhere
+                { assert matrix[0] == "chrom\tpos\tref\talt\tL1\tL2\tL3\tL4" },
+                { assert matrix[1] == "chrA\t100\tA\tG\t2\t0\t2\tNA" },
+                { assert matrix.drop(1).every { it.endsWith("\tNA") } }
             )
         }
     }

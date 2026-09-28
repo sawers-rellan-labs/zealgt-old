@@ -9,6 +9,7 @@ nextflow_process {
     tag "genotype_summary"
     tag "rasterize"
     tag "real"
+    tag "line_marker_qc"
 
     // RASTERIZE runs first on its fixture (see rasterize/tests/real.nf.test). Hand-computed:
     //   L1 segments 1-350 x = 2 (350 bp) and 380-5000 x = 0 (4,621 bp); L3 excluded.
@@ -64,6 +65,57 @@ nextflow_process {
                 { assert bp.find { it.line == 'L1' }.subMap(['n_breakpoints', 'gap_sites_near', 'step2_near', 'gap_sites_far']) ==
                          [ n_breakpoints: '1', gap_sites_near: '3', step2_near: '1', gap_sites_far: '0' ] },
                 { assert bp.find { it.line == 'L2' }.gap_sites_far == '3' }
+            )
+        }
+    }
+
+    // line_qc contract (review fix a): the table written by the real LINE_MARKER_QC (columns sample ... line_pass reason,
+    // one row per contig; its fixture gives L1-L3 true, L4 false) is read as is, with no column renaming.
+    test("line_qc from the real LINE_MARKER_QC") {
+
+        setup {
+            run("LINE_MARKER_QC") {
+                script "../../line_marker_qc/main.nf"
+                process {
+                    """
+                    input[0] = channel.of([
+                        [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.tierA_sites.tsv", checkIfExists: true)
+                    ])
+                    input[1] = 10
+                    input[2] = 2
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                genotype_store_key = 'test'
+            }
+            process {
+                """
+                input[0] = RASTERIZE.out.genotypes.combine(LINE_MARKER_QC.out.line_qc.map { _m, qc -> qc }).map { meta, g, qc -> [
+                    meta,
+                    g,
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    qc
+                ] }
+                """
+            }
+        }
+
+        then {
+            def tab = { f -> def l = path(f).readLines().collect { it.split('\t') }; l.drop(1).collect { r -> [l[0], r].transpose().collectEntries() } }
+            def lines = tab(process.out.summary[0][1])
+            assertAll(
+                { assert process.success },
+                { assert lines.find { it.line == 'L1' }.excluded == 'false' },
+                { assert lines.find { it.line == 'L3' }.excluded == 'false' },
+                { assert lines.find { it.line == 'L4' }?.excluded in [ null, 'true' ] }
             )
         }
     }

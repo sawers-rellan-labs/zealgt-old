@@ -10,6 +10,7 @@ nextflow_process {
     tag "gap_filling_lines"
     tag "gap_filling_bc1"
     tag "real"
+    tag "line_marker_qc"
 
     // Step 1 runs first on the GAP_FILLING_BC1 fixture: Zx.0001_P1 is missing at 300 (LLR 6.5, pi 0.5) and 500 (LLR 3).
     // Lines (tests/data): L1 x = 2 on 1-350 and x = 0 on 380-5000; L2 x = 0 everywhere; L3 excluded by line QC (its 3 ALT
@@ -113,6 +114,59 @@ nextflow_process {
                 { assert s('c_grid_bins') == '31' },
                 { assert s("lines_used") == "2" && s("lines_without_x0_depth") == "1" },   // no line QC: L3 is kept, but has no x = 0 site (no depth scale)
                 { assert s('candidates') == '2' }
+            )
+        }
+    }
+
+    // line_qc contract (review fix a): the table written by the real LINE_MARKER_QC (columns sample ... line_pass reason,
+    // one row per contig; its fixture gives L1-L3 true, L4 false) is read as is, with no column renaming.
+    test("line_qc from the real LINE_MARKER_QC") {
+
+        setup {
+            run("LINE_MARKER_QC") {
+                script "../../line_marker_qc/main.nf"
+                process {
+                    """
+                    input[0] = channel.of([
+                        [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.tierA_sites.tsv", checkIfExists: true)
+                    ])
+                    input[1] = 10
+                    input[2] = 2
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                genotype_store_key = 'test'
+            }
+            process {
+                """
+                input[0] = GAP_FILLING_BC1.out.calls.combine(LINE_MARKER_QC.out.line_qc.map { _m, qc -> qc }).map { _meta, calls, qc -> [
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    calls,
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.lines.ad.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    qc,
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/mexicana.prior.tsv", checkIfExists: true)
+                ] }
+                input[1] = 'Zx.0001_P1'
+                """
+            }
+        }
+
+        then {
+            def summary = path(process.out.summary[0][1]).readLines().collect { it.split('\t') }
+            def s = { name -> summary[1][summary[0].findIndexOf { it == name }] }
+            assertAll(
+                { assert process.success },
+                // L1-L3 pass in this table (L4 is not in the AD file): none QC-excluded; L3 has no x = 0 site
+                { assert s('lines_excluded_qc') == '0' },
+                { assert s('lines_used') == '2' && s('lines_without_x0_depth') == '1' }
             )
         }
     }

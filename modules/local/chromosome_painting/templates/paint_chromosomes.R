@@ -26,22 +26,19 @@ read_table <- function(path) {
     if (nrow(d) == 0) NULL else d
 }
 
-truthy <- function(v) tolower(trimws(as.character(v))) %in% c("true", "t", "pass", "passed", "1", "yes", "y", "ok")
-
+# LINE_MARKER_QC's line_qc.tsv: columns sample and line_pass (true|false), one row per contig.
 line_qc_table <- function(path) {
     d <- read_table(path)
     if (is.null(d)) return(data.table(line = character(), pass = logical()))
-    idc <- intersect(c("sample", "line", "name", "sample_id"), names(d))[1]
-    pc <- intersect(c("pass", "status", "include", "passed"), names(d))[1]
-    if (is.na(idc)) stop("CHROMOSOME_PAINTING: line_qc needs a sample column")
-    if (!is.na(pc)) {
-        pass <- truthy(d[[pc]])
-    } else if ("excluded" %in% names(d)) {
-        pass <- !truthy(d[["excluded"]])
-    } else {
-        stop("CHROMOSOME_PAINTING: line_qc needs a pass or excluded column")
+    if (!all(c("sample", "line_pass") %in% names(d))) {
+        stop("CHROMOSOME_PAINTING: line_qc needs the LINE_MARKER_QC columns sample and line_pass, has ",
+             paste(names(d), collapse = ","))
     }
-    data.table(line = as.character(d[[idc]]), pass = pass)
+    v <- tolower(trimws(as.character(d[["line_pass"]])))
+    if (!all(v %in% c("true", "false"))) stop("CHROMOSOME_PAINTING: line_pass values must be true or false")
+    q <- unique(data.table(line = as.character(d[["sample"]]), pass = v == "true"))
+    if (anyDuplicated(q[["line"]])) stop("CHROMOSOME_PAINTING: line_pass of a line differs between its contig rows")
+    q
 }
 
 parse_opts <- function(s) {
