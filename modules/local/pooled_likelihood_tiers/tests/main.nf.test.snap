@@ -1,0 +1,128 @@
+{
+    "Zx.0540_P3.chrA - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.sites.tsv.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.pool_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.run_info.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    "Zx.0540_P3.chrA.pooled_likelihood_tiers.versions.yml:md5,bcbddc293a54d2fad4a7cd35138d3a9b"
+                ],
+                "pool_qc": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.pool_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "run_info": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.run_info.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "sites": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.sites.tsv.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "Zx.0540_P3.chrA.pooled_likelihood_tiers.versions.yml:md5,bcbddc293a54d2fad4a7cd35138d3a9b"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:54:10.797278",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "Zx.0540_P3.chrA - crisp_vcf tiers": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0540_P3.chrA",
+                        "donor": "Zx.0540_P3",
+                        "region": "chrA"
+                    },
+                    "Zx.0540_P3.chrA.summary.tsv:md5,385c1d6f00da5215c9dec23f9b5df81f"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0540_P3.chrA",
+                        "donor": "Zx.0540_P3",
+                        "region": "chrA"
+                    },
+                    "Zx.0540_P3.chrA.pool_qc.tsv:md5,a1317fc591cc926087792d2575aa1e45"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T08:07:46.663052",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

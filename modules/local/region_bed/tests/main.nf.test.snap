@@ -1,0 +1,76 @@
+{
+    "chrA_101-1000 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "chrA_101-1000"
+                        },
+                        "chrA_101-1000.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "chrA_101-1000"
+                        },
+                        "chrA_101-1000.regions.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "chrA_101-1000.region_bed.versions.yml:md5,5c550f47a750ac81204eafea26d692f7"
+                ],
+                "bed": [
+                    [
+                        {
+                            "id": "chrA_101-1000"
+                        },
+                        "chrA_101-1000.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "regions": [
+                    [
+                        {
+                            "id": "chrA_101-1000"
+                        },
+                        "chrA_101-1000.regions.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "chrA_101-1000.region_bed.versions.yml:md5,5c550f47a750ac81204eafea26d692f7"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:47:08.535493",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "chrA_101-1000 - clip and merge": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "chrA_101-1000"
+                    },
+                    "chrA_101-1000.bed:md5,c362271c69be0c5e6675d4e59f929d9d"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "chrA_101-1000"
+                    },
+                    "chrA_101-1000.regions.txt:md5,673670cb99fd5f2f8ff85534442c6a6f"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:47:11.236223",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

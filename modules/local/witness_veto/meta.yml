@@ -1,0 +1,77 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. No own environment.yml: it runs in the python env of POOLED_LIKELIHOOD_TIERS
+# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv WITNESS_VETO -> pooled_likelihood_tiers).
+name: witness_veto
+description: Keep a CRISP record only when the witness pool (the donor's merged BC2S3 lines) shows at least --min-alt-reads ALT reads (ADf + ADr + ADb, all ALT alleles); writes the kept records as a BGZF VCF, their site list and a summary.
+keywords:
+  - vcf
+  - filter
+  - witness
+  - variant discovery
+tools:
+  - python:
+      description: Python standard library script (module template, templates/veto_by_witness.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map of the unit (donor x region)
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - vcf:
+        type: file
+        description: In-range CRISP VCF (BED_CLIP output), gzip/BGZF or plain
+        pattern: "*.{vcf,vcf.gz}"
+        ontologies: []
+  - witness:
+      type: string
+      description: The witness pool's sample name in the VCF (e.g. Zx0540_P3_BC2S3)
+output:
+  vcf:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.vetoed.vcf.gz":
+          type: file
+          description: Kept records with the full header, BGZF (tabix-indexable)
+          pattern: "*.vetoed.vcf.gz"
+          ontologies: []
+  sites:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.kept_sites.tsv":
+          type: file
+          description: chrom, pos, ref, alt of the kept records, no header
+          pattern: "*.kept_sites.tsv"
+          ontologies: []
+  summary:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.veto_summary.tsv":
+          type: file
+          description: witness, min_alt_reads, records_in, kept, dropped, kept_share
+          pattern: "*.veto_summary.tsv"
+          ontologies: []
+  versions:
+    - "${task.ext.prefix ?: meta.id}.witness_veto.versions.yml":
+        type: file
+        description: Tool versions (python)
+        pattern: "*.witness_veto.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

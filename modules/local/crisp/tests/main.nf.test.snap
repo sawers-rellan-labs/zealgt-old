@@ -1,0 +1,61 @@
+{
+    "Zx.0540_P3.chrA - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                        "Zx.0540_P3.chrA.crisp.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "Zx.0540_P3.chrA.crisp.versions.yml:md5,8c225900c2d69bd60ca366a9312e639d"
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "vcf": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                        "Zx.0540_P3.chrA.crisp.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "Zx.0540_P3.chrA.crisp.versions.yml:md5,8c225900c2d69bd60ca366a9312e639d"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:59:11.39549",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

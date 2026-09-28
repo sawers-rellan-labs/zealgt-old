@@ -1,0 +1,108 @@
+{
+    "Zx.0540_P3.chrA - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.vetoed.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.kept_sites.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.veto_summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    "Zx.0540_P3.chrA.witness_veto.versions.yml:md5,409b4d582a3c976ecaba64d6c9a5a9d7"
+                ],
+                "sites": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.kept_sites.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.veto_summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "vcf": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.vetoed.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "versions": [
+                    "Zx.0540_P3.chrA.witness_veto.versions.yml:md5,409b4d582a3c976ecaba64d6c9a5a9d7"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:50:38.879803",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "Zx.0540_P3.chrA - veto at >= 1 ALT read": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0540_P3.chrA",
+                        "donor": "Zx.0540_P3",
+                        "region": "chrA"
+                    },
+                    "Zx.0540_P3.chrA.kept_sites.tsv:md5,213162ee1b736287457bd3fbde445a61"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0540_P3.chrA",
+                        "donor": "Zx.0540_P3",
+                        "region": "chrA"
+                    },
+                    "Zx.0540_P3.chrA.veto_summary.tsv:md5,8a8f25e2d9de9333bb3d16e1b68cc0a6"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:50:42.785537",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

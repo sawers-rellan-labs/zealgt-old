@@ -1,0 +1,109 @@
+nextflow_process {
+
+    name "Test Process ALLELE_COUNTS"
+    script "../main.nf"
+    process "ALLELE_COUNTS"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "allele_counts"
+
+    test("Zx.0540_P3.chrA - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0540_P3.chrA', donor:'Zx.0540_P3', region:'chrA' ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam.bai", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam.bai", checkIfExists: true) ],
+                    [ 'p1', 'p2' ]
+                ])
+                input[1] = [ [ id:'Zx.0540_P3.chrA' ], file("${projectDir}/modules/local/allele_counts/tests/data/sites.tsv", checkIfExists: true) ]
+                input[2] = [ [ id:'tiny' ], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ]
+                input[3] = 'chrA'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.counts[0][1]).name == "Zx.0540_P3.chrA.b73.ad.tsv.gz" }
+            )
+        }
+    }
+
+    test("Zx.0540_P3.chrA - AD at fixed sites") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0540_P3.chrA', donor:'Zx.0540_P3', region:'chrA' ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam.bai", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam.bai", checkIfExists: true) ],
+                    [ 'p1', 'p2' ]
+                ])
+                input[1] = [ [ id:'Zx.0540_P3.chrA' ], file("${projectDir}/modules/local/allele_counts/tests/data/sites.tsv", checkIfExists: true) ]
+                input[2] = [ [ id:'tiny' ], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ]
+                input[3] = 'chrA'
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.counts[0][1]).linesGzip
+            def by_pos = rows.drop(1).collectEntries { l -> def x = l.split('\t'); [ (x[1]): x ] }
+            // AD of the site's ALT allele among mpileup's ALT list (index 1..), 0 when absent
+            def ad = { String pos, int col, String alt ->
+                def x = by_pos[pos]; def alts = x[3].split(','); def v = x[col].split(',')*.toInteger()
+                def i = alts.findIndexOf { a -> a == alt }
+                [ v[0], i < 0 ? 0 : v[i + 1] ] }
+            assertAll(
+                { assert process.success },
+                { assert rows[0].replaceFirst(/^# /, "#") == "#[1]CHROM\t[2]POS\t[3]REF\t[4]ALT\t[5]p1:AD\t[6]p2:AD" },
+                { assert by_pos.keySet() == [ '1001', '2001', '3001' ] as Set },
+                { assert ad('1001', 4, 'C') == [ 7, 3 ] },
+                { assert ad('1001', 5, 'C') == [ 8, 0 ] },
+                { assert ad('2001', 4, 'A') == [ 0, 5 ] },
+                { assert ad('2001', 5, 'A') == [ 0, 0 ] },
+                { assert ad('3001', 4, 'C') == [ 4, 2 ] },
+                { assert ad('3001', 5, 'C') == [ 4, 0 ] },
+                { assert rows.drop(1).every { l -> !l.split('\t')[3].split(',').any { a -> a.length() > 1 && a != '<*>' } } }
+            )
+        }
+    }
+
+    test("sample id not matching the read-group SM - fails") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0540_P3.chrA' ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam.bai", checkIfExists: true) ],
+                    [ 'S_2A_11' ]
+                ])
+                input[1] = [ [ id:'Zx.0540_P3.chrA' ], file("${projectDir}/modules/local/allele_counts/tests/data/sites.tsv", checkIfExists: true) ]
+                input[2] = [ [ id:'tiny' ], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ]
+                input[3] = 'chrA'
+                """
+            }
+        }
+
+        then {
+            assert process.failed
+        }
+    }
+}
