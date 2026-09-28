@@ -11,10 +11,12 @@ CollectWgsMetrics, MultiQC per library) and the provenance record. Build the gen
 stub modules) only if it costs nothing; do not develop it.
 
 Done by morning means, in this order:
-0. The nf-core template scaffolded and committed untouched first (the build prompt's "Template" section); the DEMUX+ALIGN
-   library task as one local module exactly as PLAN §0 (cutadapt → Trimmomatic → FastQC → minibwa | samtools → CRAM inside the task;
-   env/assembly + zealgt_reads/bin on PATH, see the build prompt); nf-core modules only for the CRAM-level steps (samtools stats, the
-   markdup-only import pass, picard/collectwgsmetrics, multiqc); registry and provenance as modules/local/ to nf-core conventions; `nf-core pipelines lint` and the stub nf-tests clean before the first push.
+0. The nf-core template scaffolded and committed untouched first (the build prompt's "Template" section); one process per
+   tool as PLAN §0 Task 2 (updated 2026-09-27): DEMUX (local, cutadapt) per library → TRIMMOMATIC, FASTQC (nf-core) → ALIGN_MARKDUP
+   (local, minibwa + samtools) per sample → SAMTOOLS_STATS, PICARD_COLLECTWGSMETRICS, MULTIQC (nf-core); the markdup-only import pass
+   from nf-core samtools modules; registry and provenance as modules/local/ to nf-core conventions. Every module with its own pinned
+   environment.yml (build prompt, "Environments, the reproducible way"); the envs built once by an xfer job into
+   ZEAL/envs/nf-conda before Gate 1. `nf-core pipelines lint` and the stub nf-tests clean before the first push.
 1. Code written locally, committed in small explicit steps (`git add <paths>`), CodeRabbit run on it (`coderabbit review --committed
    --base main --agent`), findings applied or rejected with a reason in agent/, pushed, pulled on hazel (ZEAL/zealgt).
 2. Gate 0: `-stub-run` of every CRAM entry as a small short-QOS job; the DAG wires (channel joins, filenames, storeDir paths under
@@ -32,7 +34,7 @@ Done by morning means, in this order:
    CodeRabbit findings applied / rejected, measured resources, everything left open, the exact next command.
 
 You are authorised (user, 2026-09-27) to write, run and debug the CRAM workflow without asking: commit, push, pull on hazel, submit
-short-QOS jobs, fix and rerun, all within the hard limits below. Stub work/ was already cleaned by the user.
+short-QOS jobs and xfer env-build jobs, fix and rerun, all within the hard limits below. Stub work/ was already cleaned by the user.
 
 Run unattended: after every submission use /loop to wake yourself every 20–30 minutes, or at the job's expected length, and check
 `squeue -u frodrig4`, `sacct -j <ids>`, the run's `.nextflow.log` and the failed task's `.command.err`; fix the module, commit, push,
@@ -42,9 +44,9 @@ settles; write what it leaves open into the handover instead of asking.
 
 Hard limits: no deletion of any kind (no rm -r, no nextflow clean, no overwriting existing CRAMs or tables); no demultiplexing of a
 library the registry or §0's table lists as demuxed unless the plan's --force-demux path is exercised deliberately at Gate 1 on the
-subsample; conda environments are used as they are under /share/maize/frodrig4/conda/env/ (assembly, nilhmm, qc — picard for
-CollectWgsMetrics, nextflow) plus ZEAL/envs/zealgt_reads (trimmomatic, fastqc) as mapped in the build prompt — verify each once with a
-version call before Gate 0, rebuild nothing; nf-schema plugin fetched into NXF_PLUGINS_DIR on /share by an xfer job, head job
+subsample; environments come only from the repo's environment.yml files, built into ZEAL/envs/nf-conda by xfer jobs, never at
+task time; the existing /share/maize/frodrig4/conda/env/* envs and ZEAL/envs/zealgt_reads are not used and not touched (no rebuild,
+move, deletion), except env/nextflow as the launcher; one library in flight (work/ peak ≈ 2 × library); nf-schema plugin fetched into NXF_PLUGINS_DIR on /share by an xfer job, head job
 with NXF_OFFLINE=true; raw libraries are read-only; work/ and TMPDIR on /share/maize/frodrig4/nf_work/<run>,
 results and store on /rsstu; all compute through Slurm (short QOS for gates, compute/normal for Gate 2's library), nothing heavy on the
 login node; attribution lines on commits as the session's rules give them.

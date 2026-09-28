@@ -10,17 +10,20 @@ Template (not optional; no hand-rolled layout)
   (nextflow_schema.json + samplesheet schema in assets/), nf-test, MultiQC, conf/base.config + conf/modules.config, the `test` profile,
   modules.json. Drop: igenomes, nf-core institutional configs (compute nodes are offline), email / Slack / Teams, GitHub CI, the
   gitpod/codespaces files. Commit the untouched scaffold as its own first commit so every later change is a readable diff against it.
-- The library task stays as PLAN §0 says (user, 2026-09-27): ONE local DEMUX+ALIGN process per library runs cutadapt demux →
-  Trimmomatic → FastQC → minibwa | samtools fixmate | sort | markdup -d 2500 → CRAM for every sample inside the task, FASTQs in task
-  scratch only. Its env: conda `/share/maize/frodrig4/conda/env/assembly` (cutadapt, minibwa, samtools), and the script's first line
-  prepends `/rsstu/users/r/rrellan/BZea/ZEAL/envs/zealgt_reads/bin` to PATH for trimmomatic, fastqc and their java — the zealbc1 way
-  (tools by prefix); no new env, no bundled env. Trimmomatic parameters: Snirwan's batch-1 run (PLAN §3 row 1b: ILLUMINACLIP 2:30:10,
-  LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36); find the adapter FASTA their run used from the batch-1 scripts / logs that sit
-  with `sara/BZea/filtered_S/` (read-only, one bounded find); if not found, use the env's `share/trimmomatic*/adapters/TruSeq3-PE-2.fa`
-  and flag it in the handover.
-- nf-core modules (`nf-core modules install`) for the steps that run on CRAMs: samtools/stats, samtools (collate, fixmate, sort, markdup,
-  index) for the markdup-only import pass, picard/collectwgsmetrics, multiqc, later bcftools/mpileup; env overrides: samtools →
-  env/assembly, picard + multiqc → env/qc. Everything else (DEMUX+ALIGN library task, registry, provenance, CRISP, RTIGER, stages 3–6) goes in
+- Reproducibility is the requirement (user, 2026-09-27): everything needed to rebuild a run is in the repo — code, pinned
+  environments, config, run card. One process per tool (PLAN §0 Task 2 and §2 rule 6 as updated 2026-09-27):
+  DEMUX (cutadapt, one task per library) → TRIMMOMATIC (per sample) → FASTQC (per sample, trimmed reads) → ALIGN_MARKDUP (per sample,
+  one process: minibwa -x sr → read groups → samtools fixmate -m → sort → markdup -d 2500 → CRAM, storeDir) → SAMTOOLS_STATS →
+  PICARD_COLLECTWGSMETRICS → MULTIQC (per library). FASTQs pass through work/; one library in flight (`maxForks 1` on DEMUX, PLAN §5
+  rule 3). Per-sample tasks make the library restart-safe by construction (storeDir skips stored CRAMs).
+- Trimmomatic parameters: Nirwan's batch-1 run (PLAN §3 row 1b: ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15,
+  MINLEN:36). The adapter FASTA is not written in the plan: find the one Nirwan's run used in the batch-1 scripts / logs next to
+  `sara/BZea/filtered_S/` (read-only, one bounded `find -maxdepth 3`); if it is not found, use TruSeq3-PE-2.fa shipped with the
+  pinned trimmomatic and flag it in the handover.
+- nf-core modules (`nf-core modules install`) wherever one exists: trimmomatic, fastqc, samtools/stats, samtools (collate, fixmate, sort,
+  markdup, index) for the markdup-only import pass, picard/collectwgsmetrics, multiqc, later bcftools/mpileup. DEMUX (cutadapt inline
+  exact demux, not what nf-core cutadapt does) and ALIGN_MARKDUP (minibwa has no nf-core module) are local modules; so are registry,
+  provenance, CRISP, RTIGER, stages 3–6. All of them go in
   modules/local/ written to nf-core module conventions: `meta` map in / out, `versions.yml` emitted, `task.ext.args` for flags,
   `stub:` block, an nf-test with a stub test. Subworkflows likewise (nf-core subworkflows where they fit, else subworkflows/local/).
 - Two workflows in the template: workflows/cram.nf and workflows/genotype.nf, chosen by one `--workflow cram|genotype` param validated in
@@ -43,14 +46,28 @@ Template (not optional; no hand-rolled layout)
   - Patch with `nf-core modules patch <module>` (patch in modules.json, upstream interface / outputs / labels unchanged, the patch touches
     only the resource values and says why in a comment above the script block). A module that cannot be patched without changing what
     it computes stays unpatched and is listed in the handover.
-  - Not covered by this fix, on purpose: a changed conda prefix, ext.args or input still changes the hash (as it should); whether an
+  - Not covered by this fix, on purpose: a changed environment.yml, ext.args or input still changes the hash (as it should); whether an
     edit to bin/slurm_resources.sh does is version-dependent — read it off the -dump-hashes output, do not assume;
     no containers are used, so env propagation is not an issue on hazel.
   Local modules follow §2 directly through the same helper. Resources follow the template: process_* labels in
   conf/base.config, per-module `withName` overrides in conf/modules.config (and conf/slurm.config for hazel), `ext.args` there too.
-- Conda: the template's `conda "${moduleDir}/environment.yml"` is overridden per process in conf/hazel.config with the existing prefixes
-  (config `withName`/`withLabel` beats the directive); no env is built at task time. Tool → prefix map (inventory of `bin/`, 2026-09-27):
-  see the Environments bullet below.
+- Environments, the reproducible way (nf-core convention, not hand-made prefixes):
+  - Every module keeps `conda "${moduleDir}/environment.yml"`. nf-core modules use the environment.yml they ship with (pinned, no
+    edits). Each local module gets its own environment.yml pinning only the tools its script calls, with exact versions: DEMUX →
+    cutadapt; ALIGN_MARKDUP → minibwa + samtools (two tools piped in one script, as nf-core's bwamem2/mem pins bwa-mem2 + samtools);
+    registry / provenance → python. Take the versions from what zealbc1 ran (`conda list -p /share/maize/frodrig4/conda/env/assembly`,
+    read-only) so results stay comparable. Channels conda-forge + bioconda, strict priority. No env bundles unrelated tools.
+  - Build: `conda.cacheDir = /rsstu/users/r/rrellan/BZea/ZEAL/envs/nf-conda` (persistent, off the /share file quota). Compute nodes are
+    offline, so the envs are created once by a Nextflow run on the `xfer` partition (it has internet) before Gate 1, from the same
+    ymls, into that cacheDir; task jobs then find them by Nextflow's own yml-hash naming. Confirm with the first real task that no
+    env is being created at task time (.nextflow.log "Creating env"). If Nextflow will not create envs in that setup, write
+    bin/build_envs.sh (one `conda env create -p <cacheDir>/<module>-<yml sha256 prefix> -f <yml>` per module, xfer job) and point
+    `withName` at those prefixes from conf/hazel.config — still built only from the repo ymls. Record every env built (path, yml
+    sha, file count) in docs/REQUIREMENTS.md §3.
+  - The existing /share/maize/frodrig4/conda/env/* envs and ZEAL/envs/zealgt_reads are not used by the pipeline and are not touched
+    (no rebuild, move or deletion). env/nextflow stays the Nextflow launcher.
+  - Containers: check once with a 1-minute short-QOS job whether `apptainer` or `singularity` exists on compute nodes (a .sif sits in
+    ZEAL/envs/containers). Report it in the handover as the next step up; do not switch tonight.
 - Offline compute nodes: the template's plugins (nf-schema) must be fetched once into NXF_PLUGINS_DIR on /share through an `xfer`
   partition job; the head job runs with NXF_OFFLINE=true.
 
@@ -75,11 +92,12 @@ What to build
   genotype_imputation, reporting; plus reference_variant_space (§3, later). One module per step, no duplicated commands; every module
   has a `stub:` block.
 - Principles §2 are hard requirements: storeDir for CRAMs / demux QC / step-4 tables (keyed as the review fix says); comments outside
-  script blocks; threads and memory from Slurm env, not ${task.cpus}; `cache 'lenient'` on large inputs; temporaries die inside the task;
-  workDir and TMPDIR on /share/maize/frodrig4/nf_work/<run>, results on /rsstu; environments referenced by prefix (conda.enabled per
-  profile, off for stub); profiles stub / slurm / local.
+  script blocks; threads and memory from Slurm env, not ${task.cpus}; `cache 'lenient'` on large inputs; temporaries die inside the task
+  except the FASTQs between DEMUX, TRIMMOMATIC and ALIGN_MARKDUP; workDir and TMPDIR on /share/maize/frodrig4/nf_work/<run>, results
+  on /rsstu; environments from each module's environment.yml (conda.enabled per profile, off for stub); profiles stub / slurm / local.
 - §0 is law: development entries start from CRAMs; read_demultiplexing refuses a registered library unless --force-demux <library>;
-  one DEMUX+ALIGN task per library aligns all its samples, FASTQs only in task scratch; raw libraries are read-only; maxForks 4.
+  one DEMUX per library, then all its samples go through TRIMMOMATIC → FASTQC → ALIGN_MARKDUP; raw libraries are read-only; one
+  library in flight.
 - CRAM stop point (§3): B73 v5, read groups in every read, duplicates flagged not removed (samtools markdup -d 2500), no MAPQ filter,
   QC (FastQC, samtools stats, markdup stats, Picard CollectWgsMetrics), provenance record, registry entry. MAPQ / BQ filters live in the
   genotype workflow (mpileup -q20 -Q20, CRISP --mmq 20).
@@ -93,19 +111,19 @@ Resource allocation (conf/slurm.config; every process gets a label, every label 
 and correct the numbers from `seff` / `sacct` after each gate — record them there)
 - Behaviour as measured in zealbc1 nilhmm, expressed in the template's config files (not nilhmm's layout): `errorStrategy 'retry'`, `maxRetries 2` (3 attempts) with memory escalation on OOM (alignment 24 → 48 → 72 GB);
   `executor.queueSize` 80 on normal, 40 on short; a debug/short profile that caps every process at 1 h; `--account=maize_cpu` in
-  `clusterOptions`; `maxForks 4` on DEMUX+ALIGN (scratch peak ≤ 1.5 TB, §5); trace.txt with peak_rss / realtime per task, read after each gate.
-- The one design change from nilhmm: nilhmm aligned each sample as its own 1–4 h task; the plan's Task 2 demuxes and aligns all samples
-  of a library in one task (12–24 h on normal). That task must be restart-safe: each sample's CRAM is written to the store as it
-  finishes and a rerun skips samples whose CRAM (and index) already exist, so a failure at sample 11 costs one sample, not the library.
-  Gate 2 measures one library this way before any other library is submitted.
+  `clusterOptions`; `maxForks 1` on DEMUX (one library in flight, peak ≈ 2 × library, §5 rule 3); trace.txt with peak_rss /
+  realtime per task, read after each gate.
+- As in nilhmm, each sample aligns as its own task (1–4 h on normal for deep BC1 samples); the library is demuxed once. Gate 2
+  measures one library this way, including the work/ peak and file count, before any other library is submitted.
 - Partition / QOS per label: `short` (compute_partners, ≤ 2 h) for everything in the genotype workflow and for stub / gate runs; `normal`
   (compute) only for the CRAM workflow's deep-library tasks; `xfer` (`--partition=xfer --mem=8G`) for downloads only. The Nextflow head
   job itself is a small short-QOS job (1 cpu, 4 GB, 2 h for gates; longer on normal for Gate 2 of the CRAM workflow), never the login node.
 - Starting requests (measured in REQUIREMENTS §4, jobs cited there):
-  - DEMUX+ALIGN, one BC1 library (12 samples, 80–362 GB raw): 8 cpu, 24 GB escalating to 48 / 72 GB on retry (sort at ~20× needed
-    ≥ 48 GB in 935092 / 945148), 24 h on normal; samples aligned sequentially inside the task, ~1 h per sample (12–13 min per 1× of
-    depth), restart-safe as above; scratch ≈ 1.1 × library on /share.
-  - DEMUX+ALIGN, one batch-2 row library (BC2S3 lines, ~18 lines): 8 cpu, 32 GB, 2 h short.
+  - DEMUX, one BC1 library (80–362 GB raw): 8 cpu, 16 GB, 53–72 min per 94–140 GB pool (935092, 945148) → normal, 4 h.
+  - TRIMMOMATIC per BC1 sample: 8 cpu, 8 GB, normal 2 h (measure at Gate 1; Java, -Xmx from the helper). FASTQC per sample: 2 cpu, 4 GB.
+  - ALIGN_MARKDUP per BC1 sample (5–25×): 8 cpu, 24 GB escalating to 48 / 72 GB on retry (sort at ~20× needed ≥ 48 GB in 935092 /
+    945148), 4 h on normal (12–13 min per 1× of depth).
+  - Batch-2 row library (BC2S3 lines, ~18 lines, 0.4–1.2×): DEMUX 8 cpu 16 GB, ALIGN_MARKDUP per line 8 cpu 32 GB, all short QOS.
   - MARK_DUPLICATES-only pass on imported CRAMs: 2 cpu, 12 GB, 30 min short (array 963772: 6–16 min per BC1 sample).
   - QC per sample (FastQC, samtools stats, CollectWgsMetrics): 2 cpu, 8 GB, 1 h short; MultiQC per library: 1 cpu, 4 GB.
   - Per-sample / per-line counts (QC panel, union sites): batched, one task per donor × chromosome over all its samples: 2 cpu, 8 GB,
@@ -115,16 +133,11 @@ and correct the numbers from `seff` / `sacct` after each gate — record them th
   - RTIGER, one donor × chromosome: 4 cpu, 16 GB, 2 h short (confirm; RTIGER is R, single-threaded per line).
   - marker_union, gap filling steps 1–2, raster, reporting: 1–2 cpu, 12–16 GB, 1 h short (step 2 measured 35 s / 0.9 GB on chr10).
   - reference_variant_space (AnchorWave, later): 8 cpu, 16 GB, 2 h short per chromosome; measure memory on one chromosome first.
-- Environments: use the existing ones as they are (user, 2026-09-27), mapped per tool (checked in `bin/` on hazel, 2026-09-27):
-  `/share/maize/frodrig4/conda/env/assembly` (minibwa, samtools, bcftools, cutadapt, python3), `env/nilhmm` (R, RTIGER, bcftools; no
-  python3 in its bin — Python steps use env/assembly or env/qc), `env/qc` (picard 3.5.0 → CollectWgsMetrics, multiqc, python3, java),
-  `env/nextflow` (nextflow, java); plus the one env added for zealgt, `/rsstu/users/r/rrellan/BZea/ZEAL/envs/zealgt_reads`
-  (trimmomatic 0.39, fastqc 0.12.1; from envs/zealgt_reads.yml, built by xfer job 968339) for TRIMMOMATIC and FASTQC; check each with one `conda run -p <prefix> <tool> --version` on the login node before Gate 0 and report any that is
-  broken to the user. Do not rebuild, move or delete any environment (PLAN_cleanup group 4 and PLAN_pipeline §5 rule 6 are superseded on
-  this point); compute nodes have no internet, so no env is built at task time.
+- Environments: see "Environments, the reproducible way" above. Launcher only: /share/maize/frodrig4/conda/env/nextflow (Nextflow
+  26.04.6); check it with one `nextflow -version` inside a tiny short-QOS job before Gate 0.
 - Scale to keep in view (§5): ~130 BC1 samples and ~185 lines to align in Task 1 (~1,000 CPU-h), ~3,000 CPU-h for all BC1 samples;
-  the group file quota on /share (~224 K files left) is the binding limit, so every gate reports file counts and stub work/ is cleaned
-  with consent.
+  the group file quota on /share (~224 K files left) is the binding limit, so every gate reports file counts. The user cleaned the
+  earlier stub work/ already (2026-09-27).
 
 How to work
 1. Scaffold the nf-core template (above), commit it untouched, then install / write modules one step at a time. The layout is the

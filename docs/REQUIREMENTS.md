@@ -39,8 +39,9 @@ chromosomes, with only `marker_union` and the PHG database as barriers.
 | R 4.x | data.table, ggplot2, logger, nilHMM 0.3.0 (RTIGER caller) | `.../conda/env/nilhmm` |
 | PHG | 2.5.14 + JDK 21 (+ agc, tiledb) | `ZEAL/envs/phgv2`, `ZEAL/envs/jdk21`, `ZEAL/envs/phgv2-conda`, `ZEAL/envs/phgv2-tiledb` |
 | Nextflow | 26.04.6 | `/share/maize/frodrig4/conda/env/nextflow` |
-The `/share/maize/frodrig4/conda/env/*` environments are used as they are (user, 2026-09-27: no rebuild, move or deletion). Only tools
-missing from all of them get a new env, built once from a pinned yml in `envs/` into `ZEAL/envs/` (persistent, off the /share file quota).
+The table above is where the tools ran until now (zealbc1). zealgt pipeline tasks do not use these prefixes (user, 2026-09-27,
+PLAN §2 rule 6): every module has its own pinned `environment.yml` in the repo, built once into `ZEAL/envs/nf-conda` by an xfer job.
+The `/share/maize/frodrig4/conda/env/*` envs stay as they are (no rebuild, move or deletion); env/nextflow remains the launcher.
 
 ## 4. Compute (measured per unit)
 | stage | unit | cpus | memory | wall time | disk |
