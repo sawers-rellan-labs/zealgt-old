@@ -10,8 +10,12 @@ curl -fsSL -o crisp.tar.gz "https://github.com/vibansal/crisp/archive/${commit}.
 echo "${sha256}  crisp.tar.gz" | sha256sum -c -
 tar -xzf crisp.tar.gz
 cd "crisp-${commit}"
-# Makefile: CC=gcc, HTSLIB_* from pkg-config or "-lhts -lz"; point both at the env's htslib (conda compiler $CC) and rpath it
-make CC="${CC:?conda compiler not activated} -Wno-all -D_GNU_SOURCE" HTSLIB_CFLAGS="-I$CONDA_PREFIX/include" \
+# Makefile: CC=gcc, HTSLIB_* from pkg-config or "-lhts -lz"; point both at the env's htslib (conda compiler $CC) and rpath it.
+# GCC >= 14 turns the pre-C99 diagnostics into errors; upstream CRISP trips -Wint-conversion (crisp/pooledFET.c:136, indel
+# FET), which the older system gcc of the zealbc1 build accepted as a warning. Downgrade them back to warnings so the binary is
+# the same upstream code zealbc1 ran (no source patch).
+permissive="-Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=implicit-int"
+make CC="${CC:?conda compiler not activated} -Wno-all -D_GNU_SOURCE ${permissive}" HTSLIB_CFLAGS="-I$CONDA_PREFIX/include" \
      HTSLIB_LIBS="-L$CONDA_PREFIX/lib -Wl,-rpath,$CONDA_PREFIX/lib -lhts -lz"
 install -m 0755 bin/CRISP.binary "$CONDA_PREFIX/bin/CRISP"
 "$CONDA_PREFIX/bin/CRISP" 2>&1 | head -3 || true
