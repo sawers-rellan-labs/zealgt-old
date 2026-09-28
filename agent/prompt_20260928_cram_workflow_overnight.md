@@ -11,6 +11,9 @@ CollectWgsMetrics, MultiQC per library) and the provenance record. Build the gen
 stub modules) only if it costs nothing; do not develop it.
 
 Done by morning means, in this order:
+0. The nf-core template scaffolded and committed untouched first (the build prompt's "Template" section); nf-core modules installed
+   for fastqc, cutadapt/trimmomatic, samtools, picard/collectwgsmetrics, multiqc; minibwa, DEMUX+ALIGN, registry and provenance as
+   modules/local/ to nf-core conventions; `nf-core pipelines lint` and the stub nf-tests clean before the first push.
 1. Code written locally, committed in small explicit steps (`git add <paths>`), CodeRabbit run on it (`coderabbit review --committed
    --base main --agent`), findings applied or rejected with a reason in agent/, pushed, pulled on hazel (ZEAL/zealgt).
 2. Gate 0: `-stub-run` of every CRAM entry as a small short-QOS job; the DAG wires (channel joins, filenames, storeDir paths under
@@ -34,6 +37,8 @@ settles; write what it leaves open into the handover instead of asking.
 Hard limits: no deletion of any kind (no rm -r, no nextflow clean, no overwriting existing CRAMs or tables); no demultiplexing of a
 library the registry or §0's table lists as demuxed unless the plan's --force-demux path is exercised deliberately at Gate 1 on the
 subsample; conda environments are used as they are under /share/maize/frodrig4/conda/env/ (assembly, nilhmm, qc, nextflow) — verify each
-once with a version call before Gate 0, rebuild nothing; raw libraries are read-only; work/ and TMPDIR on /share/maize/frodrig4/nf_work/<run>,
+once with a version call before Gate 0, rebuild nothing (FastQC or Picard missing from every prefix → write it into the handover and
+run Gate 1 without that module, do not build an env); nf-schema plugin fetched into NXF_PLUGINS_DIR on /share by an xfer job, head job
+with NXF_OFFLINE=true; raw libraries are read-only; work/ and TMPDIR on /share/maize/frodrig4/nf_work/<run>,
 results and store on /rsstu; all compute through Slurm (short QOS for gates, compute/normal for Gate 2's library), nothing heavy on the
 login node; attribution lines on commits as the session's rules give them.

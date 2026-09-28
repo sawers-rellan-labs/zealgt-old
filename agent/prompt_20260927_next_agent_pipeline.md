@@ -1,7 +1,32 @@
-You are writing the zealgt Nextflow pipeline from scratch, reviewing it with CodeRabbit, and debugging it on the hazel cluster
-until it passes the testing ladder. Repository: /Users/fvrodriguez/repos/zealgt. Nothing of the pipeline exists yet (only docs/, meta/,
-agent/); do not port or read old pipeline code from other repositories — the specification is the plan, and the only external code
-you may consult is the algorithm scripts the plan names for stages 3–6 (zealbc1 PHG/bin/*.py, read for the maths, rewritten as modules).
+You are building the zealgt Nextflow pipeline on the nf-core pipeline template, reviewing it with CodeRabbit and nf-core lint, and
+debugging it on the hazel cluster until it passes the testing ladder. Repository: /Users/fvrodriguez/repos/zealgt. Nothing of the
+pipeline exists yet (only docs/, meta/, agent/); do not port or read old pipeline code from other repositories — the specification is
+the plan, the structure is the nf-core template, and the only external code you may consult is the algorithm scripts the plan names for
+stages 3–6 (zealbc1 PHG/bin/*.py, read for the maths, rewritten as modules).
+
+Template (not optional; no hand-rolled layout)
+- Scaffold with nf-core/tools (`nf-core pipelines create`, non-interactive via `--template-yaml agent/<ts>_nfcore_template.yml`) into the
+  repo root, pipeline name zealgt. Install nf-core/tools locally in its own laptop conda env; never on hazel. Keep: nf-schema
+  (nextflow_schema.json + samplesheet schema in assets/), nf-test, MultiQC, conf/base.config + conf/modules.config, the `test` profile,
+  modules.json. Drop: igenomes, nf-core institutional configs (compute nodes are offline), email / Slack / Teams, GitHub CI, the
+  gitpod/codespaces files. Commit the untouched scaffold as its own first commit so every later change is a readable diff against it.
+- Modules: use nf-core modules (`nf-core modules install`) wherever one exists for the step — check `nf-core modules list remote` for
+  fastqc, cutadapt/trimmomatic, samtools (fixmate, sort, markdup, index, stats, collate), picard/collectwgsmetrics, multiqc,
+  bcftools/mpileup. Everything else (minibwa, DEMUX+ALIGN library task, registry, provenance, CRISP, RTIGER, stages 3–6) goes in
+  modules/local/ written to nf-core module conventions: `meta` map in / out, `versions.yml` emitted, `task.ext.args` for flags,
+  `stub:` block, an nf-test with a stub test. Subworkflows likewise (nf-core subworkflows where they fit, else subworkflows/local/).
+- Two workflows in the template: workflows/cram.nf and workflows/genotype.nf, chosen by one `--workflow cram|genotype` param validated in
+  the schema, dispatched from main.nf (main.nf edited only while scaffolding). The run card is a `-params-file`; every §7 open decision
+  is a schema param.
+- Where the template collides with PLAN §2 (hash hygiene): nf-core modules put `${task.cpus}` / `${task.memory}` in the script. Patch
+  them with `nf-core modules patch` to read `$SLURM_CPUS_PER_TASK` / Slurm memory (patches tracked in modules.json), so retries with
+  memory escalation keep the cache; local modules follow §2 directly. Resources follow the template: process_* labels in
+  conf/base.config, per-module `withName` overrides in conf/modules.config (and conf/slurm.config for hazel), `ext.args` there too.
+- Conda: the template's `conda "${moduleDir}/environment.yml"` is overridden per process in conf/hazel.config with the existing prefixes
+  (config `withName`/`withLabel` beats the directive); no env is built. FastQC and Picard are not listed in any existing env — check with
+  `conda run -p <prefix> fastqc --version` / `picard CollectWgsMetrics --version`; if absent, stop and ask the user, do not build one.
+- Offline compute nodes: the template's plugins (nf-schema) must be fetched once into NXF_PLUGINS_DIR on /share through an `xfer`
+  partition job; the head job runs with NXF_OFFLINE=true.
 
 Read first, in this order, and follow them: CLAUDE.md (agent/ scratch; any command longer than one line — loops, chains, heredocs,
 inline R/Python, ssh payloads — goes into agent/<YYYYMMDD_HHMMSS>_<desc>.<ext> and is run from there; no recursive removal and no
@@ -40,8 +65,7 @@ What to build
 
 Resource allocation (conf/slurm.config; every process gets a label, every label a measured request; start from docs/REQUIREMENTS.md §4
 and correct the numbers from `seff` / `sacct` after each gate — record them there)
-- Conventions as run in zealbc1 nilhmm (its nextflow.config, gate scripts): resources in each module body, config maps labels to env
-  prefixes only; `errorStrategy 'retry'`, `maxRetries 2` (3 attempts) with memory escalation on OOM (alignment 24 → 48 → 72 GB);
+- Behaviour as measured in zealbc1 nilhmm, expressed in the template's config files (not nilhmm's layout): `errorStrategy 'retry'`, `maxRetries 2` (3 attempts) with memory escalation on OOM (alignment 24 → 48 → 72 GB);
   `executor.queueSize` 80 on normal, 40 on short; a debug/short profile that caps every process at 1 h; `--account=maize_cpu` in
   `clusterOptions`; `maxForks 4` on DEMUX+ALIGN (scratch peak ≤ 1.5 TB, §5); trace.txt with peak_rss / realtime per task, read after each gate.
 - The one design change from nilhmm: nilhmm aligned each sample as its own 1–4 h task; the plan's Task 2 demuxes and aligns all samples
@@ -75,9 +99,12 @@ and correct the numbers from `seff` / `sacct` after each gate — record them th
   with consent.
 
 How to work
-1. Plan the file layout (main.nf, workflows/, modules/, conf/, bin/, envs/*.yml, docs/runs/<run>.md) and write it locally. Commit in
-   small explicit steps (`git add <paths>`, never -A); attribution lines per the session's rules.
-2. Gate −1: before each push of a substantive change run `coderabbit review --committed --base main --agent` (or `--uncommitted`), read
+1. Scaffold the nf-core template (above), commit it untouched, then install / write modules one step at a time. The layout is the
+   template's (main.nf, workflows/, subworkflows/{nf-core,local}/, modules/{nf-core,local}/, conf/, assets/, bin/, tests/,
+   nextflow_schema.json, modules.json) plus docs/runs/<run>.md. Commit in small explicit steps (`git add <paths>`, never -A);
+   attribution lines per the session's rules.
+2. Gate −1: before each push, locally: `nf-core pipelines lint` (fix or justify every failure in .nf-core.yml), `nf-core pipelines
+   schema lint`, `nf-test test --tag stub` for the touched modules; then run `coderabbit review --committed --base main --agent` (or `--uncommitted`), read
    every finding against the code and the plan, fix what is real, record what you rejected and why in agent/. CodeRabbit finds code/API
    bugs, not environment/data bugs.
 3. Gate 0: push, pull on hazel, run `-stub-run` as a tiny short-QOS job for every entry; the whole DAG must wire (channel joins,
