@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+# CRISP (pooled variant caller, vibansal/crisp @ 1a9027e, compiled by build.sh against this htslib; runtime needs
+# libhts.so.3, as the zealbc1 binary) + bgzip/tabix of the same htslib. Compilers/make only for build.sh.
+# Exact version + build.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::htslib=1.21=h566b1c6_1
+  - conda-forge::zlib=1.3.2=h25fd6f3_3
+  - conda-forge::gcc_linux-64=15.3.0=h7df7c86_1
+  - conda-forge::make=4.4.1=hb03c661_3

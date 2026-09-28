@@ -11,3 +11,11 @@ align_markdup	minibwa version && samtools --version | head -1
 markdup_import	samtools --version | head -1 && gawk --version | head -1
 provenance	python3 --version
 registry	python3 --version
+allele_counts	bcftools --version | head -1
+mask_read_starts	samtools --version | head -1 && gawk --version | head -1
+witness_pool	samtools --version | head -1
+crisp	CRISP 2>&1 | head -2; test -x "$CONDA_PREFIX/bin/CRISP" && ldd "$CONDA_PREFIX/bin/CRISP" | grep -q 'libhts.so.3 => /'
+pooled_likelihood_tiers	python3 --version
+rtiger	Rscript -e 'suppressPackageStartupMessages(library(nilHMM)); cat(as.character(packageVersion("nilHMM")))'
+chromosome_painting	Rscript -e 'library(ggplot2); cat(as.character(packageVersion("ggplot2")))'
+read_position_qc	samtools --version | head -1 && python3 --version
