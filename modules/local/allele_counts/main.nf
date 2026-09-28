@@ -70,7 +70,9 @@ process ALLELE_COUNTS {
         printf '#[1]CHROM\\t[2]POS\\t[3]REF\\t[4]ALT\\t%s\\n' "\$(printf '%s:AD\\n' ${id_list.join(' ')} | awk '{ printf "%s[%d]%s", (NR > 1 ? "\\t" : ""), NR + 4, \$0 }')" | bgzip > ${prefix}.ad.tsv.gz
     fi
 
-    bgzip -dc ${prefix}.ad.tsv.gz | head -1 | cut -f5- | tr '\\t' '\\n' | sed 's/^\\[[0-9]*\\]//; s/:AD\$//' | sort > found_samples.txt
+    # header line via awk reading to EOF, not `head -1`: under pipefail, head closing the pipe early kills bgzip with
+    # SIGPIPE (exit 141) once the table exceeds the pipe buffer (Gate 1, B73_CONTROL_COUNTS, job 974146)
+    bgzip -dc ${prefix}.ad.tsv.gz | awk 'NR == 1' | cut -f5- | tr '\\t' '\\n' | sed 's/^\\[[0-9]*\\]//; s/:AD\$//' | sort > found_samples.txt
     if ! cmp -s expected_samples.txt found_samples.txt; then
         echo "ALLELE_COUNTS ${prefix}: table samples differ from the input ids (read-group SM vs sample id):" >&2
         diff expected_samples.txt found_samples.txt >&2 || true
