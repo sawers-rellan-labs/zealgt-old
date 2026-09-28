@@ -16,7 +16,10 @@ nf_core_version: 4.1.0
 #     allele_counts module runs mpileup -I -a AD | bcftools query); nf-core samtools/merge is not used for the witness pool
 #     (merge, read-group rewrite and index run as one pipe in witness_pool, so the ~2 GB intermediate never reaches work/);
 #     the python-only genotype modules share one python env (owned by pooled_likelihood_tiers, envs/process_aliases.tsv, as
-#     MERGE_LANES shares demux's), standard library only, to save ~14 conda prefixes on the group file quota.
+#     MERGE_LANES shares demux's), standard library only, to save ~14 conda prefixes on the group file quota; the stage-5
+#     subworkflow is named MARKER_UNION_STAGE (dir subworkflows/local/marker_union), because a workflow cannot share its
+#     module's name MARKER_UNION; marker_union and genotype_imputation wrap one module each (one subworkflow per --entry
+#     stage), so nf-core lint warns that they include fewer than 2 modules.
 lint:
   container_configs: false
   files_unchanged:
