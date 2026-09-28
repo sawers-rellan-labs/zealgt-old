@@ -118,7 +118,7 @@ workflow PIPELINE_COMPLETION {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     FUNCTIONS (template): methods description for MultiQC
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Used only by the template's workflows/zealgt.nf (not included by main.nf); the CRAM workflow's MultiQC has no methods
+    Unused since the template's workflows/zealgt.nf was removed (2026-09-28); the CRAM workflow's MultiQC has no methods
     section. The tool list matches CITATIONS.md.
 */
 
