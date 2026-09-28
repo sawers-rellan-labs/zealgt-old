@@ -22,7 +22,8 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
 - Checks: `scripts/check_ext_args.py` (no `task.*` inside `ext.args*` closures), `scripts/check_resources.sh` +
   `tests/expected_resources.tsv` (resolved cpus / memory / time / queue per profile and process).
 - ALIGN_MARKDUP / MARKDUP_IMPORT memory parameters (`align_memory_gb`, `align_mem_reserve_gb`, `align_sort_mem_share`,
-  `import_mem_reserve_gb`) and an explicit `samtools sort -m` from `task.memory` (Gate 2 OOM analysis).
+  `import_mem_reserve_gb`) and an explicit `samtools sort -m` from `task.memory` (Gate 2 calibration: 48 GB first attempt,
+  28 GiB reserve, 0.75 share; hazel kills at 95 % of `--mem`); ALIGN_MARKDUP 10 h × attempt on `normal`.
 - Head job: repository and commit printed first, timestamp on every Nextflow console line.
 
 ### `Changed`

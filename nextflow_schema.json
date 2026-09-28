@@ -228,7 +228,7 @@
                         "string"
                     ],
                     "pattern": "^\\d+$",
-                    "default": 32,
+                    "default": 48,
                     "minimum": 1,
                     "description": "ALIGN_MARKDUP first-attempt memory in GB (conf/hazel.config; multiplied by the attempt number).",
                     "fa_icon": "fas fa-memory",
@@ -240,7 +240,7 @@
                         "string"
                     ],
                     "pattern": "^\\d+$",
-                    "default": 20,
+                    "default": 28,
                     "minimum": 0,
                     "description": "GB of an ALIGN_MARKDUP task kept out of samtools sort -m (minibwa index and mapping, fixmate, markdup).",
                     "fa_icon": "fas fa-memory",

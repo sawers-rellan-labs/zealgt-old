@@ -106,11 +106,16 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
   `agent/20260929_032000_align_rss.tsv`): minibwa ≈ 9–10.5 GB, flat; `samtools sort` grows to its full `-m` × threads budget + 5–10 %
   for samples above ~20 M pairs, so a 12 GiB reserve was too little. With a 16 GiB reserve (main 0a61f9c, Gate 2 relaunch) sort stays
   at ~1.09 × its budget, but 6 of 8 first attempts at 24 GB still OOM'd: minibwa grows from ~10 GB to 12–16 GB over a deep sample
-  (per-process RSS via `srun --overlap ps`). Model: peak ≈ minibwa (≤ ~16 GB) + 1.1 × sort budget + ~1 GB. Rule on branch
-  `simplify`: first attempt 32 GB × attempt (`params.align_memory_gb`), sort threads = min(4, cpus), sort `-m` = max(768 MB,
-  (task.memory − 20 GiB) × 0.75 / threads) (`align_mem_reserve_gb` 20, `align_sort_mem_share` 0.75) → at 32 GB: (32768 − 20480) × 0.75 / 4 =
-  2304 MB × 4 threads ≈ 9 GB sort budget, modelled peak ≈ 16 + 1.1 × 9 + 1 ≈ 27 GB (≈ 21 GB with minibwa at 10 GB); retries
-  64 / 96 GB (sort -m 8448 MB and 14592 MB per thread). Memory test on branch `simplify`: see its handover.
+  (per-process RSS via `srun --overlap ps`).
+  **Calibration over all 46 attempts** (main checkout `agent/20260928_204500_align_memory_calibration.md`): hazel kills a job at
+  **95 % of its `--mem`** (`AllowedRAMSpace = 95 %`, swap 0; every OOM has sacct MaxRSS = 0.95 × ReqMem). Peak = M + 1.0 × sort
+  budget; M (minibwa + fixmate) ≈ 10 GiB while the sample fits the sort buffer (0.785 GiB of sort data per M pairs), 17–22.5 GiB once
+  sort spills (every full BC1 sample), with depth explaining ~5 % of it (80–112 M pairs); design M = 26 GiB, ceiling ~35 GiB at 4E's
+  ~311 M pairs. Rule on branch `simplify`: first attempt **48 GB** × attempt (`params.align_memory_gb`), sort threads = min(4, cpus),
+  sort `-m` = max(768 MB, (task.memory − **28 GiB**) × 0.75 / threads) (`align_mem_reserve_gb` 28, `align_sort_mem_share` 0.75) → at
+  48 GB: 3840 MB × 4 = 15 GiB sort, peak ≈ 26 + 15 = 41 of the 45.6 GiB cap; retries 96 GB, then 120 GB (resourceLimits).
+  **Time:** S_3A_8 (112 M pairs) took 2 h 57 at 48 GB → ~8 h for a ~311 M-pair sample: ALIGN_MARKDUP gets 10 h × attempt on `normal`.
+  Memory test on branch `simplify`: see its handover.
   The zealbc1 ALIGN row above (14–22 GB peak) had another sort setting and does not carry over.
 - **MARKDUP_IMPORT memory:** the same bounded share with its own reserve, sort `-m` = (task.memory − 2 GiB) × 0.75 / threads
   (`import_mem_reserve_gb` 2; was half of the memory) → 7.5 GB of sort at the 12 GB first attempt.

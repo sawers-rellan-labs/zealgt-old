@@ -66,6 +66,8 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 
 ## Node sizes
 - Smallest compute / compute_partners nodes: **20 cpu / 125000 MB** → `resourceLimits` 16 cpu / 120 GB so a task fits any node.
+- **A job is OOM-killed at 95 % of its `--mem`** (`AllowedRAMSpace = 95 %`, `ConstrainRAMSpace = yes`, no swap; sacct MaxRSS of
+  every Gate 2 OOM = 0.95 × ReqMem): size memory so the modelled peak stays below 0.95 × the request.
 - xfer: 32 cpu / 188000 MB, no time limit (QOS `xfer` auto-set). Partition time limits show infinite; the QOS sets the real one.
 
 ## Conda envs

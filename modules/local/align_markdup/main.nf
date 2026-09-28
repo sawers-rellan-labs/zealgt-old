@@ -9,12 +9,12 @@
 // values interpolated into the script, nextflow-cache skill). minibwa gets all task.cpus; samtools sort gets
 // sort_threads = min(task.cpus, 4) threads and an explicit per-thread -m, a bounded share of what is left of task.memory:
 //   sort_mem_mb = max(768, floor((task.memory in MB - reserve_mb) x share / sort_threads))
-// reserve_mb = params.align_mem_reserve_gb (20 GB: minibwa, ~10 GB after the index load and growing to 12-16 GB over a
-// deep sample, plus headroom; fixmate / markdup < 5 MB) and share = params.align_sort_mem_share (0.75: samtools sort grows
-// to its full -m x threads budget for any sample > ~20 M pairs and stays at ~1.09 x it). Gate 2 (gate2_3A and its relaunch;
+// reserve_mb = params.align_mem_reserve_gb (28 GiB: minibwa + fixmate M, ~10 GiB unspilled, 17-22.5 GiB once sort spills,
+// design 26 GiB, plus headroom) and share = params.align_sort_mem_share (0.75: samtools sort grows to its full -m x threads
+// budget, RSS ~1.0 x it; main checkout agent/20260928_204500_align_memory_calibration.md). Gate 2 (gate2_3A and its relaunch;
 // main checkout agent/20260929_032000_align_rss.tsv + agent/handover_*_gate2.md): the old (memory - 12 GiB) / 4 rule made
 // every attempt (24 / 48 / 72 GB) OOM, and 6 of 8 first attempts at 24 GB with reserve 16 still OOM'd (minibwa growth).
-// Model: peak ~ minibwa <= ~16 GB + 1.1 x sort budget + ~1 GB; at 32 GB: sort 4 x 2304 MB (~9 GB), peak ~21-27 GB. Both params are referenced here, so they enter the task
+// Model: peak = M + 1.0 x sort budget; at 48 GB: sort 4 x 3840 MB (15 GiB), peak ~41 GiB (hazel kills at 95 % = 45.6 GiB). Both params are referenced here, so they enter the task
 // hash by value: change them only with a deliberate re-tune. The chosen values are logged to stderr. The first-attempt
 // memory is params.align_memory_gb (conf/hazel.config).
 // A pipe stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so the memory-escalation retry
