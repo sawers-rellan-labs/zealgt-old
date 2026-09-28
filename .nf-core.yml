@@ -1,0 +1,89 @@
+repository_type: pipeline
+
+nf_core_version: 4.1.0
+
+lint:
+  files_unchanged:
+    - .prettierignore
+    - docs/CONTRIBUTING.md
+    - .prettierignore
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-zealgt_logo_light.png
+    - docs/images/nf-core-zealgt_logo_light.png
+    - docs/images/nf-core-zealgt_logo_dark.png
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - assets/email_template.txt
+    - docs/README.md
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/ISSUE_TEMPLATE/feature_request.yml
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - .github/workflows/branch.yml
+    - .github/workflows/pr-comment.yml
+    - .github/workflows/linting.yml
+    - .github/.dockstore.yml
+  nextflow_config:
+    - process.cpus
+    - process.memory
+    - process.time
+    - custom_config
+    - params.custom_config_version
+    - params.custom_config_base
+    - manifest.name
+    - manifest.homePage
+  multiqc_config:
+    - report_comment
+  files_exist:
+    - .github/workflows/branch.yml
+    - .github/workflows/nf-test.yml
+    - .github/actions/get-shards/action.yml
+    - .github/actions/nf-test/action.yml
+    - .github/workflows/pr-comment.yml
+    - .github/workflows/linting.yml
+    - conf/igenomes.config
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+    - conf/igenomes.config
+    - conf/igenomes_ignored.config
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-zealgt_logo_light.png
+    - docs/images/nf-core-zealgt_logo_light.png
+    - docs/images/nf-core-zealgt_logo_dark.png
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/ISSUE_TEMPLATE/feature_request.yml
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - .github/.dockstore.yml
+    - docs/CONTRIBUTING.md
+  readme:
+    - nextflow_badge
+    - nextflow_badge
+    - nfcore_template_badge
+  included_configs: false
+
+template:
+  org: sawers-rellan-labs
+  name: zealgt
+  description: 'ZEAL genotyping: raw libraries to analysis-ready CRAMs (CRAM workflow)
+    and CRAM store to ancestry and imputed genotypes (genotype workflow)'
+  author: Fausto Rodriguez Zapata
+  version: 0.1.0dev
+  force: true
+  outdir: /Users/fvrodriguez/repos/zealgt/agent/20260928_011000_scaffold/zealgt
+  skip_features:
+    - github
+    - github_badges
+    - ci
+    - igenomes
+    - nf_core_configs
+    - seqera_platform
+    - gpu
+    - codespaces
+    - vscode
+    - email
+    - rocrate
+  is_nfcore: false
