@@ -6,6 +6,9 @@
 # zg-source: nextflow-plugin nf-schema@2.5.1
 set -eo pipefail
 : "${CONDA_PREFIX:?build.sh must run inside the env}"
+# The user's login env exports NXF_OFFLINE=true (Slurm propagates it into the xfer job), which makes
+# `plugin install` fail with "Plugin with id nf-schema not found in any repository". This step needs the network.
+export NXF_OFFLINE=false
 export NXF_HOME="$CONDA_PREFIX/share/nextflow/home"
 export NXF_PLUGINS_DIR="$CONDA_PREFIX/share/nextflow/plugins"
 mkdir -p "$NXF_HOME" "$NXF_PLUGINS_DIR"
