@@ -2,7 +2,7 @@
 //
 // One task per library x lane (READ_DEMULTIPLEXING splits the library; MERGE_LANES then joins each sample's lane files, and
 // DEMUX_QC sums the lane reports), so every read of the library is demultiplexed exactly once and the lanes run in
-// parallel. maxForks in conf/modules.config = the lanes of one BC1 library (one library in flight, PLAN §5 rule 3).
+// parallel. No maxForks: the run guards bound the libraries of a run by --max_libraries (PLAN §5 rule 3).
 // cutadapt reads the delivered lane FASTQs in place (read-only, staged as symlinks): one real file per read, nothing is
 // streamed or copied. Gate 2 (job 972171): a gzip stream through a named pipe fails with cutadapt 4.9 / xopen 2.1.0 at -j > 1
 // ("File or stream is not seekable."; xopen sniffs the format by seeking). Batch-1 plate pools are tar members (input

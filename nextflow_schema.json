@@ -92,7 +92,7 @@
                     ],
                     "pattern": "^[1-9]\\d*$",
                     "default": 4,
-                    "description": "read_demultiplexing: at most this many libraries in flight at once, from DEMUX through their last CRAM (PLAN §5 rule 3); --libraries may name more, which are admitted in order as earlier ones finish.",
+                    "description": "read_demultiplexing: the run is refused when the requested libraries plus the libraries already holding a checkpoint dir under --fastq_checkpoint are more than this (PLAN §5 rule 3: nothing is removed automatically, so this bounds the FASTQs on disk). The requested libraries run concurrently.",
                     "minimum": 1
                 },
                 "subsample": {

@@ -40,7 +40,35 @@ nextflow_pipeline {
         }
     }
 
-    test("-profile test, --entry read_demultiplexing, two libraries, --max_libraries 1 - stub") {
+    test("-profile test, --entry read_demultiplexing, --max_libraries 1 with another library's checkpoint - refused - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                max_libraries    = 1
+                // LIBZ: a checkpoint left by an earlier run (its FASTQs are still on disk)
+                def ck = new File("$outputDir/checkpoint_stub/LIBZ")
+                ck.mkdirs()
+                new File(ck, 'cleanup_status.tsv').text = '# checkpoint LIBZ: keep: 1 of 1 CRAMs missing\n'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                // refused by the run guards before any task: LIBX + LIBZ = 2 > 1, LIBZ and its cleanup report named
+                { assert workflow.trace.tasks().size() == 0 },
+                { assert workflow.stdout.any { l -> l.contains('more than --max_libraries 1') } },
+                { assert workflow.stdout.any { l -> l.contains('LIBZ: ') && l.contains('checkpoint_stub/LIBZ/cleanup_status.tsv') } }
+            )
+        }
+    }
+
+    test("-profile test, --entry read_demultiplexing, two libraries, --max_libraries 2 - stub") {
 
         options "-stub"
 
@@ -50,7 +78,7 @@ nextflow_pipeline {
                 store            = "$outputDir/store_stub"
                 fastq_checkpoint = "$outputDir/checkpoint_stub"
                 libraries        = 'LIBX,LIBY'
-                max_libraries    = 1
+                max_libraries    = 2
                 // LIBY: two more samples on the fixture lanes of LIBX (the stub never reads them)
                 def sheet = new File("$outputDir/samples_two_libs.csv")
                 def fx = new File("${baseDir}/tests/fixtures/samples_test.csv").readLines()
@@ -71,9 +99,10 @@ nextflow_pipeline {
                 { assert workflow.success },
                 // LIBX: 24 tasks as above; LIBY: DEMUX x 2, MERGE_LANES, DEMUX_QC, 2 x 6 per-sample tasks, REGISTRY, MULTIQC
                 { assert workflow.trace.succeeded().size() == 42 },
-                // one library in flight: LIBY's DEMUX tasks are created only after all of LIBX's ALIGN_MARKDUP tasks
+                // both libraries run concurrently: LIBY's DEMUX tasks are created before any of LIBX's ALIGN_MARKDUP tasks
                 { assert libx_align.size() == 3 && liby_demux.size() == 2 },
-                { assert liby_demux.min() > libx_align.max() },
+                { assert liby_demux.max() < libx_align.min() },
+                { assert file("$outputDir/checkpoint_stub/LIBX/samplesheet.csv").readLines().size() == 4 },
                 { assert file("$outputDir/checkpoint_stub/LIBY/samplesheet.csv").readLines().size() == 3 }
             )
         }

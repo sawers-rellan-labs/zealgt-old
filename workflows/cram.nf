@@ -35,9 +35,6 @@ include { zgToolVersionsString    } from '../subworkflows/local/utils_nfcore_zea
 include { zgStage1Tools           } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { zgWithStage1Tools       } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { zgWriteCheckpointSheet  } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
-include { zgLibraryGate           } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
-include { zgAdmitLibrary          } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
-include { zgReleaseLibrary        } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
 
 workflow CRAM {
 
@@ -75,15 +72,13 @@ workflow CRAM {
         def ch_reads    = channel.empty() // [ val(meta), [ trimmed R1, R2 ] ]  every sample of the libraries
         def ch_rec      = ch_records      // [ sample_id, provenance record ]
         def ch_demux_qc = channel.empty() // [ val(lmeta), <library>.tsv ]  (REGISTRY)
-        def gate        = null            // library admission semaphore (read_demultiplexing)
         if (params.entry == 'read_demultiplexing') {
             //
-            // STAGE 1: demultiplex, trim, publish the FASTQ checkpoint. At most --max_libraries libraries in flight: a library
-            // enters DEMUX only when a place is free (zgAdmitLibrary), and frees it when its last CRAM leaves stage 2 below.
+            // STAGE 1: demultiplex, trim, publish the FASTQ checkpoint. All requested libraries run concurrently: the run
+            // guards bound them (requested + those already holding a checkpoint <= --max_libraries, PLAN §5 rule 3).
             //
-            gate = zgLibraryGate()
             READ_DEMULTIPLEXING(
-                ch_libraries.map { library -> zgAdmitLibrary(gate, library) },
+                ch_libraries,
                 ch_libraries.map { lmeta, _r1, _r2, _barcodes, _rs, _tm -> zgStoredDemuxQc(store, lmeta.id) },
                 zgSubsample(),
             )
@@ -98,7 +93,7 @@ workflow CRAM {
             // tool versions of the tools that made the checkpoint FASTQs (zgStage1Tools: DEMUX's and TRIMMOMATIC's), as
             // "tool=version;..." for the samplesheet and every provenance record. Taken as soon as each tool has reported once
             // (one environment per process, so every task reports the same), not at the end of the channel: a library's
-            // samplesheet must not wait for the stage 1 of the libraries admitted after it.
+            // samplesheet must not wait for the stage 1 of the other libraries of the run.
             def ch_stage1_tools = READ_DEMULTIPLEXING.out.versions
                 .mix(READ_TRIMMING.out.versions)
                 .map { _process, tool, version -> [tool, version] }
@@ -166,9 +161,6 @@ workflow CRAM {
             .map { lib, files, ids -> [groupKey(lib, ids.size()), files] }
             .groupTuple()
             .map { lib, files -> [lib.toString(), files.flatten()] }
-        if (gate) {
-            ch_lib_crams.subscribe { lib, _files -> zgReleaseLibrary(gate, lib) }
-        }
         def ch_registry = ch_demux_qc
             .map { lmeta, tsv -> [lmeta.id, lmeta, tsv] }
             .join(ch_lib_crams)

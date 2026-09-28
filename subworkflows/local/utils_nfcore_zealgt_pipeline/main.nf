@@ -282,10 +282,11 @@ def zgRealPathOf(p) {
 
 //
 // read_demultiplexing request (PLAN §0 Task 2): --force_demux only names requested libraries, and a registered library is
-// refused unless it is named with --force_demux. Any number of libraries may be requested: the CRAM workflow admits at
-// most --max_libraries of them at a time (zgAdmitLibrary, PLAN §5 rule 3).
+// refused unless it is named with --force_demux, and the libraries whose FASTQs the run holds on disk are bounded
+// (zgCheckCheckpointBound, PLAN §5 rule 3).
 //
 def zgCheckDemuxRequest(List libs) {
+    zgCheckCheckpointBound(libs)
     def force = zgList(params.force_demux)
     if (force - libs) {
         error("--force_demux names libraries that are not in --libraries: ${force - libs}")
@@ -307,6 +308,43 @@ def zgCheckDemuxRequest(List libs) {
         }
     }
     force.each { l -> log.warn("--force_demux ${l}: demultiplexing a registered library (${registered[l] ?: 'not registered'})") }
+}
+
+//
+// Disk bound (PLAN §5 rule 3): the FASTQs of a library stay in work/ (every library of the run, for the whole run) and in
+// its checkpoint dir until the user removes them; nothing is removed automatically. So a read_demultiplexing run is refused
+// when the requested libraries plus the libraries already holding a checkpoint dir under --fastq_checkpoint are more than
+// --max_libraries. The requested libraries then all run concurrently. subsample_<N> / checkpoint_stub* dirs are other
+// checkpoint roots, not libraries.
+//
+def zgCheckpointLibraries() {
+    def root = file(params.fastq_checkpoint).toAbsolutePath().normalize()
+    if (!root.isDirectory()) {
+        return []
+    }
+    return root.listFiles()
+        .findAll { d -> d.isDirectory() && !(d.name ==~ /\..*|subsample_\d+|checkpoint_stub.*/) }
+        .collect { d -> d.name }
+        .sort()
+}
+
+def zgCheckCheckpointBound(List libs) {
+    def held = zgCheckpointLibraries()
+    def union = (libs + held).unique()
+    if (union.size() > zgMaxLibraries()) {
+        def others = held - libs
+        def root = file(params.fastq_checkpoint).toAbsolutePath().normalize()
+        def status = others.collect { l ->
+            def tsv = zgCheckpointDir(l).resolve('cleanup_status.tsv')
+            def where = tsv.exists() ? tsv.toString() : "${zgCheckpointDir(l)} (no cleanup_status.tsv yet)"
+            "  ${l}: ${where}"
+        }
+        def msg = "--libraries ${libs.join(',')} and the libraries already holding a FASTQ checkpoint in ${root} are ${union.size()} libraries, more than --max_libraries ${zgMaxLibraries()} (PLAN §5 rule 3: the disk holds the FASTQs of all of them; nothing is removed automatically)."
+        if (others) {
+            msg += "\nLibraries holding a checkpoint (see each cleanup_status.tsv; remove a checkpoint only with the user's consent, once it says removable):\n${status.join('\n')}"
+        }
+        error(msg + "\nRequest fewer libraries, clean up finished checkpoints (with consent), or raise --max_libraries if the disk allows it.")
+    }
 }
 
 // stage1_session_id values of a checkpoint samplesheet ([] if it cannot be read)
@@ -538,34 +576,6 @@ def zgToolVersionsString(List tools) {
 
 def zgParseToolVersions(String s) {
     return zgSplit(s, ';').collectEntries { tv -> def i = tv.indexOf('='); [tv.substring(0, i), tv.substring(i + 1)] }
-}
-
-//
-// Library admission (PLAN §5 rule 3): at most --max_libraries libraries in flight in a read_demultiplexing run, from DEMUX
-// through their last CRAM. Nextflow channels cannot form a cycle, so the gate is a semaphore: the CRAM workflow maps the
-// libraries through zgAdmitLibrary (one operator, which blocks on the (N+1)th library until a permit is free; the other
-// dataflow threads keep running) and releases a permit when a library's last CRAM leaves stage 2 (zgReleaseLibrary).
-// Libraries are admitted in --libraries order.
-//
-def zgLibraryGate() {
-    return new java.util.concurrent.Semaphore(zgMaxLibraries(), true)
-}
-
-def zgAdmitLibrary(gate, List library) {
-    try {
-        gate.acquire()
-    } catch (InterruptedException e) {
-        // the run is stopping (an earlier error): this library was never admitted
-        Thread.currentThread().interrupt()
-        error("library ${library[0].id} was not admitted to stage 1: the run stopped while it waited for a place (--max_libraries ${zgMaxLibraries()})")
-    }
-    log.info("zealgt: library ${library[0].id} admitted to stage 1 (at most ${zgMaxLibraries()} libraries in flight)")
-    return library
-}
-
-def zgReleaseLibrary(gate, String lib) {
-    log.info("zealgt: library ${lib} has all its CRAMs: its place in flight is free")
-    gate.release()
 }
 
 // A chained run's record once this session's stage-1 tool versions are known (as read_alignment reads them from the sheet)
