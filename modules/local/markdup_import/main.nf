@@ -48,18 +48,21 @@ process MARKDUP_IMPORT {
     sort_mem_mb=\$(( ZG_MEM_MB / 2 / threads ))
     [ "\$sort_mem_mb" -ge 768 ] || sort_mem_mb=768
 
-    # exit with the pipe's first signal status (> 128: 137 = OOM kill, so errorStrategy retries with more memory), else
+    # exit with the pipe's signal status (137 = OOM kill preferred over the SIGPIPE 141 it causes upstream; errorStrategy
+    # retries 130-145 with more memory), else
     # with its first non-zero status; without this, pipefail + set -e report the last stage's error (markdup: exit 1)
     zg_pipe_fail() {
-        local s first=0
+        local s sig=0 first=0
         for s in "\$@"; do
-            if [ "\$s" -gt 128 ]; then
-                echo "markdup_import: pipe statuses \$*; exiting \$s" >&2
-                exit "\$s"
+            if [ "\$s" -eq 137 ]; then
+                sig=137
+            elif [ "\$s" -gt 128 ] && [ "\$sig" -eq 0 ]; then
+                sig=\$s
             fi
             [ "\$first" -ne 0 ] || first=\$s
         done
         echo "markdup_import: pipe statuses \$*" >&2
+        [ "\$sig" -eq 0 ] || exit "\$sig"
         exit \$(( first ? first : 1 ))
     }
     tmp="\${TMPDIR:-.}/${prefix}.markdup_import.\$\$"

@@ -32,7 +32,7 @@ for c in $S1/cram/*.cram $SI/cram_import/*.cram; do
     tot=$($SAM view -@4 -c -T $REF "$c")
     rg=$($SAM view -@4 -c -T $REF -d RG "$c")
     dup=$($SAM view -@4 -c -T $REF -f 0x400 "$c")
-    sec=$($SAM view -@4 -c -T $REF -f 0x900 "$c")
+    sec=$($SAM view -@4 -c -T $REF --rf 0x900 "$c")
     q0=$($SAM view -@4 -c -T $REF -F 0x4 -q 1 "$c")
     unm=$($SAM view -@4 -c -T $REF -f 0x4 "$c")
     idx=no; [ -s "$c.crai" ] && idx=yes

@@ -9,4 +9,4 @@ for i in $(seq 1 "$max"); do
     fi
     sleep 60
 done
-echo "timeout; last:"; echo "$s"
+echo "timeout; last:"; echo "$s"; exit 1
