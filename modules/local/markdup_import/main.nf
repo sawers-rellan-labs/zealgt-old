@@ -9,8 +9,9 @@
 //                            sample remains in the header.
 // The inputs keep their zealbc1 MAPQ 20 / -F 0x904 filter (the provenance record says so); reads whose mate was filtered are
 // marked as single-end by markdup. storeDir <store>/cram_import (conf/modules.config), separate from new CRAMs (<store>/cram).
-// Threads / memory from bin/export_slurm_resources.sh; sort memory (ZG_MEM_MB - 2 GB) split over up to 4 threads, >= 768 MB
-// each. storeDir forbids `eval` outputs, so the versions go into one versions.yml (samtools, gawk).
+// Threads / memory from bin/export_slurm_resources.sh; sort memory = half of ZG_MEM_MB split over up to 4 threads, >= 768 MB
+// each (Gate 1, job 969706: (ZG_MEM_MB - 2 GB) for sort left too little for collate / fixmate / markdup and was OOM-killed
+// at 12 GB). A stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so it is retried. storeDir forbids `eval` outputs, so the versions go into one versions.yml (samtools, gawk).
 // ext.args = markdup flags (-d 2500), ext.args2 = fixmate, ext.args3 = sort.
 process MARKDUP_IMPORT {
     tag "${meta.id}"
@@ -44,8 +45,23 @@ process MARKDUP_IMPORT {
     source export_slurm_resources.sh
 
     threads=\$(( ZG_CPUS < 4 ? ZG_CPUS : 4 ))
-    sort_mem_mb=\$(( (ZG_MEM_MB - 2048) / threads ))
+    sort_mem_mb=\$(( ZG_MEM_MB / 2 / threads ))
     [ "\$sort_mem_mb" -ge 768 ] || sort_mem_mb=768
+
+    # exit with the pipe's first signal status (> 128: 137 = OOM kill, so errorStrategy retries with more memory), else
+    # with its first non-zero status; without this, pipefail + set -e report the last stage's error (markdup: exit 1)
+    zg_pipe_fail() {
+        local s first=0
+        for s in "\$@"; do
+            if [ "\$s" -gt 128 ]; then
+                echo "markdup_import: pipe statuses \$*; exiting \$s" >&2
+                exit "\$s"
+            fi
+            [ "\$first" -ne 0 ] || first=\$s
+        done
+        echo "markdup_import: pipe statuses \$*" >&2
+        exit \$(( first ? first : 1 ))
+    }
     tmp="\${TMPDIR:-.}/${prefix}.markdup_import.\$\$"
     mkdir -p "\$tmp"
 
@@ -97,7 +113,8 @@ process MARKDUP_IMPORT {
         -T "\$tmp/markdup" \\
         --reference ${fasta} \\
         -O cram \\
-        - ${prefix}.cram
+        - ${prefix}.cram \\
+    || zg_pipe_fail "\${PIPESTATUS[@]}"
 
     samtools index -@ "\$threads" ${prefix}.cram
     rm -f header.sam

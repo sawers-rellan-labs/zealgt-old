@@ -6,6 +6,8 @@
 // storeDir does not allow `eval` outputs, so the tool versions go into one versions.yml (one line per tool).
 // Threads / memory from bin/export_slurm_resources.sh at run time (hash hygiene): minibwa gets all ZG_CPUS; sort gets up to 4
 // threads and (ZG_MEM_MB - 12 GB reserved for the minibwa index and the pipe) split across them, at least 768 MB per thread.
+// A pipe stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so the 24 / 48 / 72 GB retry
+// escalation of conf/hazel.config actually fires (Gate 1: an OOM-killed sort otherwise surfaced as markdup's exit 1).
 // Sort and markdup temporaries go to TMPDIR (/share, conf/hazel.config) and are removed by samtools.
 // ext.args = minibwa map flags (-x sr), ext.args2 = markdup flags (-d 2500), ext.args3 = fixmate, ext.args4 = sort.
 process ALIGN_MARKDUP {
@@ -46,6 +48,21 @@ process ALIGN_MARKDUP {
     mkdir -p "\$tmp"
     echo "align_markdup sort_threads=\$sort_threads sort_mem_mb=\$sort_mem_mb tmp=\$tmp" >&2
 
+    # exit with the pipe's first signal status (> 128: 137 = OOM kill, so errorStrategy retries with more memory), else
+    # with its first non-zero status; without this, pipefail + set -e report the last stage's error (markdup: exit 1)
+    zg_pipe_fail() {
+        local s first=0
+        for s in "\$@"; do
+            if [ "\$s" -gt 128 ]; then
+                echo "align_markdup: pipe statuses \$*; exiting \$s" >&2
+                exit "\$s"
+            fi
+            [ "\$first" -ne 0 ] || first=\$s
+        done
+        echo "align_markdup: pipe statuses \$*" >&2
+        exit \$(( first ? first : 1 ))
+    }
+
     minibwa map \\
         -t "\$ZG_CPUS" \\
         ${args} \\
@@ -61,7 +78,8 @@ process ALIGN_MARKDUP {
         -T "\$tmp/markdup" \\
         --reference ${fasta} \\
         -O cram \\
-        - ${prefix}.cram
+        - ${prefix}.cram \\
+    || zg_pipe_fail "\${PIPESTATUS[@]}"
 
     samtools index -@ "\$ZG_CPUS" ${prefix}.cram
     rmdir "\$tmp" 2>/dev/null || true
