@@ -20,7 +20,7 @@ Outputs:
   <prefix>.counts.tsv   RTIGER input, only lines that pass and observations with reads:
                         SAMPLE CONTIG POSITION REF_COUNT ALT_COUNT REF_NUCLEOTIDE ALT_NUCLEOTIDE (zealbc1 layout)
   <prefix>.line_qc.tsv  one row per line x contig: sample contig markers markers_kept covered reads mean_depth floor
-                        contig_pass line_pass reason (below_marker_floor | .)
+                        contig_pass line_pass reason (below_marker_floor | no_markers | .)
 Standard library only.
 """
 import argparse
@@ -148,12 +148,15 @@ def main():
             if rc + ac > 0:
                 covered[(i, key[0])] = covered.get((i, key[0]), 0) + 1
                 reads[(i, key[0])] = reads.get((i, key[0]), 0) + rc + ac
-    line_pass = [all(covered.get((i, c), 0) >= floor for c in contigs) for i in range(len(lines))]
+    # no marker at all: no line can pass (all() over no contigs would be True)
+    line_pass = [bool(contigs) and all(covered.get((i, c), 0) >= floor for c in contigs) for i in range(len(lines))]
 
     with open(f"{PREFIX}.line_qc.tsv", "w") as out:
         out.write(TAB.join(["sample", "contig", "markers", "markers_kept", "covered", "reads", "mean_depth", "floor",
                             "contig_pass", "line_pass", "reason"]) + NL)
         for i, s in enumerate(lines):
+            if not contigs:
+                out.write(TAB.join([s, ".", "0", "0", "0", "0", "NA", str(floor), "false", "false", "no_markers"]) + NL)
             for c in contigs:
                 k = covered.get((i, c), 0)
                 d = reads.get((i, c), 0)

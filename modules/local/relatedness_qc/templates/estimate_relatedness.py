@@ -210,6 +210,8 @@ def main():
                 v = k / (r + k)
             x[s][si] = v
             vals.append(v)
+        if not vals:
+            continue  # no mapped sample has reads here: not a site for the allele frequency
         p[si] = sum(vals) / len(vals)
     informative = {si for si, ps in p.items() if 0.0 < ps < 1.0}
     w = {si: p[si] * (1.0 - p[si]) for si in informative}

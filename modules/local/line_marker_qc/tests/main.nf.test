@@ -109,4 +109,36 @@ nextflow_process {
             )
         }
     }
+
+    // No marker at all (empty tier-A table): no line can pass; one row per line, contig '.', reason no_markers.
+    test("D1.chr10_1-5000 - no markers - real") {
+
+        tag "real"
+
+        config "./nextflow.config"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                    file("${moduleDir}/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                    file("${moduleDir}/tests/fixtures/D1.no_sites.tsv", checkIfExists: true)
+                ])
+                input[1] = 10
+                input[2] = 2
+                """
+            }
+        }
+
+        then {
+            def qc = path(process.out.line_qc[0][1]).readLines().drop(1).collect { it.split('\t') as List }
+            assertAll(
+                { assert process.success },
+                { assert qc.collect { it[0] } == [ 'L1', 'L2', 'L3', 'L4' ] },
+                { assert qc.every { it[1] == '.' && it[9] == 'false' && it[10] == 'no_markers' } },
+                { assert path(process.out.counts[0][1]).readLines().size() == 1 }
+            )
+        }
+    }
 }

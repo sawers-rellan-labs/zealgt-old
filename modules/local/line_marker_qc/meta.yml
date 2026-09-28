@@ -59,7 +59,7 @@ output:
             e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
       - "*.line_qc.tsv":
           type: file
-          description: "Per line x contig: markers, markers_kept, covered, reads, mean_depth, floor, contig_pass, line_pass, reason (below_marker_floor | .)"
+          description: "Per line x contig: markers, markers_kept, covered, reads, mean_depth, floor, contig_pass, line_pass, reason (below_marker_floor | no_markers: one contig . row per line when there is no marker | .)"
           pattern: "*.line_qc.tsv"
           ontologies: []
   versions:
