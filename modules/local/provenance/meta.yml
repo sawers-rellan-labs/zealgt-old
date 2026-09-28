@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module. Wraps a python module template.
 name: provenance
-description: One JSON provenance record per stored CRAM (settings built by the pipeline + versions.yml of the steps + CRAM size); storeDir next to the CRAM.
+description: One JSON provenance record per stored CRAM (settings built by the pipeline + versions.yml of the steps + CRAM size); published next to the CRAM in the store.
 keywords:
   - provenance
   - cram
@@ -48,7 +48,7 @@ output:
   versions:
     - "*.provenance.versions.yml":
         type: file
-        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        description: Tool versions (one line per tool), kept next to the output in the store (read back for an already-stored output)
         pattern: "*.provenance.versions.yml"
         ontologies: []
 authors:

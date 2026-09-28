@@ -2,8 +2,9 @@
 //   minibwa map -x sr -R <read group>  (the RG tag goes on every record; minibwa 0.7 format.c writes RG:Z per record)
 //   -> samtools fixmate -m -> sort -> markdup -d 2500 (optical distance for patterned flow cells; duplicates FLAGGED, not removed)
 //   -> CRAM against B73 v5, no MAPQ filter, all records kept -> .crai; markdup statistics next to the CRAM.
-// storeDir <store>/cram (conf/modules.config): a stored CRAM is never recomputed, whatever changed in this module (PLAN §2 rule 3).
-// storeDir does not allow `eval` outputs, so the tool versions go into one versions.yml (one line per tool).
+// Published to <store>/cram (conf/modules.config: copy, never overwritten); the CRAM workflow does not align a sample whose
+// CRAM is stored and verified (zgIsStored), whatever changed in this module (PLAN §2 rule 3). The tool versions go into one
+// versions.yml (one line per tool), published next to the CRAM: PROVENANCE of an already-stored CRAM reads it from there.
 // Threads / memory from task.cpus / task.memory, the standard nf-core way (Nextflow >= 26.04.6 does not hash the resource
 // values interpolated into the script, nextflow-cache skill). minibwa gets all task.cpus; samtools sort gets
 // sort_threads = min(task.cpus, 4) threads and an explicit per-thread -m, a bounded share of what is left of task.memory:
@@ -106,9 +107,11 @@ process ALIGN_MARKDUP {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Stub versions are the environment.yml pins (the tools are not run in a stub).
+    // Stub versions are the environment.yml pins (the tools are not run in a stub). The stub CRAM is the 38-byte CRAM 3 EOF
+    // container, so a stored stub CRAM passes the store check (zgCramEofOk) like a real one.
     """
-    touch ${prefix}.cram ${prefix}.cram.crai ${prefix}.markdup.stats
+    printf '\\x0f\\x00\\x00\\x00\\xff\\xff\\xff\\xff\\x0f\\xe0\\x45\\x4f\\x46\\x00\\x00\\x00\\x00\\x01\\x00\\x05\\xbd\\xd9\\x4f\\x00\\x01\\x00\\x06\\x06\\x01\\x00\\x01\\x00\\x01\\x00\\xee\\x63\\x01\\x4b' > ${prefix}.cram
+    touch ${prefix}.cram.crai ${prefix}.markdup.stats
 
     cat <<-END_VERSIONS > ${prefix}.align_markdup.versions.yml
     "${task.process}":

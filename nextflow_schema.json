@@ -69,15 +69,16 @@
                     "type": "string",
                     "enum": [
                         "read_demultiplexing",
+                        "read_alignment",
                         "markdup_import"
                     ],
                     "default": "read_demultiplexing",
-                    "description": "CRAM-workflow entry: read_demultiplexing (raw library -> CRAMs) or markdup_import (existing CRAMs -> duplicate marking + read groups); both end at the CRAM stop point."
+                    "description": "CRAM-workflow entry: read_demultiplexing (stage 1: raw library -> trimmed FASTQ checkpoint, then stage 2 in the same run -> CRAMs), read_alignment (stage 2 alone: FASTQ checkpoint -> CRAMs) or markdup_import (existing CRAMs -> duplicate marking + read groups); all end at the CRAM stop point."
                 },
                 "libraries": {
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$",
-                    "description": "read_demultiplexing: library ids (meta/samples.csv 'library'), comma-separated."
+                    "description": "read_demultiplexing / read_alignment: library ids (meta/samples.csv 'library'), comma-separated."
                 },
                 "force_demux": {
                     "type": "string",
@@ -90,8 +91,8 @@
                         "string"
                     ],
                     "pattern": "^[1-9]\\d*$",
-                    "default": 1,
-                    "description": "Libraries per read_demultiplexing run (one library in flight, PLAN §5 rule 3).",
+                    "default": 4,
+                    "description": "read_demultiplexing: at most this many libraries in flight at once, from DEMUX through their last CRAM (PLAN §5 rule 3); --libraries may name more, which are admitted in order as earlier ones finish.",
                     "minimum": 1
                 },
                 "subsample": {
@@ -101,7 +102,7 @@
                     ],
                     "pattern": "^\\d+$",
                     "default": 0,
-                    "description": "Read pairs per library for Gate 1 (0 = all); each lane gives its first ceil(N / lanes) pairs. With N > 0, --store must be a directory named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs go.",
+                    "description": "Read pairs per library for Gate 1 (0 = all); each lane gives its first ceil(N / lanes) pairs. With N > 0, --store and --fastq_checkpoint must be directories named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs or FASTQs go.",
                     "minimum": 0
                 },
                 "import_samples": {
@@ -132,12 +133,18 @@
             "title": "Store and reference",
             "type": "object",
             "fa_icon": "fas fa-database",
-            "description": "Permanent store (storeDir, /rsstu) and the B73 v5 reference.",
+            "description": "Permanent store (/rsstu), FASTQ checkpoint (/share) and the B73 v5 reference.",
             "properties": {
                 "store": {
                     "type": "string",
                     "default": "/rsstu/users/r/rrellan/BZea/ZEAL/store",
-                    "description": "Store root: demux_qc/, cram/, cram_import/, registry/ (PLAN §5 rule 2). A --subsample run needs a store named subsample_<N>; a stub run one named store_stub* (conf/stub.config).",
+                    "description": "Store root: demux_qc/, cram/, cram_import/, registry/ (PLAN §5 rule 2). Outputs are copied in and never overwritten; stored work is skipped. A --subsample run needs a store named subsample_<N>; a stub run one named store_stub* (conf/stub.config).",
+                    "format": "directory-path"
+                },
+                "fastq_checkpoint": {
+                    "type": "string",
+                    "default": "/share/maize/frodrig4/fastq_checkpoint",
+                    "description": "FASTQ checkpoint root: <library>/ holds the trimmed pairs (hardlinks of the work/ files, so it must be on the filesystem of work/), samplesheet.csv (read by --entry read_alignment) and cleanup_status.tsv. A --subsample run needs a directory named subsample_<N>; a stub run one named checkpoint_stub* (conf/stub.config).",
                     "format": "directory-path"
                 },
                 "fasta": {

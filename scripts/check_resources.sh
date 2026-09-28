@@ -9,7 +9,7 @@
 # How: per profile pair (hazel,normal and hazel,short) a -stub run of both CRAM entries (read_demultiplexing on the test
 # fixture library LIBX, markdup_import on touch-file CRAMs) with the real profiles (-profile hazel,<p>), plus an override
 # config that only swaps the executor to local with a large pool (64 cpus, 1 TB: nothing is capped by the laptop), turns
-# conda off, and puts work/, TMPDIR (+ its beforeScript), outdir and a store_stub* store under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
+# conda off, and puts work/, TMPDIR (+ its beforeScript), outdir, a store_stub* store and a checkpoint_stub* FASTQ checkpoint under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
 # retry) are compared with the table: every observed process needs a row, every row must be observed, values must match.
 # Also checked (`nextflow config -flat -profile hazel,normal`): hazel.config's beforeScript creates exactly env.TMPDIR.
 # Exit 1 on any mismatch. Stub runs evaluate the nf-core modules' `eval` versions, so the tools or version shims must be on
@@ -67,6 +67,7 @@ EOF
         echo "== hazel,$prof  --entry $entry"
         ( cd "$D" && nextflow run "$REPO" -profile "hazel,$prof" -stub -c "$D/override.config" -w "$D/work" \
             --run_id "check_resources_$prof" --entry "$entry" --outdir "$D/results_$entry" --store "$D/store_stub" \
+            --fastq_checkpoint "$D/checkpoint_stub" \
             -with-trace "$D/trace_$entry.txt" > "$D/nextflow_$entry.log" 2>&1 ) \
             || { echo "check_resources: stub run failed (hazel,$prof $entry), see $D/nextflow_$entry.log" >&2; tail -20 "$D/nextflow_$entry.log" >&2; exit 1; }
         grep -E "Succeeded|succeeded" "$D/nextflow_$entry.log" | tail -1 || true

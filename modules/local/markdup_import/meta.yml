@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module (step-named; the name keys the hazel conda prefix). Wraps samtools (+ gawk) in one pipe.
 name: markdup_import
-description: Duplicate marking + read groups for existing CRAMs/BAMs (no realignment); the input header RG is kept only if it is the single RG and its SM is the sample, otherwise the sample-sheet RG replaces it; storeDir <store>/cram_import.
+description: Duplicate marking + read groups for existing CRAMs/BAMs (no realignment); the input header RG is kept only if it is the single RG and its SM is the sample, otherwise the sample-sheet RG replaces it; published to <store>/cram_import.
 keywords:
   - duplicate marking
   - read groups
@@ -100,7 +100,7 @@ output:
   versions:
     - "*.markdup_import.versions.yml":
         type: file
-        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        description: Tool versions (one line per tool), kept next to the output in the store (read back for an already-stored output)
         pattern: "*.markdup_import.versions.yml"
         ontologies: []
 authors:

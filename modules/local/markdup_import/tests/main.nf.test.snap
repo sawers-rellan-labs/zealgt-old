@@ -11,7 +11,7 @@
                             "qc_group": "testset",
                             "single_end": false
                         },
-                        "OLD_1.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "OLD_1.cram:md5,a4d9dc2f28d9e01b39e0be7137973012",
                         "OLD_1.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
@@ -51,7 +51,7 @@
                             "qc_group": "testset",
                             "single_end": false
                         },
-                        "OLD_1.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "OLD_1.cram:md5,a4d9dc2f28d9e01b39e0be7137973012",
                         "OLD_1.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
@@ -84,7 +84,7 @@
                 ]
             }
         ],
-        "timestamp": "2026-09-28T01:36:12.048414",
+        "timestamp": "2026-09-28T10:26:57.364617",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

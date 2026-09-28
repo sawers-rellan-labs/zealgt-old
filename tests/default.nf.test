@@ -11,8 +11,9 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "$outputDir"
-                store  = "$outputDir/store_stub"
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
             }
         }
 
@@ -24,12 +25,101 @@ nextflow_pipeline {
             assertAll(
                 { assert workflow.success },
                 { assert workflow.trace.succeeded().size() == 24 }, // DEMUX x 2 lanes, MERGE_LANES, DEMUX_QC, 3 x 6 per-sample tasks, REGISTRY, MULTIQC
+                // FASTQ checkpoint: the trimmed pairs, the samplesheet (written once all 3 samples are trimmed), the cleanup report
+                { assert file("$outputDir/checkpoint_stub/LIBX/samplesheet.csv").readLines().size() == 4 },
+                { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (6 files') },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
                     // All stable path name, with a relative path
                     stable_path,
                     // All files with stable contents
+                    stable_content
+                ).match() }
+            )
+        }
+    }
+
+    test("-profile test, --entry read_demultiplexing, two libraries, --max_libraries 1 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                libraries        = 'LIBX,LIBY'
+                max_libraries    = 1
+                // LIBY: two more samples on the fixture lanes of LIBX (the stub never reads them)
+                def sheet = new File("$outputDir/samples_two_libs.csv")
+                def fx = new File("${baseDir}/tests/fixtures/samples_test.csv").readLines()
+                sheet.text = (fx + [
+                    'LY_1,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,GCCATA,GCCATA,symmetric,,1,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P1,FALSE,LIBY,ILLUMINA',
+                    'LY_2,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,TCTGGT,TCTGGT,symmetric,,2,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P2,FALSE,LIBY,ILLUMINA',
+                ]).join('\n') + '\n'
+                input = sheet.toString()
+            }
+        }
+
+        then {
+            // task ids in creation order (the run's trace, next to the test's output dir)
+            def ids = new File("$outputDir/../meta/trace.csv").readLines().drop(1).collect { l -> l.split('\t') }.collect { f -> [f[0] as int, f[3]] }
+            def libx_align = ids.findAll { _id, n -> n.contains(':ALIGN_MARKDUP (LX_') }*.getAt(0)
+            def liby_demux = ids.findAll { _id, n -> n.contains(':DEMUX (LIBY.') }*.getAt(0)
+            assertAll(
+                { assert workflow.success },
+                // LIBX: 24 tasks as above; LIBY: DEMUX x 2, MERGE_LANES, DEMUX_QC, 2 x 6 per-sample tasks, REGISTRY, MULTIQC
+                { assert workflow.trace.succeeded().size() == 42 },
+                // one library in flight: LIBY's DEMUX tasks are created only after all of LIBX's ALIGN_MARKDUP tasks
+                { assert libx_align.size() == 3 && liby_demux.size() == 2 },
+                { assert liby_demux.min() > libx_align.max() },
+                { assert file("$outputDir/checkpoint_stub/LIBY/samplesheet.csv").readLines().size() == 3 }
+            )
+        }
+    }
+
+    test("-profile test, --entry read_alignment - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                entry            = 'read_alignment'
+                // a checkpoint of two samples (touch-file FASTQs) as stage 1 writes it, and the library's demux QC table
+                def ck = new File("$outputDir/checkpoint_stub/LIBX")
+                ck.mkdirs()
+                def cols = 'sample,library,fastq_1,fastq_2,source,role,donor,taxon,read_group,read_structure,layout,barcode_r1,barcode_r2,demux_args,trim_illuminaclip,trim_args,trim_adapters,raw_location,raw_files_r1,raw_files_r2,tar_members_r1,tar_members_r2,subsample,stage1_run_id,stage1_session_id,stage1_code_version,stage1_tool_versions'
+                def rows = [['LX_1', 'GCCATA'], ['LX_2', 'TCTGGT']].collect { s, bc ->
+                    [1, 2].each { r -> new File(ck, "${s}.paired.trim_${r}.fastq.gz").text = '' }
+                    [s, 'LIBX', "${ck}/${s}.paired.trim_1.fastq.gz", "${ck}/${s}.paired.trim_2.fastq.gz", 'bc1', 'bc1_sample', 'Zx.TEST_P1', 'mexicana',
+                     "\"@RG\\tID:${s}\\tSM:${s}\\tLB:LIBX\\tPL:ILLUMINA\\tPU:TESTFC01.1,TESTFC01.2\"", '6B2S+T 6B2S+T', 'symmetric', bc, bc,
+                     '-e 0 --no-indels --discard-untrimmed -Z', '2:30:10', 'LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36', '/adapters/TruSeq3-PE-2.fa',
+                     '/raw/LIBX', 'LIBX_TESTFC01_L1_1.fq.gz;LIBX_TESTFC01_L2_1.fq.gz', 'LIBX_TESTFC01_L1_2.fq.gz;LIBX_TESTFC01_L2_2.fq.gz', '', '', '0', '',
+                     '00000000-0000-0000-0000-000000000000', 'test', 'cutadapt=4.9;pigz=2.8;tar=1.35;trimmomatic=0.39'].join(',')
+                }
+                new File(ck, 'samplesheet.csv').text = ([cols] + rows).join('\n') + '\n'
+                def dq = new File("$outputDir/store_stub/demux_qc")
+                dq.mkdirs()
+                new File(dq, 'LIBX.tsv').text = 'sample_id\tread_pairs\nLX_1\t10\nLX_2\t10\n'
+            }
+        }
+
+        then {
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success },
+                // stage 2 only: 2 x (ALIGN_MARKDUP, SAMTOOLS_STATS, PICARD, PROVENANCE), REGISTRY, MULTIQC; no stage-1 task
+                { assert workflow.trace.succeeded().size() == 10 },
+                { assert !workflow.trace.tasks().any { t -> t.name =~ /DEMUX|MERGE_LANES|TRIMMOMATIC|FASTQC/ } },
+                { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (4 files') },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
+                    stable_path,
                     stable_content
                 ).match() }
             )

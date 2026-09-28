@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module (step-named; the name keys the hazel conda prefix). Wraps a python module template.
 name: demux_qc
-description: Per-library demultiplexing QC from the cutadapt JSON and the demuxed reads (assigned pairs per sample, assignment rate, read-start base composition, TruSeq read-through share); storeDir <store>/demux_qc.
+description: Per-library demultiplexing QC from the cutadapt JSON and the demuxed reads (assigned pairs per sample, assignment rate, read-start base composition, TruSeq read-through share); published to <store>/demux_qc.
 keywords:
   - demultiplexing
   - qc
@@ -101,7 +101,7 @@ output:
   versions:
     - "*.demux_qc.versions.yml":
         type: file
-        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        description: Tool versions (one line per tool), kept next to the output in the store (read back for an already-stored output)
         pattern: "*.demux_qc.versions.yml"
         ontologies: []
 authors:

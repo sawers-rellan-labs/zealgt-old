@@ -6,5 +6,8 @@ fastqc/**/*_fastqc.{html,zip}
 pipeline_info/*.{html,json,txt,yml}
 store_stub/**/*.provenance.json
 store_stub/registry/*.registry.tsv
+checkpoint_stub/**/samplesheet.csv
+checkpoint_stub/**/cleanup_status.tsv
+checkpoint_stub/**/*.fastq.gz
 import.csv
 imp/**

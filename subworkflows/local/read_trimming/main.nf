@@ -1,7 +1,8 @@
 //
 // READ_TRIMMING (PLAN §3 row 1b): TRIMMOMATIC with batch 1's parameters (ILLUMINACLIP on the staged adapter FASTA, ext.args
-// from params.trim_illuminaclip / params.trim_args) -> FASTQC of the trimmed pairs. An internal step of --entry
-// read_demultiplexing; trimmed FASTQs stay in work/ until the library's CRAMs are stored.
+// from params.trim_illuminaclip / params.trim_args) -> FASTQC of the trimmed pairs. Stage 1 of --entry read_demultiplexing;
+// TRIMMOMATIC's publishDir hardlinks each trimmed pair into the FASTQ checkpoint <fastq_checkpoint>/<library>/ (same
+// filesystem as work/: no extra space or inode; conf/modules.config), which --entry read_alignment reads.
 //
 include { TRIMMOMATIC } from '../../../modules/nf-core/trimmomatic/main'
 include { FASTQC      } from '../../../modules/nf-core/fastqc/main'

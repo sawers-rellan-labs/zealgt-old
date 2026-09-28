@@ -17,7 +17,8 @@ nextflow_workflow {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                store            = "${outputDir}/store_stub"
+                fastq_checkpoint = "${outputDir}/checkpoint_stub"
             }
             workflow {
                 """
@@ -33,6 +34,10 @@ nextflow_workflow {
         then {
             assertAll(
                 { assert workflow.success },
+                // the trimmed pair is hardlinked into the FASTQ checkpoint (conf/modules.config), the unpaired reads are not
+                { assert file("${outputDir}/checkpoint_stub/LIBX/LX_1.paired.trim_1.fastq.gz").exists() },
+                { assert file("${outputDir}/checkpoint_stub/LIBX/LX_1.paired.trim_2.fastq.gz").exists() },
+                { assert !file("${outputDir}/checkpoint_stub/LIBX/LX_1.unpaired.trim_1.fastq.gz").exists() },
                 { assert snapshot(
                     workflow.out.reads.collect { meta, reads -> [meta.id, reads.collect { f -> file(f).name }.sort()] },
                     workflow.out.qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),

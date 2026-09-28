@@ -75,16 +75,18 @@ workflow PIPELINE_INITIALISATION {
     // zealgt run guards (conf/hazel.config, PLAN §2 / §5), then the entry's inputs from its sample sheet (nf-schema)
     //
     zgRunGuards()
-    def inputs = [libraries: [], samples: [], imports: [], records: []]
+    def inputs = [libraries: [], checkpoint: [], imports: [], records: []]
     if (params.workflow == 'cram') {
-        inputs = params.entry == 'markdup_import' ? zgImportInputs() : zgDemuxInputs()
+        inputs = params.entry == 'markdup_import' ? zgImportInputs()
+               : params.entry == 'read_alignment' ? zgAlignmentInputs()
+               : zgDemuxInputs()
     }
 
     emit:
-    libraries = channel.fromList(inputs.libraries) // channel: [ val(lmeta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ]
-    samples   = channel.fromList(inputs.samples)   // channel: [ val(meta), val(read_group) ]  every sample of the run
-    imports   = channel.fromList(inputs.imports)   // channel: [ val(meta), cram|bam, crai|bai, val(read_group) ]
-    records   = channel.fromList(inputs.records)   // channel: [ val(sample_id), val(provenance record) ]
+    libraries  = channel.fromList(inputs.libraries)  // channel: [ val(lmeta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ]  (read_demultiplexing)
+    checkpoint = channel.fromList(inputs.checkpoint) // channel: [ val(meta), val(checkpoint row) ]  every sample of the stage-2 libraries (read_demultiplexing, read_alignment)
+    imports    = channel.fromList(inputs.imports)    // channel: [ val(meta), cram|bam, crai|bai, val(read_group) ]  (markdup_import)
+    records    = channel.fromList(inputs.records)    // channel: [ val(sample_id), val(provenance record) ]
 }
 
 /*
@@ -100,12 +102,25 @@ workflow PIPELINE_COMPLETION {
 
     main:
 
+    // Checkpoint cleanup report after every run with stage 2 (read_demultiplexing, read_alignment). onComplete runs after
+    // Nextflow has finished the publishDir transfers (26.04.6: Session.destroy shuts the publish pool down first), but
+    // params / projectDir are unbound there, so the report gets its values now.
+    def cleanup = params.workflow == 'cram' && params.entry in ['read_demultiplexing', 'read_alignment'] ? [
+        libraries  : zgList(params.libraries).unique(),
+        checkpoint : zgList(params.libraries).collectEntries { lib -> [lib, zgCheckpointDir(lib).toString()] },
+        cram_dir   : "${params.store}/cram".toString(),
+        schema     : "${projectDir}/assets/schema_checkpoint.json".toString(),
+    ] : null
+
     //
     // Completion summary
     //
     workflow.onComplete {
 
         completionSummary(monochrome_logs)
+        if (cleanup) {
+            zgCheckpointCleanupReport(cleanup)
+        }
 
     }
 
@@ -200,7 +215,11 @@ def zgMaxLibraries() {
 
 // Comma-separated param -> list of trimmed, non-empty values
 def zgList(value) {
-    return value ? value.toString().tokenize(',')*.trim().findAll { v -> v } : []
+    return zgSplit(value, ',')
+}
+
+def zgSplit(value, String sep) {
+    return value ? value.toString().tokenize(sep)*.trim().findAll { v -> v } : []
 }
 
 //
@@ -211,24 +230,38 @@ def zgRunGuards() {
     if (profiles.intersect(['hazel', 'slurm']) && !params.run_id) {
         error("--run_id is required on hazel: it names the scratch dir /share/maize/frodrig4/nf_work/<run_id> (conf/hazel.config)")
     }
-    def store = zgRealPath(params.store)
-    // a subset never lands where the real CRAMs go (a stored subsample CRAM would make storeDir skip the real alignment)
-    def subsample_dir = zgSubsample() ? "subsample_${zgSubsample()}" : ''
-    if (subsample_dir && store.name != subsample_dir) {
-        error("--subsample ${zgSubsample()} needs a store directory named ${subsample_dir}: --store <store>/${subsample_dir} (got ${store})")
+    // a subset never lands where the real CRAMs go (a stored subsample CRAM would make the skip-if-stored logic skip the
+    // real alignment), and stub outputs never land in the real store
+    zgCheckOutputRoot('--store', params.store, 'store_stub', '/rsstu/users/r/rrellan/BZea/ZEAL/store', '<outdir>/store_stub')
+    def stage2 = params.workflow == 'cram' && params.entry in ['read_demultiplexing', 'read_alignment']
+    if (stage2) {
+        // the same two rules for the FASTQ checkpoint (a subsample checkpoint must never feed a full-library stage 2)
+        zgCheckOutputRoot('--fastq_checkpoint', params.fastq_checkpoint, 'checkpoint_stub', '/share/maize/frodrig4/fastq_checkpoint', '<outdir>/checkpoint_stub')
     }
-    if (!subsample_dir && store.name ==~ /subsample_\d+/) {
-        error("--store ${store} is a subsample store; name it with --subsample ${store.name - 'subsample_'} (or use the full store)")
+    if (stage2 && !params.libraries) {
+        error("--entry ${params.entry} needs --libraries <library>[,<library>...] (meta/samples.csv 'library' column)")
+    }
+}
+
+//
+// Rules for an output root (--store, --fastq_checkpoint): with --subsample N it must be a directory named subsample_<N>, a
+// subsample_* directory needs --subsample, and a stub run needs a path component starting with <stub_prefix>, outside the
+// production root.
+//
+def zgCheckOutputRoot(String option, String path, String stub_prefix, String production_path, String stub_default) {
+    def root = zgRealPath(path)
+    def subsample_dir = zgSubsample() ? "subsample_${zgSubsample()}" : ''
+    if (subsample_dir && root.name != subsample_dir) {
+        error("--subsample ${zgSubsample()} needs ${option} to be a directory named ${subsample_dir}: ${option} <dir>/${subsample_dir} (got ${root})")
+    }
+    if (!subsample_dir && root.name ==~ /subsample_\d+/) {
+        error("${option} ${root} is a subsample directory; name it with --subsample ${root.name - 'subsample_'} (or use the full one)")
     }
     if (workflow.stubRun) {
-        // the stub store must lie in a directory named store_stub* and not inside the production store
-        def production = zgRealPath('/rsstu/users/r/rrellan/BZea/ZEAL/store')
-        if (!store.iterator().any { p -> p.toString().startsWith('store_stub') } || store.startsWith(production)) {
-            error("stub runs must not write into the real store: --store must be (inside) a directory named store_stub* outside ${production} (conf/stub.config sets <outdir>/store_stub), got ${store}")
+        def production = zgRealPath(production_path)
+        if (!root.iterator().any { p -> p.toString().startsWith(stub_prefix) } || root.startsWith(production)) {
+            error("stub runs must not write into the real ${option - '--'}: ${option} must be (inside) a directory named ${stub_prefix}* outside ${production} (conf/stub.config sets ${stub_default}), got ${root}")
         }
-    }
-    if (params.workflow == 'cram' && params.entry == 'read_demultiplexing' && !params.libraries) {
-        error("--entry read_demultiplexing needs --libraries <library>[,<library>...] (meta/samples.csv 'library' column)")
     }
 }
 
@@ -248,23 +281,42 @@ def zgRealPathOf(p) {
 }
 
 //
-// read_demultiplexing request (PLAN §0 Task 2, §5 rule 3): at most --max_libraries libraries, --force_demux only names
-// requested libraries, and a registered library is refused unless it is named with --force_demux.
+// read_demultiplexing request (PLAN §0 Task 2): --force_demux only names requested libraries, and a registered library is
+// refused unless it is named with --force_demux. Any number of libraries may be requested: the CRAM workflow admits at
+// most --max_libraries of them at a time (zgAdmitLibrary, PLAN §5 rule 3).
 //
 def zgCheckDemuxRequest(List libs) {
     def force = zgList(params.force_demux)
     if (force - libs) {
         error("--force_demux names libraries that are not in --libraries: ${force - libs}")
     }
-    if (libs.size() > zgMaxLibraries()) {
-        error("${libs.size()} libraries requested, --max_libraries ${params.max_libraries}: one library in flight (PLAN §5 rule 3)")
-    }
     def registered = zgRegisteredLibraries()
     def refused = libs.findAll { l -> registered.containsKey(l) && !(l in force) }
     if (refused) {
         error("refusing to demultiplex registered libraries ${refused.collect { l -> "${l} [${registered[l]}]" }} (PLAN §0 Task 2); name them with --force_demux to override")
     }
+    // a FASTQ checkpoint written by another session: stage 2 alone reads it; demultiplexing again would replace it
+    // (-resume of the session that wrote it is allowed: its cached tasks publish the same files)
+    libs.findAll { l -> !(l in force) }.each { l ->
+        def sheet = zgCheckpointSheet(l)
+        if (sheet.exists()) {
+            def sessions = zgCheckpointSessions(sheet)
+            if (sessions != [workflow.sessionId.toString()]) {
+                error("library ${l} already has a FASTQ checkpoint ${sheet} (stage 1 of session ${sessions ?: 'unknown'}): run stage 2 alone with --entry read_alignment --libraries ${l}; to demultiplex again use -resume <that session> or --force_demux ${l} (replaces the checkpoint)")
+            }
+        }
+    }
     force.each { l -> log.warn("--force_demux ${l}: demultiplexing a registered library (${registered[l] ?: 'not registered'})") }
+}
+
+// stage1_session_id values of a checkpoint samplesheet ([] if it cannot be read)
+def zgCheckpointSessions(sheet) {
+    try {
+        return zgReadCheckpointSheet(sheet)*.stage1_session_id.unique()
+    } catch (Exception e) {
+        log.warn("zealgt: cannot read ${sheet}: ${e.message}")
+        return []
+    }
 }
 
 //
@@ -294,14 +346,16 @@ def zgRegisteredLibraries() {
 
 //
 // --entry read_demultiplexing: the --libraries rows of --input (meta/samples.csv) -> one DEMUX input per library, and per
-// sample its meta, read group and provenance record. Origins and read groups stay out of `meta` (meta is hashed).
+// sample its checkpoint samplesheet row (zgCheckpointRow: everything stage 2 needs, written to
+// <fastq_checkpoint>/<library>/samplesheet.csv once the library is trimmed), meta and provenance record, built from that row
+// exactly as --entry read_alignment builds them. Origins and read groups stay out of `meta` (meta is hashed).
 //
 def zgDemuxInputs() {
     def libs = zgList(params.libraries).unique()
     zgCheckDemuxRequest(libs)
     def rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json").collect { row -> (row instanceof List ? row[0] : row) as Map }
     def settings = zgRunSettings()
-    def out = [libraries: [], samples: [], imports: [], records: []]
+    def out = [libraries: [], checkpoint: [], imports: [], records: []]
     libs.each { lib ->
         def lrows = rows.findAll { r -> r.library == lib }
         if (!lrows) {
@@ -317,23 +371,247 @@ def zgDemuxInputs() {
         def pu = zgPlatformUnit(raw.r1*.name)
         def lmeta = [id: lib, library: lib, source: first.source, layout: first.barcode_layout, n_samples: lrows.size(), pu: pu]
         out.libraries << [lmeta, raw.r1, raw.r2, lrows.collect { r -> [r.sample_id, r.barcode_r1, r.barcode_r2 ?: ''] }, structures, [raw.members_r1, raw.members_r2]]
+        def ckpt = zgCheckpointDir(lib)
         lrows.each { r ->
-            def meta = [id: r.sample_id, sample: r.sample_id, library: r.library, source: r.source, role: r.role ?: '',
-                        donor: r.donor ?: '', taxon: r.taxon ?: '', single_end: false, qc_group: r.library]
-            def read_group = zgReadGroup(r.sample_id, r.rg_lb ?: r.library, r.rg_pl, pu)
-            def origin = [kind: 'demux', library: lib, raw_location: raw.location, raw_files_r1: raw.r1*.name, raw_files_r2: raw.r2*.name,
-                          tar_members_r1: raw.members_r1, tar_members_r2: raw.members_r2, tool: 'cutadapt', args: params.demux_args,
-                          read_structure: structures.join(' '), layout: first.barcode_layout, barcode_r1: r.barcode_r1,
-                          barcode_r2: r.barcode_r2 ?: '', subsample: zgSubsample()]
-            out.samples << [meta, read_group]
-            out.records << [meta.id, zgProvenanceRecord(settings, meta, "${params.store}/cram", origin, read_group) + [
-                trimming : [tool: 'trimmomatic', illuminaclip: params.trim_illuminaclip, args: params.trim_args,
-                            adapters: params.trim_adapters, phred: 'auto-detected'], // no -phred33: nf-core TRIMMOMATIC appends ext.args after the outputs
-                alignment: [tool: 'minibwa map', args: params.align_args, read_group: read_group],
-            ]]
+            // fastq_1 / fastq_2: where TRIMMOMATIC's publishDir (conf/modules.config) hardlinks the trimmed pair
+            def row = zgCheckpointRow([
+                sample: r.sample_id, library: lib,
+                fastq_1: ckpt.resolve("${r.sample_id}.paired.trim_1.fastq.gz"), fastq_2: ckpt.resolve("${r.sample_id}.paired.trim_2.fastq.gz"),
+                source: r.source, role: r.role, donor: r.donor, taxon: r.taxon,
+                read_group: zgReadGroup(r.sample_id, r.rg_lb ?: r.library, r.rg_pl, pu),
+                read_structure: structures.join(' '), layout: first.barcode_layout, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2,
+                demux_args: params.demux_args, trim_illuminaclip: params.trim_illuminaclip, trim_args: params.trim_args,
+                trim_adapters: params.trim_adapters, raw_location: raw.location,
+                raw_files_r1: raw.r1*.name.join(';'), raw_files_r2: raw.r2*.name.join(';'),
+                tar_members_r1: raw.members_r1.join(';'), tar_members_r2: raw.members_r2.join(';'), subsample: zgSubsample(),
+                stage1_run_id: params.run_id, stage1_session_id: workflow.sessionId, stage1_code_version: settings.code_version,
+                stage1_tool_versions: '', // filled in by the CRAM workflow from this session's DEMUX / TRIMMOMATIC versions
+            ])
+            zgCsvLine(row) // refuse now, not after trimming, a value the samplesheet cannot hold
+            def meta = zgCheckpointMeta(row)
+            out.checkpoint << [meta, row]
+            out.records << [meta.id, zgCheckpointRecord(settings, row)]
         }
     }
+    zgCheckStoredCrams("${params.store}/cram", out.checkpoint.collect { c -> c[0].id })
     return out
+}
+
+//
+// --entry read_alignment (stage 2 alone): the checkpoint samplesheets <fastq_checkpoint>/<library>/samplesheet.csv of the
+// --libraries (assets/schema_checkpoint.json: the FASTQs must exist) -> per sample meta, row and provenance record, built as
+// read_demultiplexing builds them. No registry / demux guard (nothing is demultiplexed); REGISTRY needs the library's
+// <store>/demux_qc/<library>.tsv and is skipped, with a warning, without it.
+//
+def zgAlignmentInputs() {
+    def libs = zgList(params.libraries).unique()
+    def settings = zgRunSettings()
+    def out = [libraries: [], checkpoint: [], imports: [], records: []]
+    libs.each { lib ->
+        def sheet = zgCheckpointSheet(lib)
+        if (!sheet.exists()) {
+            error("--entry read_alignment: library ${lib} has no checkpoint samplesheet ${sheet}: run --entry read_demultiplexing --libraries ${lib} with this --fastq_checkpoint first")
+        }
+        def rows = zgReadCheckpointSheet(sheet)
+        rows.findAll { row -> row.library != lib }.each { row -> error("${sheet}: sample ${row.sample} is in library ${row.library}, not ${lib}") }
+        rows.findAll { row -> row.subsample != zgSubsample() }.each { row ->
+            error("${sheet}: sample ${row.sample} was demultiplexed with --subsample ${row.subsample}, this run has --subsample ${zgSubsample()}")
+        }
+        if (!file("${params.store}/demux_qc/${lib}.tsv").exists()) {
+            log.warn("zealgt: ${params.store}/demux_qc/${lib}.tsv is missing (stage 1 ran with another --store?): library ${lib} is aligned but not registered")
+        }
+        rows.each { row ->
+            def meta = zgCheckpointMeta(row)
+            out.checkpoint << [meta, row]
+            out.records << [meta.id, zgCheckpointRecord(settings, row)]
+        }
+    }
+    zgCheckStoredCrams("${params.store}/cram", out.checkpoint.collect { c -> c[0].id })
+    return out
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ZEALGT FUNCTIONS: FASTQ checkpoint (stage 1 -> stage 2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <fastq_checkpoint>/<library>/: the trimmed pairs <sample>.paired.trim_{1,2}.fastq.gz (hardlinks of TRIMMOMATIC's work/
+    outputs), samplesheet.csv (assets/schema_checkpoint.json; one row per sample, everything stage 2 needs) and, after
+    every run with stage 2, cleanup_status.tsv (zgCheckpointCleanupReport). Nothing here removes a file.
+*/
+
+// Checkpoint samplesheet columns, in file order (assets/schema_checkpoint.json)
+def zgCheckpointColumns() {
+    return ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'read_group', 'read_structure', 'layout',
+            'barcode_r1', 'barcode_r2', 'demux_args', 'trim_illuminaclip', 'trim_args', 'trim_adapters', 'raw_location',
+            'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample', 'stage1_run_id', 'stage1_session_id',
+            'stage1_code_version', 'stage1_tool_versions']
+}
+
+def zgCheckpointDir(String lib) {
+    return file(params.fastq_checkpoint).toAbsolutePath().normalize().resolve(lib)
+}
+
+def zgCheckpointSheet(String lib) {
+    return zgCheckpointDir(lib).resolve('samplesheet.csv')
+}
+
+// A samplesheet cell as a string: nf-schema hands an empty cell over as [], a file-path cell as a Path
+def zgCell(value) {
+    return (value == null || (value instanceof List && !value)) ? '' : value.toString()
+}
+
+// One checkpoint row with every column, strings except the integer subsample (the same types whether built or read back)
+def zgCheckpointRow(Map m) {
+    return zgCheckpointColumns().collectEntries { c -> [c, c == 'subsample' ? zgCell(m[c] ?: 0).toInteger() : zgCell(m[c])] }
+}
+
+// The rows of a checkpoint samplesheet, validated by nf-schema (FASTQs must exist)
+def zgReadCheckpointSheet(sheet) {
+    return samplesheetToList(sheet.toString(), "${projectDir}/assets/schema_checkpoint.json").collect { r ->
+        zgCheckpointRow(r[0] + [fastq_1: r[1], fastq_2: r[2]])
+    }
+}
+
+// One CSV line; nf-schema reads "..."-quoted cells (commas inside) but not escaped quotes, so a quote or newline is refused
+def zgCsvLine(Map row) {
+    return zgCheckpointColumns().collect { c ->
+        def s = zgCell(row[c])
+        if (s.contains('"') || s.contains('\n') || s.contains('\r')) {
+            error("checkpoint samplesheet: ${c} of sample ${row.sample} contains a quote or newline, which the samplesheet cannot hold: ${s}")
+        }
+        s.contains(',') ? "\"${s}\"" : s
+    }.join(',')
+}
+
+//
+// Write <fastq_checkpoint>/<library>/samplesheet.csv for the rows of one library (all its samples trimmed), via a temporary
+// file and an atomic move, so a killed run never leaves half a samplesheet.
+//
+def zgWriteCheckpointSheet(List rows) {
+    def sheet = file(rows[0].fastq_1).parent.resolve('samplesheet.csv')
+    def tmp = sheet.parent.resolve('.samplesheet.csv.tmp')
+    sheet.parent.mkdirs()
+    tmp.text = ([zgCheckpointColumns().join(',')] + rows.sort(false) { r -> r.sample }.collect { r -> zgCsvLine(r) }).join('\n') + '\n'
+    java.nio.file.Files.move(tmp, sheet, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+    log.info("zealgt: FASTQ checkpoint samplesheet ${sheet} (${rows.size()} samples)")
+    return sheet
+}
+
+// Stage-2 meta of a checkpoint row (the same fields for both stage-2 entries; meta is hashed)
+def zgCheckpointMeta(Map row) {
+    return [id: row.sample, sample: row.sample, library: row.library, source: row.source, role: row.role, donor: row.donor,
+            taxon: row.taxon, single_end: false, qc_group: row.library]
+}
+
+//
+// Provenance record of a checkpoint row (origin = demux), shared by both stage-2 entries, so the JSON differs only in the
+// run fields. stage1_tool_versions: the DEMUX / TRIMMOMATIC tool versions of the session that wrote the checkpoint.
+//
+def zgCheckpointRecord(Map settings, Map row) {
+    def meta = zgCheckpointMeta(row)
+    def origin = [kind: 'demux', library: row.library, raw_location: row.raw_location,
+                  raw_files_r1: zgSplit(row.raw_files_r1, ';'), raw_files_r2: zgSplit(row.raw_files_r2, ';'),
+                  tar_members_r1: zgSplit(row.tar_members_r1, ';'), tar_members_r2: zgSplit(row.tar_members_r2, ';'),
+                  tool: 'cutadapt', args: row.demux_args, read_structure: row.read_structure, layout: row.layout,
+                  barcode_r1: row.barcode_r1, barcode_r2: row.barcode_r2, subsample: row.subsample,
+                  fastq_checkpoint: [row.fastq_1, row.fastq_2], stage1_run_id: row.stage1_run_id,
+                  stage1_session_id: row.stage1_session_id, stage1_code_version: row.stage1_code_version,
+                  stage1_tool_versions: zgParseToolVersions(row.stage1_tool_versions)]
+    return zgProvenanceRecord(settings, meta, "${params.store}/cram", origin, row.read_group) + [
+        trimming : [tool: 'trimmomatic', illuminaclip: row.trim_illuminaclip, args: row.trim_args,
+                    adapters: row.trim_adapters, phred: 'auto-detected'], // no -phred33: nf-core TRIMMOMATIC appends ext.args after the outputs
+        alignment: [tool: 'minibwa map', args: params.align_args, read_group: row.read_group],
+    ]
+}
+
+// The tools that make the checkpoint FASTQs, i.e. the version outputs of DEMUX (cutadapt, pigz, tar) and TRIMMOMATIC. The CRAM
+// workflow waits until each has reported once: a tool added to those modules must be added here (else the samplesheet and
+// the provenance records wait for the end of stage 1).
+def zgStage1Tools() {
+    return ['cutadapt', 'pigz', 'tar', 'trimmomatic']
+}
+
+// [[tool, version], ...] -> "tool=version;tool=version" (sorted; several versions of one tool comma-joined)
+def zgToolVersionsString(List tools) {
+    return tools.groupBy { t -> t[0] }.collect { tool, vs -> "${tool}=${vs*.getAt(1).unique().sort().join(',')}" }.sort().join(';')
+}
+
+def zgParseToolVersions(String s) {
+    return zgSplit(s, ';').collectEntries { tv -> def i = tv.indexOf('='); [tv.substring(0, i), tv.substring(i + 1)] }
+}
+
+//
+// Library admission (PLAN §5 rule 3): at most --max_libraries libraries in flight in a read_demultiplexing run, from DEMUX
+// through their last CRAM. Nextflow channels cannot form a cycle, so the gate is a semaphore: the CRAM workflow maps the
+// libraries through zgAdmitLibrary (one operator, which blocks on the (N+1)th library until a permit is free; the other
+// dataflow threads keep running) and releases a permit when a library's last CRAM leaves stage 2 (zgReleaseLibrary).
+// Libraries are admitted in --libraries order.
+//
+def zgLibraryGate() {
+    return new java.util.concurrent.Semaphore(zgMaxLibraries(), true)
+}
+
+def zgAdmitLibrary(gate, List library) {
+    try {
+        gate.acquire()
+    } catch (InterruptedException e) {
+        // the run is stopping (an earlier error): this library was never admitted
+        Thread.currentThread().interrupt()
+        error("library ${library[0].id} was not admitted to stage 1: the run stopped while it waited for a place (--max_libraries ${zgMaxLibraries()})")
+    }
+    log.info("zealgt: library ${library[0].id} admitted to stage 1 (at most ${zgMaxLibraries()} libraries in flight)")
+    return library
+}
+
+def zgReleaseLibrary(gate, String lib) {
+    log.info("zealgt: library ${lib} has all its CRAMs: its place in flight is free")
+    gate.release()
+}
+
+// A chained run's record once this session's stage-1 tool versions are known (as read_alignment reads them from the sheet)
+def zgWithStage1Tools(Map record, String tools) {
+    return record + [origin: record.origin + [stage1_tool_versions: zgParseToolVersions(tools)]]
+}
+
+//
+// Checkpoint cleanup report (never removes anything), from workflow.onComplete after every run with stage 2: per library,
+// are ALL its samples' CRAMs stored and verified (zgCramState)? Writes <checkpoint>/<library>/cleanup_status.tsv and logs
+// "removable" or "keep". Called from onComplete, where params / projectDir are no longer bound: everything comes in `ctx`
+// [libraries, checkpoint dirs by library, cram dir, schema path].
+//
+def zgCheckpointCleanupReport(Map ctx) {
+    ctx.libraries.each { lib ->
+        def dir = file(ctx.checkpoint[lib])
+        def sheet = dir.resolve('samplesheet.csv')
+        if (!sheet.exists()) {
+            log.warn("zealgt: checkpoint ${dir}: keep: no samplesheet.csv (stage 1 of library ${lib} did not finish)")
+            return
+        }
+        def rows
+        try {
+            rows = samplesheetToList(sheet.toString(), ctx.schema).collect { r -> r[0] + [fastq_1: r[1], fastq_2: r[2]] }
+        } catch (Exception e) {
+            log.warn("zealgt: checkpoint ${dir}: keep: ${sheet} does not validate (${e.message})")
+            return
+        }
+        def lines = [['sample', 'cram', 'cram_bytes', 'verified', 'fastq_1', 'fastq_1_bytes', 'fastq_2', 'fastq_2_bytes'].join('\t')]
+        def n_ok = 0
+        def bytes = 0L
+        rows.each { r ->
+            def id = zgCell(r.sample)
+            def cram = file("${ctx.cram_dir}/${id}.cram")
+            def ok = zgCramState(ctx.cram_dir, id) == 'stored'
+            n_ok += ok ? 1 : 0
+            def fq = [file(zgCell(r.fastq_1)), file(zgCell(r.fastq_2))]
+            bytes += fq.sum { f -> f.size() }
+            lines << [id, cram, cram.exists() ? cram.size() : 0, ok ? 'yes' : 'no', fq[0].name, fq[0].size(), fq[1].name, fq[1].size()].join('\t')
+        }
+        def status = n_ok == rows.size()
+            ? "checkpoint ${dir}: removable (${2 * rows.size()} files, ${String.format('%.2f', bytes / 1e9)} GB) — remove only with the user's consent"
+            : "checkpoint ${dir}: keep: ${rows.size() - n_ok} of ${rows.size()} CRAMs missing"
+        dir.resolve('cleanup_status.tsv').text = (lines + ["# ${status}"]).join('\n') + '\n'
+        log.info("zealgt: ${status} (${dir}/cleanup_status.tsv)")
+    }
 }
 
 //
@@ -391,7 +669,7 @@ def zgImportInputs() {
         error("markdup_import: no rows selected from ${params.import_sheet}")
     }
     def settings = zgRunSettings()
-    def out = [libraries: [], samples: [], imports: [], records: []]
+    def out = [libraries: [], checkpoint: [], imports: [], records: []]
     rows.each { row, path, index ->
         def lib = row.library ?: row.import_set
         def meta = [id: row.id, sample: row.id, library: lib, source: row.source ?: '', role: row.role ?: '',
@@ -403,6 +681,7 @@ def zgImportInputs() {
         out.records << [meta.id, zgProvenanceRecord(settings, meta, "${params.store}/cram_import", origin,
                         'from the input header if it has exactly one @RG with SM = sample, else the sample sheet (see <sample>.read_group.txt)')]
     }
+    zgCheckStoredCrams("${params.store}/cram_import", out.imports.collect { i -> i[0].id })
     return out
 }
 
@@ -479,9 +758,57 @@ def zgProvenanceRecord(Map settings, Map meta, String store_dir, Map origin, Str
     ]
 }
 
-// A sample counts as stored when its CRAM and index are in the store directory (storeDir would skip it anyway).
+//
+// Store (params.store): every output is published there (publishDir mode copy, overwrite false; conf/modules.config) and
+// the workflow skips work whose stored output exists (no storeDir). A sample's CRAM counts as stored only when the CRAM
+// and its .crai exist and the CRAM ends with the CRAM 3 EOF container, so a copy cut short by a killed head job is caught.
+//
+
+// htslib's CRAM 3.x EOF container (cram_io.c), the last 38 bytes of every complete CRAM 3.0 / 3.1 file
+def zgCramEof() {
+    return '0f000000ffffffff0fe0454f4600000000010005bdd94f0001000606010001000100ee63014b'.decodeHex()
+}
+
+def zgCramEofOk(cram) {
+    def eof = zgCramEof()
+    def size = cram.size()
+    if (size < eof.length) {
+        return false
+    }
+    return cram.withInputStream { s -> s.skipNBytes(size - eof.length); java.util.Arrays.equals(s.readNBytes(eof.length), eof) }
+}
+
+// The files a sample leaves in a store CRAM directory (<store>/cram or <store>/cram_import)
+def zgSampleStoreFiles(String dir, String id) {
+    return ['.cram', '.cram.crai', '.markdup.stats', '.align_markdup.versions.yml', '.markdup_import.versions.yml', '.read_group.txt',
+            '.stats', '.CollectWgsMetrics.coverage_metrics', '.provenance.json', '.provenance.versions.yml'].collect { s -> file("${dir}/${id}${s}") }
+}
+
+//
+// 'stored': CRAM + .crai present and the CRAM ends with the EOF container; 'absent': none of the sample's files present;
+// 'broken': anything else (an unverified CRAM, or files left over without a CRAM). publishDir never overwrites a stored
+// file, so a broken sample is an error for the user to resolve, never silently redone.
+//
+def zgCramState(String dir, String id) {
+    def cram = file("${dir}/${id}.cram")
+    def crai = file("${dir}/${id}.cram.crai")
+    if (cram.exists() && crai.exists() && zgCramEofOk(cram)) {
+        return 'stored'
+    }
+    return zgSampleStoreFiles(dir, id).any { f -> f.exists() } ? 'broken' : 'absent'
+}
+
 def zgIsStored(String dir, String id) {
-    return file("${dir}/${id}.cram").exists() && file("${dir}/${id}.cram.crai").exists()
+    return zgCramState(dir, id) == 'stored'
+}
+
+// Before any task: refuse the run if a sample of it is broken in the store, naming the files to check and remove
+def zgCheckStoredCrams(String dir, List ids) {
+    def broken = ids.findAll { id -> zgCramState(dir, id) == 'broken' }
+    if (broken) {
+        def files = broken.collectMany { id -> zgSampleStoreFiles(dir, id).findAll { f -> f.exists() } }
+        error("stored sample(s) ${broken} in ${dir} are incomplete: a CRAM counts as stored only with its .crai and the CRAM 3 EOF block at its end (a copy cut short by a killed run?), and without a CRAM no other file of the sample may be there. zealgt never overwrites a stored file: check and remove these files yourself, then rerun:\n  ${files.join('\n  ')}")
+    }
 }
 
 // A stored CRAM as the QC / provenance steps take it: [ meta, cram, crai, [ <id>.<module>.versions.yml if present ] ]
@@ -490,7 +817,21 @@ def zgStoredCram(String dir, Map meta, String module) {
     return [meta, file("${dir}/${meta.id}.cram"), file("${dir}/${meta.id}.cram.crai"), versions.exists() ? [versions] : []]
 }
 
-// QC files of a sample already in the store directory: [ id, [ files ] ] (CRAM_QC_PROVENANCE skips what is there)
+// QC files and provenance record of a sample already in the store directory: [ id, [ files ] ] (CRAM_QC_PROVENANCE skips
+// what is there)
 def zgStoredQc(String dir, String id) {
-    return [id, ["${id}.stats", "${id}.CollectWgsMetrics.coverage_metrics", "${id}.markdup.stats"].collect { n -> file("${dir}/${n}") }.findAll { f -> f.exists() }]
+    return [id, ["${id}.stats", "${id}.CollectWgsMetrics.coverage_metrics", "${id}.markdup.stats", "${id}.provenance.json"].collect { n -> file("${dir}/${n}") }.findAll { f -> f.exists() }]
+}
+
+// Demux QC of a library already in <store>/demux_qc: [ library, [ tsv, summary.tsv if present ] ], [] when its tsv is not
+// there (READ_DEMULTIPLEXING then runs DEMUX_QC)
+def zgStoredDemuxQc(String store, String lib) {
+    def tsv = file("${store}/demux_qc/${lib}.tsv")
+    def summary = file("${store}/demux_qc/${lib}.summary.tsv")
+    return [lib, tsv.exists() ? [tsv] + (summary.exists() ? [summary] : []) : []]
+}
+
+// A library whose registry entry is already in <store>/registry (REGISTRY is not run again)
+def zgIsRegistered(String store, String lib) {
+    return file("${store}/registry/${lib}.registry.tsv").exists()
 }

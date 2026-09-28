@@ -41,10 +41,11 @@ output:
       type: file
       description: |
         channel: [ val(lmeta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ] (read_demultiplexing)
-  - samples:
+  - checkpoint:
       type: map
       description: |
-        channel: [ val(meta), val(read_group) ], every sample of the run (read_demultiplexing)
+        channel: [ val(meta), val(checkpoint row) ], every sample of the stage-2 libraries (read_demultiplexing: the row it
+        writes to <fastq_checkpoint>/<library>/samplesheet.csv; read_alignment: the row read from it, assets/schema_checkpoint.json)
   - imports:
       type: file
       description: |

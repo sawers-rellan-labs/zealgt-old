@@ -8,7 +8,8 @@
 //                            whenever the sheet RG is used, the input's @RG header lines are dropped first (gawk), so no stale
 //                            sample remains in the header.
 // The inputs keep their zealbc1 MAPQ 20 / -F 0x904 filter (the provenance record says so); reads whose mate was filtered are
-// marked as single-end by markdup. storeDir <store>/cram_import (conf/modules.config), separate from new CRAMs (<store>/cram).
+// marked as single-end by markdup. Published to <store>/cram_import (conf/modules.config: copy, never overwritten), separate
+// from new CRAMs (<store>/cram); the CRAM workflow does not import a sample whose CRAM there is stored and verified.
 // Threads / memory from task.cpus / task.memory (standard nf-core; not hashed on Nextflow >= 26.04.6). samtools sort gets
 // threads = min(task.cpus, 4) and the bounded share rule of ALIGN_MARKDUP with its own reserve:
 //   sort_mem_mb = max(768, floor((task.memory in MB - reserve_mb) x share / threads))
@@ -19,8 +20,8 @@
 // rest. Gate 1, job 969706: (memory - 2 GB) = 10 GB for sort (no share) was OOM-killed at 12 GB. Both params are referenced
 // here, so they enter the task hash by value (deliberate re-tunes only). A stage killed by a signal (OOM) makes the task exit with that
 // status (zg_pipe_fail: the signal status, 137 preferred over the SIGPIPE 141 it causes upstream, else the first non-zero
-// status; errorStrategy retries 130-145 with more memory), so it is retried. storeDir forbids `eval` outputs, so the versions
-// go into one versions.yml (samtools, gawk).
+// status; errorStrategy retries 130-145 with more memory), so it is retried. The versions go into one versions.yml
+// (samtools, gawk), published next to the CRAM: PROVENANCE of an already-stored CRAM reads it from there.
 // ext.args = markdup flags (-d 2500), ext.args2 = fixmate, ext.args3 = sort.
 process MARKDUP_IMPORT {
     tag "${meta.id}"
@@ -141,9 +142,11 @@ process MARKDUP_IMPORT {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Stub versions are the environment.yml pins (the tools are not run in a stub).
+    // Stub versions are the environment.yml pins (the tools are not run in a stub). The stub CRAM is the 38-byte CRAM 3 EOF
+    // container, so a stored stub CRAM passes the store check (zgCramEofOk) like a real one.
     """
-    touch ${prefix}.cram ${prefix}.cram.crai ${prefix}.markdup.stats ${prefix}.read_group.txt
+    printf '\\x0f\\x00\\x00\\x00\\xff\\xff\\xff\\xff\\x0f\\xe0\\x45\\x4f\\x46\\x00\\x00\\x00\\x00\\x01\\x00\\x05\\xbd\\xd9\\x4f\\x00\\x01\\x00\\x06\\x06\\x01\\x00\\x01\\x00\\x01\\x00\\xee\\x63\\x01\\x4b' > ${prefix}.cram
+    touch ${prefix}.cram.crai ${prefix}.markdup.stats ${prefix}.read_group.txt
 
     cat <<-END_VERSIONS > ${prefix}.markdup_import.versions.yml
     "${task.process}":

@@ -40,5 +40,26 @@
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
         }
+    },
+    "LIBX, demux QC already stored - stub": {
+        "content": [
+            [
+                [
+                    "LIBX",
+                    "LIBX.tsv"
+                ]
+            ],
+            [
+                [
+                    "LIBX",
+                    "LIBX.summary.tsv"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T10:27:20.378456",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
     }
 }

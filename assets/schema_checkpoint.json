@@ -1,0 +1,163 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_checkpoint.json",
+    "title": "sawers-rellan-labs/zealgt - FASTQ checkpoint samplesheet (<fastq_checkpoint>/<library>/samplesheet.csv)",
+    "description": "Written by --entry read_demultiplexing once every sample of a library is trimmed (subworkflows/local/utils_nfcore_zealgt_pipeline zgWriteCheckpointSheet); read by --entry read_alignment. One row per sample with everything stage 2 needs: the trimmed pair (hardlinks in the checkpoint directory), the stage-2 meta fields, the read group, and the stage-1 settings and run recorded in every provenance record. The read structure's crops are already applied to the FASTQs.",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "meta": ["sample"],
+                "errorMessage": "sample: letters, digits, _ . - only (and unique in the sheet)"
+            },
+            "library": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "meta": ["library"]
+            },
+            "fastq_1": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^/\\S+\\.paired\\.trim_1\\.fastq\\.gz$",
+                "errorMessage": "fastq_1: absolute path of the trimmed R1 (<sample>.paired.trim_1.fastq.gz), which must exist"
+            },
+            "fastq_2": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^/\\S+\\.paired\\.trim_2\\.fastq\\.gz$",
+                "errorMessage": "fastq_2: absolute path of the trimmed R2 (<sample>.paired.trim_2.fastq.gz), which must exist"
+            },
+            "source": {
+                "type": "string",
+                "enum": ["bc1", "bc2s3_batch1", "bc2s3_batch2"],
+                "meta": ["source"]
+            },
+            "role": {
+                "type": "string",
+                "meta": ["role"]
+            },
+            "donor": {
+                "type": "string",
+                "meta": ["donor"]
+            },
+            "taxon": {
+                "type": "string",
+                "meta": ["taxon"]
+            },
+            "read_group": {
+                "type": "string",
+                "pattern": "^@RG\\\\tID:\\S+$",
+                "meta": ["read_group"],
+                "errorMessage": "read_group: an escaped @RG line (@RG\\tID:...\\tSM:...)"
+            },
+            "read_structure": {
+                "type": "string",
+                "pattern": "^\\S+ \\S+$",
+                "meta": ["read_structure"]
+            },
+            "layout": {
+                "type": "string",
+                "enum": ["symmetric", "r1_only"],
+                "meta": ["layout"]
+            },
+            "barcode_r1": {
+                "type": "string",
+                "pattern": "^[ACGT]+$",
+                "meta": ["barcode_r1"]
+            },
+            "barcode_r2": {
+                "type": "string",
+                "pattern": "^[ACGT]*$",
+                "meta": ["barcode_r2"]
+            },
+            "demux_args": {
+                "type": "string",
+                "meta": ["demux_args"]
+            },
+            "trim_illuminaclip": {
+                "type": "string",
+                "meta": ["trim_illuminaclip"]
+            },
+            "trim_args": {
+                "type": "string",
+                "meta": ["trim_args"]
+            },
+            "trim_adapters": {
+                "type": "string",
+                "meta": ["trim_adapters"]
+            },
+            "raw_location": {
+                "type": "string",
+                "meta": ["raw_location"]
+            },
+            "raw_files_r1": {
+                "type": "string",
+                "meta": ["raw_files_r1"]
+            },
+            "raw_files_r2": {
+                "type": "string",
+                "meta": ["raw_files_r2"]
+            },
+            "tar_members_r1": {
+                "type": "string",
+                "meta": ["tar_members_r1"]
+            },
+            "tar_members_r2": {
+                "type": "string",
+                "meta": ["tar_members_r2"]
+            },
+            "subsample": {
+                "type": "integer",
+                "minimum": 0,
+                "meta": ["subsample"]
+            },
+            "stage1_run_id": {
+                "type": "string",
+                "meta": ["stage1_run_id"]
+            },
+            "stage1_session_id": {
+                "type": "string",
+                "pattern": "^[0-9a-f-]{36}$",
+                "meta": ["stage1_session_id"]
+            },
+            "stage1_code_version": {
+                "type": "string",
+                "meta": ["stage1_code_version"]
+            },
+            "stage1_tool_versions": {
+                "type": "string",
+                "pattern": "^([^=;]+=[^=;]+)(;[^=;]+=[^=;]+)*$",
+                "meta": ["stage1_tool_versions"],
+                "errorMessage": "stage1_tool_versions: tool=version;tool=version"
+            }
+        },
+        "required": [
+            "sample",
+            "library",
+            "fastq_1",
+            "fastq_2",
+            "source",
+            "read_group",
+            "read_structure",
+            "layout",
+            "barcode_r1",
+            "demux_args",
+            "trim_illuminaclip",
+            "trim_args",
+            "trim_adapters",
+            "raw_location",
+            "raw_files_r1",
+            "raw_files_r2",
+            "subsample",
+            "stage1_session_id",
+            "stage1_code_version",
+            "stage1_tool_versions"
+        ]
+    },
+    "uniqueEntries": ["sample"]
+}

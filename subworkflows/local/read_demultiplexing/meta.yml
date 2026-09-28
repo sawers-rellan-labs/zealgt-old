@@ -4,7 +4,7 @@
 # Versions: the modules publish their versions to the `versions` topic (collated in workflows/cram.nf);
 # `versions` here re-emits the eval tuples [ process, tool, version ] of the nf-core-style modules.
 name: read_demultiplexing
-description: One DEMUX task per library, then its demux QC in the store
+description: One DEMUX task per library x lane, MERGE_LANES, then the library's demux QC in the store (not made again if already stored)
 keywords:
   - zealgt
   - cram workflow
@@ -17,6 +17,10 @@ input:
       type: file
       description: |
         channel: [ val(meta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ]
+  - ch_stored_qc:
+      type: file
+      description: |
+        channel: [ library id, [ <library>.tsv, <library>.summary.tsv ] ] demux QC already in the store ([] if not), one per library
   - val_subsample:
       type: integer
       description: |
