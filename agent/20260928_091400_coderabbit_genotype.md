@@ -64,3 +64,12 @@ card: pass-A key gate1_zx0540_nomask_r2, mappability_priors set); 3 files: **0 f
 | round | base | head | findings | action |
 |---|---|---|---|---|
 | 5 | d9dbd92 | a620fbe | 0 | none |
+
+## Round 6 (identifier rule): base 3cfbe4b, head f9623ae
+`coderabbit review --committed --base-commit 3cfbe4b --agent` (2026-09-29, identifier agent): merge 6363f41 of origin/main (7 main-side files, already reviewed by the CRAM session, counted by CodeRabbit: it reviewed all 37 files of 3cfbe4b..f9623ae) and commits 8b9db49 (SAMPLE_LABELS edge translation), e95c22a (build_genotype_sheet.py biology from the registry), f9623ae (docs/output.md): **1 finding**, on a main-side file.
+
+- 6.1 minor, `docs/PLAN_pipeline.md` ~354-360 (PLAN §5 rule 3 says "default N = 4" for `--max_libraries`, `nextflow.config` has 1). **Not fixed here**: the text arrived with the merge of origin/main (CRAM session, "several libraries in flight", 2026-09-29); both files belong to the CRAM side and the genotype branch must not diverge from main on them. Forwarded to the CRAM session (handover). No finding on the genotype changes.
+
+| round | base | head | findings | action |
+|---|---|---|---|---|
+| 6 | 3cfbe4b | f9623ae | 1 (main-side) | 6.1 forwarded to the CRAM session, not changed on genotype |
