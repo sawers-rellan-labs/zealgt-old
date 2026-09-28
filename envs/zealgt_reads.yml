@@ -1,0 +1,9 @@
+# Read trimming + read QC for the CRAM workflow (PLAN §3 rows 1b/2): Trimmomatic with batch-1 parameters, FastQC of trimmed reads.
+# Built once into ZEAL/envs/zealgt_reads (persistent /rsstu); the existing /share envs are not touched.
+name: zealgt_reads
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - trimmomatic=0.39
+  - fastqc=0.12.1

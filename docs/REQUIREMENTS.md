@@ -30,14 +30,17 @@ chromosomes, with only `marker_union` and the PHG database as barriers.
 |---|---|---|
 | cutadapt | exact inline demux (`-e 0 --no-indels`) | `/share/maize/frodrig4/conda/env/assembly` |
 | minibwa, samtools | `-x sr`; MAPQ 20, `-F 0x904` | `.../conda/env/assembly`; PHG's samtools in `ZEAL/envs/phgv2-conda` |
-| duplicate marking | samtools markdup or Picard MarkDuplicates (not in use yet) | — |
+| Trimmomatic, FastQC | 0.39, 0.12.1; batch-1 trimming parameters (PLAN §3 row 1b) | `ZEAL/envs/zealgt_reads` (new, `envs/zealgt_reads.yml`, xfer job 968339) |
+| duplicate marking | `samtools markdup -d 2500` (decided, PLAN §4 #1) | `.../conda/env/assembly` |
+| Picard CollectWgsMetrics, MultiQC | picard 3.5.0, multiqc 1.25 | `.../conda/env/qc` |
 | bcftools / htslib | mpileup `-I -q20 -Q20 -a AD` | `.../conda/env/nilhmm` |
 | CRISP | built from source | `ZEAL/envs/crisp/bin/CRISP.binary` |
-| Python 3 | standard library only (step 4, union, gap filling) | `.../conda/env/nilhmm` |
+| Python 3 | standard library only (step 4, union, gap filling) | `.../conda/env/assembly` or `env/qc` (env/nilhmm has no `python3` in its bin, checked 2026-09-27) |
 | R 4.x | data.table, ggplot2, logger, nilHMM 0.3.0 (RTIGER caller) | `.../conda/env/nilhmm` |
 | PHG | 2.5.14 + JDK 21 (+ agc, tiledb) | `ZEAL/envs/phgv2`, `ZEAL/envs/jdk21`, `ZEAL/envs/phgv2-conda`, `ZEAL/envs/phgv2-tiledb` |
-| Nextflow | 26.04.6 | `/share/maize/frodrig4/conda/env/nextflow` (dead per memory; rebuild on /rsstu) |
-Environments under `/share` are not persistent (wiped); zealgt should build them from pinned ymls into the persistent partition.
+| Nextflow | 26.04.6 | `/share/maize/frodrig4/conda/env/nextflow` |
+The `/share/maize/frodrig4/conda/env/*` environments are used as they are (user, 2026-09-27: no rebuild, move or deletion). Only tools
+missing from all of them get a new env, built once from a pinned yml in `envs/` into `ZEAL/envs/` (persistent, off the /share file quota).
 
 ## 4. Compute (measured per unit)
 | stage | unit | cpus | memory | wall time | disk |

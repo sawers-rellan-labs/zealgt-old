@@ -11,20 +11,38 @@ Template (not optional; no hand-rolled layout)
   modules.json. Drop: igenomes, nf-core institutional configs (compute nodes are offline), email / Slack / Teams, GitHub CI, the
   gitpod/codespaces files. Commit the untouched scaffold as its own first commit so every later change is a readable diff against it.
 - Modules: use nf-core modules (`nf-core modules install`) wherever one exists for the step — check `nf-core modules list remote` for
-  fastqc, cutadapt/trimmomatic, samtools (fixmate, sort, markdup, index, stats, collate), picard/collectwgsmetrics, multiqc,
+  fastqc, trimmomatic (batch-1 parameters, PLAN §3 row 1b; cutadapt only demuxes), samtools (fixmate, sort, markdup, index, stats, collate), picard/collectwgsmetrics, multiqc,
   bcftools/mpileup. Everything else (minibwa, DEMUX+ALIGN library task, registry, provenance, CRISP, RTIGER, stages 3–6) goes in
   modules/local/ written to nf-core module conventions: `meta` map in / out, `versions.yml` emitted, `task.ext.args` for flags,
   `stub:` block, an nf-test with a stub test. Subworkflows likewise (nf-core subworkflows where they fit, else subworkflows/local/).
 - Two workflows in the template: workflows/cram.nf and workflows/genotype.nf, chosen by one `--workflow cram|genotype` param validated in
   the schema, dispatched from main.nf (main.nf edited only while scaffolding). The run card is a `-params-file`; every §7 open decision
   is a schema param.
-- Where the template collides with PLAN §2 (hash hygiene): nf-core modules put `${task.cpus}` / `${task.memory}` in the script. Patch
-  them with `nf-core modules patch` to read `$SLURM_CPUS_PER_TASK` / Slurm memory (patches tracked in modules.json), so retries with
-  memory escalation keep the cache; local modules follow §2 directly. Resources follow the template: process_* labels in
+- Where the template collides with PLAN §2 (hash hygiene). Why it matters: the task hash includes the evaluated script, so a task
+  that succeeded on attempt 3 at 72 GB is rebuilt as attempt 1 at 24 GB on the next -resume, its script text differs, and the cache
+  misses. storeDir outputs (CRAMs, demux QC, step-4 tables) are unaffected (storeDir checks files, not the hash), so the exposure is the
+  non-storeDir tasks. Keep the fix small:
+  - Inventory first: after installing each nf-core module, grep its main.nf script for `task.cpus`, `task.memory`, `task.attempt` (also
+    inside `ext.args` closures in conf/modules.config) and list module / line / purpose (thread arg, memory arg such as Picard `-Xmx`
+    or FastQC `--memory`, logic, logging) in agent/<ts>_resource_interpolation_inventory.md. Patch only modules that have one.
+  - One helper, bin/slurm_resources.sh, sourced at the top of every patched and local script: exports ZG_CPUS from
+    `SLURM_CPUS_PER_TASK` and ZG_MEM_MB from `SLURM_MEM_PER_NODE` (MB; Nextflow's slurm executor submits `--mem`; confirm once on
+    hazel that `executor.perCpuMemAllocation` is off and the variable is set, else derive from `SLURM_MEM_PER_CPU` × cpus); validates
+    both are positive integers; echoes `zg_resources cpus=… mem_mb=…` to stderr (lands in .command.log/.err, not in the script text);
+    exits non-zero with a clear message if neither Slurm nor an explicit `ZG_CPUS`/`ZG_MEM_MB` override (local profile only, set in
+    conf/local.config env scope) supplies them. No silent default. JVM tools get `-Xmx` as ZG_MEM_MB minus a fixed headroom inside
+    the helper, never from task.memory.
+  - Patch with `nf-core modules patch <module>` (patch in modules.json, upstream interface / outputs / labels unchanged, the patch touches
+    only the resource values and says why in a comment above the script block). A module that cannot be patched without changing what
+    it computes stays unpatched and is listed in the handover.
+  - Not covered by this fix, on purpose: a changed conda prefix, ext.args or input still changes the hash (as it should); whether an
+    edit to bin/slurm_resources.sh does is version-dependent — read it off the -dump-hashes output, do not assume;
+    no containers are used, so env propagation is not an issue on hazel.
+  Local modules follow §2 directly through the same helper. Resources follow the template: process_* labels in
   conf/base.config, per-module `withName` overrides in conf/modules.config (and conf/slurm.config for hazel), `ext.args` there too.
 - Conda: the template's `conda "${moduleDir}/environment.yml"` is overridden per process in conf/hazel.config with the existing prefixes
-  (config `withName`/`withLabel` beats the directive); no env is built. FastQC and Picard are not listed in any existing env — check with
-  `conda run -p <prefix> fastqc --version` / `picard CollectWgsMetrics --version`; if absent, stop and ask the user, do not build one.
+  (config `withName`/`withLabel` beats the directive); no env is built at task time. Tool → prefix map (inventory of `bin/`, 2026-09-27):
+  see the Environments bullet below.
 - Offline compute nodes: the template's plugins (nf-schema) must be fetched once into NXF_PLUGINS_DIR on /share through an `xfer`
   partition job; the head job runs with NXF_OFFLINE=true.
 
@@ -89,9 +107,11 @@ and correct the numbers from `seff` / `sacct` after each gate — record them th
   - RTIGER, one donor × chromosome: 4 cpu, 16 GB, 2 h short (confirm; RTIGER is R, single-threaded per line).
   - marker_union, gap filling steps 1–2, raster, reporting: 1–2 cpu, 12–16 GB, 1 h short (step 2 measured 35 s / 0.9 GB on chr10).
   - reference_variant_space (AnchorWave, later): 8 cpu, 16 GB, 2 h short per chromosome; measure memory on one chromosome first.
-- Environments: use the existing ones as they are (user, 2026-09-27): `withLabel` prefixes `/share/maize/frodrig4/conda/env/assembly`
-  (minibwa, samtools, bcftools, cutadapt, wgsim), `env/nilhmm` (R, RTIGER, python3), `env/qc` (python with numpy, multiqc),
-  `env/nextflow`; check each with one `conda run -p <prefix> <tool> --version` on the login node before Gate 0 and report any that is
+- Environments: use the existing ones as they are (user, 2026-09-27), mapped per tool (checked in `bin/` on hazel, 2026-09-27):
+  `/share/maize/frodrig4/conda/env/assembly` (minibwa, samtools, bcftools, cutadapt, python3), `env/nilhmm` (R, RTIGER, bcftools; no
+  python3 in its bin — Python steps use env/assembly or env/qc), `env/qc` (picard 3.5.0 → CollectWgsMetrics, multiqc, python3, java),
+  `env/nextflow` (nextflow, java); plus the one env added for zealgt, `/rsstu/users/r/rrellan/BZea/ZEAL/envs/zealgt_reads`
+  (trimmomatic 0.39, fastqc 0.12.1; from envs/zealgt_reads.yml, built by xfer job 968339) for TRIMMOMATIC and FASTQC; check each with one `conda run -p <prefix> <tool> --version` on the login node before Gate 0 and report any that is
   broken to the user. Do not rebuild, move or delete any environment (PLAN_cleanup group 4 and PLAN_pipeline §5 rule 6 are superseded on
   this point); compute nodes have no internet, so no env is built at task time.
 - Scale to keep in view (§5): ~130 BC1 samples and ~185 lines to align in Task 1 (~1,000 CPU-h), ~3,000 CPU-h for all BC1 samples;
@@ -114,6 +134,11 @@ How to work
    stub → 1 M pairs / one region → one full library / one donor × chr10 → full, never skipping a rung. Inner loop of
    the skill: read .command.err / .out / .sh in the task dir, fix the module, commit, push, pull after the run has stopped, rerun with
    -resume <session-id>. Never edit on hazel, never rsync.
+   Cache check, once, on one patched module (Picard CollectWgsMetrics or FastQC) at Gate 1, in its own run directory so no real work/
+   or store is touched: (A) run, then `-resume <id>` with that module's memory doubled in config → must be cached; (C) `-resume <id>`
+   with one real parameter changed in ext.args and resources as in the first run → must rerun; (D) the `zg_resources` line in each
+   .command.err matches the sacct allocation. Evidence: `-dump-hashes json` for both runs, the diffing hash component named, the
+   "Cached process" lines, output md5s. Record it in the handover; do not claim a pass from unchanged script text alone.
 5. Gate 2 (one full unit: the two mexicana pilot donors × chr10 on short QOS; the CRAM workflow's one full library on compute/normal)
    only when Gate 1 passes and after telling the user the requested resources; record measurements in docs/REQUIREMENTS.md, file counts
    included (§5). Nothing full-scale (Gate 3) without the user's go.
