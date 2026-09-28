@@ -16,15 +16,18 @@ are INFERRED for these imports, not recorded by the pipeline that made them:
   B73_skim10           12 /  0  merge of 10 batch-1 B73 checks (made like the batch-1 lines).
   B73_ERR3288215        0 /  0  SRA reads, no inline barcode or randomer.
   (CRAMs demultiplexed by zealgt are cropped at demux and carry 0 / 0; they are not in this sheet.)
-taxon from the donor prefix (Zx -> mexicana, as meta/build_samples.py); B73 controls have no donor and no taxon.
+Biology from the registry (meta/PROVENANCE.md "Identifiers: one physical key, biology in the registry"): donor, role and taxon
+come from meta/samples.csv joined on sample_id; dev_import.csv supplies only the import fields (source, include; masks by
+source). Documented exception: the two B73 controls (B73_ERR3288215, B73_skim10) have no registry row; they keep role
+b73_control from dev_import.csv and no donor / taxon. Any other row missing from the registry is refused.
 
 Usage: python3 meta/build_genotype_sheet.py   (writes meta/genotype_dev.csv; exits 1 on a failed check)"""
 import csv, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, 'dev_import.csv')
+REGISTRY = os.path.join(HERE, 'samples.csv')
 OUT = os.path.join(HERE, 'genotype_dev.csv')
-TAXON = {'Zd': 'diploperennis', 'Zx': 'mexicana', 'Zv': 'parviglumis', 'Zl': 'luxurians', 'Zh': 'huehuetenangensis'}
 ROLES = {'bc1_sample', 'line', 'b73_control'}
 COLS = ['sample_id', 'role', 'donor', 'taxon', 'source', 'store_dir', 'mask_r1', 'mask_r2', 'include', 'mask_source']
 MASK_BY_SOURCE = {
@@ -41,9 +44,19 @@ ID_RE = re.compile(r'^[A-Za-z0-9_-]+$')  # no dots: CRISP --sm 0 names a pool by
 def build():
     with open(SRC, newline='') as f:
         rows = list(csv.DictReader(f))
+    with open(REGISTRY, newline='') as f:
+        registry = {g['sample_id']: g for g in csv.DictReader(f)}
     errors, out, seen = [], [], set()
     for r in rows:
-        sid, role, donor = r['sample_id'], r['role'], r['donor']
+        sid = r['sample_id']
+        reg = registry.get(sid)
+        if reg is not None:
+            role, donor, taxon = reg['role'], reg['donor'], reg['taxon']
+        elif r['role'] == 'b73_control':
+            role, donor, taxon = 'b73_control', '', ''
+        else:
+            errors.append(f'{sid}: not in the registry {REGISTRY} (only the B73 controls may be missing)')
+            continue
         if not ID_RE.match(sid):
             errors.append(f'{sid}: sample_id must match {ID_RE.pattern}')
         if sid in seen:
@@ -60,9 +73,8 @@ def build():
         else:
             errors.append(f'{sid}: no read-start mask rule for source {r["source"]!r}')
             continue
-        taxon = TAXON.get(donor[:2], '') if donor else ''
         if donor and not taxon:
-            errors.append(f'{sid}: no taxon for donor {donor}')
+            errors.append(f'{sid}: registry has no taxon for donor {donor}')
         include = r['include'].strip().upper()
         if include not in ('TRUE', 'FALSE'):
             errors.append(f'{sid}: include {r["include"]!r} is not TRUE/FALSE')
