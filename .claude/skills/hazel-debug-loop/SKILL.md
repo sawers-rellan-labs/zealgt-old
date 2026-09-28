@@ -120,3 +120,8 @@ With the slurm executor each process is its own Slurm job next to the head; `sca
 - Every change is a git diff; never force-push; never rewrite `main` without the user.
 - **No `rm`, recursive removal, overwrite, or `nextflow clean` on hazel without the user's explicit consent** for that specific target
   (`CLAUDE.md`). The only automatic writes are Nextflow's `work/`, the store, and published outputs.
+- **No `rm` in generated commands at all**, except a removal the user approved for that exact path. Temporary files live in the job's
+  own directory and are left for the user-approved cleanup; never "tidy up" with an `rm` of a variable (an unset or reassigned variable
+  turns it into `rm -rf /dev/null`-style mistakes — seen 2026-09-28, refused by the permission rules).
+- **Cleanup and any multi-line command only as a script in `agent/`**, never typed inline, so every removal is visible, reviewable and
+  kept; print the exact paths (`ls`) before the removal line.

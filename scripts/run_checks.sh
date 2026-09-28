@@ -2,9 +2,10 @@
 # scripts/run_checks.sh — the local replacement for nf-core's GitHub Actions CI (no GitHub CI for zealgt: .nf-core.yml,
 # docs/CONTRIBUTING.md). Run it on the laptop before every push; it stops at the first failing check.
 #
-#   bash scripts/run_checks.sh            nf-core lint, schema lint, nextflow lint, no task.* in ext.args closures,
-#                                         nf-test (all local tests, stub), resolved hazel resources (scripts/check_resources.sh)
-#   bash scripts/run_checks.sh --quick    the three lints and the ext.args check only
+#   bash scripts/run_checks.sh            registry rebuild check, nf-core lint, schema lint, nextflow lint, no task.* in
+#                                         ext.args closures, nf-test (all local tests, stub), resolved hazel resources
+#                                         (scripts/check_resources.sh)
+#   bash scripts/run_checks.sh --quick    registry rebuild check, the three lints and the ext.args check only
 #
 # Needs on PATH: nextflow (>= 25.10.4; NXF_VER pins it), nf-core (tools 4.1), nf-test (0.9.x). ZG_CHECK_PATH is prepended to
 # PATH when set, e.g. the laptop's local tool dirs. The nf-test stub runs still evaluate the tool versions of the nf-core
@@ -19,6 +20,9 @@ cd "$REPO"
 export NXF_ANSI_LOG=false
 
 step() { printf '\n##### %s\n' "$*"; }
+
+step "sample registry: rebuild meta/{registry,samples,accessions}.csv from meta/sources/ (sha256-pinned) and diff"
+python3 meta/build_samples.py --check
 
 step "nf-core pipelines lint (must report 0 failed)"
 nf-core pipelines lint --dir . 2>&1 | tee /dev/stderr | grep -qE '\[✗\] +0 Tests Failed' || { echo "nf-core lint: failures" >&2; exit 1; }
