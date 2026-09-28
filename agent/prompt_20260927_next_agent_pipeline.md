@@ -51,21 +51,32 @@ Template (not optional; no hand-rolled layout)
     no containers are used, so env propagation is not an issue on hazel.
   Local modules follow §2 directly through the same helper. Resources follow the template: process_* labels in
   conf/base.config, per-module `withName` overrides in conf/modules.config (and conf/slurm.config for hazel), `ext.args` there too.
-- Environments, the reproducible way (nf-core convention, not hand-made prefixes):
+- Environments, the reproducible way (nf-core convention, not hand-made prefixes; user, 2026-09-28):
   - Every module keeps `conda "${moduleDir}/environment.yml"`. nf-core modules use the environment.yml they ship with (pinned, no
-    edits). Each local module gets its own environment.yml pinning only the tools its script calls, with exact versions: DEMUX →
-    cutadapt; ALIGN_MARKDUP → minibwa + samtools (two tools piped in one script, as nf-core's bwamem2/mem pins bwa-mem2 + samtools);
-    registry / provenance → python. Take the versions from what zealbc1 ran (`conda list -p /share/maize/frodrig4/conda/env/assembly`,
-    read-only) so results stay comparable. Channels conda-forge + bioconda, strict priority. No env bundles unrelated tools.
-  - Build: `conda.cacheDir = /rsstu/users/r/rrellan/BZea/ZEAL/envs/nf-conda` (persistent, off the /share file quota). Compute nodes are
-    offline, so the envs are created once by a Nextflow run on the `xfer` partition (it has internet) before Gate 1, from the same
-    ymls, into that cacheDir; task jobs then find them by Nextflow's own yml-hash naming. Confirm with the first real task that no
-    env is being created at task time (.nextflow.log "Creating env"). If Nextflow will not create envs in that setup, write
-    bin/build_envs.sh (one `conda env create -p <cacheDir>/<module>-<yml sha256 prefix> -f <yml>` per module, xfer job) and point
-    `withName` at those prefixes from conf/hazel.config — still built only from the repo ymls. Record every env built (path, yml
-    sha, file count) in docs/REQUIREMENTS.md §3.
-  - The existing /share/maize/frodrig4/conda/env/* envs and ZEAL/envs/zealgt_reads are not used by the pipeline and are not touched
-    (no rebuild, move or deletion). env/nextflow stays the Nextflow launcher.
+    edits). Each local module gets its own environment.yml pinning only the tools its script calls, exact version + build: DEMUX →
+    cutadapt 4.9; ALIGN_MARKDUP → minibwa 0.7 (bioconda h118bc1c_0) + samtools 1.21 (two tools piped in one script, as nf-core's
+    bwamem2/mem pins bwa-mem2 + samtools); registry / provenance → python. The versions are those zealbc1 ran, recorded in
+    envs/legacy_zealbc1/ (snapshot of the old envs; the old /share envs are being deleted by the user — do not rely on them).
+    Channels conda-forge + bioconda, strict priority. No env bundles unrelated tools.
+  - Tools that are not conda packages get a pinned source build in the same env: next to the module's environment.yml a
+    `build.sh` that downloads the source at a fixed commit (never a branch), verifies the commit, compiles with the compilers /
+    libraries pinned in that environment.yml (conda-forge `c-compiler`, `make`, `zlib`, htslib as needed) and installs into
+    `$CONDA_PREFIX/bin` (or the env's R library). Known cases (envs/legacy_zealbc1/README.md): CRISP = github.com/vibansal/crisp @
+    1a9027ed16e6db6cf619d609806156cfc2e190fa (`make`, unpatched); nilHMM 0.3.0 = github.com/sawers-rellan-labs/nilhmm @
+    248e67ead3693ae5af79d3cadd769e2d10b895f9 (`R CMD INSTALL` into an r-base 4.4.3 env). Before writing any module, list every tool
+    it calls and check it on bioconda / conda-forge (`conda search`); any tool not found gets a build.sh the same way and is listed in
+    the handover.
+  - Location: `/share/maize/frodrig4/conda/zealgt/<module>-<first 8 of the yml+build.sh sha256>`, package cache
+    `CONDA_PKGS_DIRS=/share/maize/frodrig4/conda/pkgs`. Never on /rsstu (NFS, far too slow for env builds; user 2026-09-28). /share is
+    not persistent, which is fine: every env is rebuilt from the repo by one command.
+  - Build: bin/build_envs.sh (tracked in the repo) as one xfer-partition job (compute nodes are offline): for each module env dir,
+    `conda env create -p <prefix> -f environment.yml`, then its build.sh if present, then a smoke test (`<tool> --version`); skips a
+    prefix that already exists with the same sha; writes envs/manifest.tsv (module, prefix, sha, source commits, tool versions, file
+    count). conf/hazel.config points each process with `withName` at its prefix (so no env is ever created at task time); a
+    `.nextflow.log` without "Creating env" in the first real run confirms it. The Nextflow launcher is built the same way from
+    envs/nextflow/environment.yml (nextflow 26.04.6, as zealbc1 ran).
+  - Not used: the old /share/maize/frodrig4/conda/env/* (being deleted by the user) and ZEAL/envs/zealgt_reads (built on /rsstu by
+    mistake; left for the user to remove).
   - Containers: check once with a 1-minute short-QOS job whether `apptainer` or `singularity` exists on compute nodes (a .sif sits in
     ZEAL/envs/containers). Report it in the handover as the next step up; do not switch tonight.
 - Offline compute nodes: the template's plugins (nf-schema) must be fetched once into NXF_PLUGINS_DIR on /share through an `xfer`
@@ -133,8 +144,7 @@ and correct the numbers from `seff` / `sacct` after each gate — record them th
   - RTIGER, one donor × chromosome: 4 cpu, 16 GB, 2 h short (confirm; RTIGER is R, single-threaded per line).
   - marker_union, gap filling steps 1–2, raster, reporting: 1–2 cpu, 12–16 GB, 1 h short (step 2 measured 35 s / 0.9 GB on chr10).
   - reference_variant_space (AnchorWave, later): 8 cpu, 16 GB, 2 h short per chromosome; measure memory on one chromosome first.
-- Environments: see "Environments, the reproducible way" above. Launcher only: /share/maize/frodrig4/conda/env/nextflow (Nextflow
-  26.04.6); check it with one `nextflow -version` inside a tiny short-QOS job before Gate 0.
+- Environments: see "Environments, the reproducible way" above; bin/build_envs.sh runs (xfer job) before Gate 0, the launcher env first.
 - Scale to keep in view (§5): ~130 BC1 samples and ~185 lines to align in Task 1 (~1,000 CPU-h), ~3,000 CPU-h for all BC1 samples;
   the group file quota on /share (~224 K files left) is the binding limit, so every gate reports file counts. The user cleaned the
   earlier stub work/ already (2026-09-27).

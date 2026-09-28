@@ -39,9 +39,11 @@ chromosomes, with only `marker_union` and the PHG database as barriers.
 | R 4.x | data.table, ggplot2, logger, nilHMM 0.3.0 (RTIGER caller) | `.../conda/env/nilhmm` |
 | PHG | 2.5.14 + JDK 21 (+ agc, tiledb) | `ZEAL/envs/phgv2`, `ZEAL/envs/jdk21`, `ZEAL/envs/phgv2-conda`, `ZEAL/envs/phgv2-tiledb` |
 | Nextflow | 26.04.6 | `/share/maize/frodrig4/conda/env/nextflow` |
-The table above is where the tools ran until now (zealbc1). zealgt pipeline tasks do not use these prefixes (user, 2026-09-27,
-PLAN §2 rule 6): every module has its own pinned `environment.yml` in the repo, built once into `ZEAL/envs/nf-conda` by an xfer job.
-The `/share/maize/frodrig4/conda/env/*` envs stay as they are (no rebuild, move or deletion); env/nextflow remains the launcher.
+The table above is where the tools ran until now (zealbc1); those `/share/maize/frodrig4/conda/env/*` envs are being deleted by the
+user (2026-09-28) and their exact package lists are kept in `envs/legacy_zealbc1/`. zealgt: every module has its own pinned
+`environment.yml` (+ `build.sh` for non-conda tools: CRISP @ 1a9027e, nilHMM @ 248e67e), built by `bin/build_envs.sh` as an xfer job
+into `/share/maize/frodrig4/conda/zealgt/` (never `/rsstu`: too slow); `envs/manifest.tsv` lists what was built.
+`ZEAL/envs/zealgt_reads` (Trimmomatic + FastQC, xfer job 968339) was built on /rsstu by mistake and is not used.
 
 ## 4. Compute (measured per unit)
 | stage | unit | cpus | memory | wall time | disk |

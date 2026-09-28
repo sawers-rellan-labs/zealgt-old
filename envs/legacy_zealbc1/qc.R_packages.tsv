@@ -1,0 +1,15 @@
+Package	Version	LibPath	Repository	RemoteUrl	RemoteSha
+base	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+compiler	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+datasets	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+grDevices	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+graphics	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+grid	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+methods	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+parallel	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+splines	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+stats	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+stats4	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+tcltk	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+tools	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA
+utils	4.6.1	/gpfs_common/share01/maize/frodrig4/conda/env/qc/lib/R/library	NA	NA	NA

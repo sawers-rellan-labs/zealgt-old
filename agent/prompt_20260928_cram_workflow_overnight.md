@@ -15,8 +15,8 @@ Done by morning means, in this order:
    tool as PLAN §0 Task 2 (updated 2026-09-27): DEMUX (local, cutadapt) per library → TRIMMOMATIC, FASTQC (nf-core) → ALIGN_MARKDUP
    (local, minibwa + samtools) per sample → SAMTOOLS_STATS, PICARD_COLLECTWGSMETRICS, MULTIQC (nf-core); the markdup-only import pass
    from nf-core samtools modules; registry and provenance as modules/local/ to nf-core conventions. Every module with its own pinned
-   environment.yml (build prompt, "Environments, the reproducible way"); the envs built once by an xfer job into
-   ZEAL/envs/nf-conda before Gate 1. `nf-core pipelines lint` and the stub nf-tests clean before the first push.
+   environment.yml (build prompt, "Environments, the reproducible way"); the envs built once by bin/build_envs.sh as an xfer
+   job into /share/maize/frodrig4/conda/zealgt/ before Gate 0 (non-conda tools by pinned build.sh; the Nextflow launcher env first). `nf-core pipelines lint` and the stub nf-tests clean before the first push.
 1. Code written locally, committed in small explicit steps (`git add <paths>`), CodeRabbit run on it (`coderabbit review --committed
    --base main --agent`), findings applied or rejected with a reason in agent/, pushed, pulled on hazel (ZEAL/zealgt).
 2. Gate 0: `-stub-run` of every CRAM entry as a small short-QOS job; the DAG wires (channel joins, filenames, storeDir paths under
@@ -48,9 +48,9 @@ settles; write what it leaves open into the handover instead of asking.
 
 Hard limits: no deletion of any kind (no rm -r, no nextflow clean, no overwriting existing CRAMs or tables); no demultiplexing of a
 library the registry or §0's table lists as demuxed unless the plan's --force-demux path is exercised deliberately at Gate 1 on the
-subsample; environments come only from the repo's environment.yml files, built into ZEAL/envs/nf-conda by xfer jobs, never at
-task time; the existing /share/maize/frodrig4/conda/env/* envs and ZEAL/envs/zealgt_reads are not used and not touched (no rebuild,
-move, deletion), except env/nextflow as the launcher; one library in flight (work/ peak ≈ 2 × library); nf-schema plugin fetched into NXF_PLUGINS_DIR on /share by an xfer job, head job
+subsample; environments come only from the repo (environment.yml + build.sh per module), built by bin/build_envs.sh into
+/share/maize/frodrig4/conda/zealgt/ by xfer jobs, never at task time and never on /rsstu; the old /share/maize/frodrig4/conda/env/*
+are being deleted by the user — use nothing from them (versions are in envs/legacy_zealbc1/); ZEAL/envs/zealgt_reads is not used; one library in flight (work/ peak ≈ 2 × library); nf-schema plugin fetched into NXF_PLUGINS_DIR on /share by an xfer job, head job
 with NXF_OFFLINE=true; raw libraries are read-only; work/ and TMPDIR on /share/maize/frodrig4/nf_work/<run>,
 results and store on /rsstu; all compute through Slurm (short QOS for gates, compute/normal for Gate 2's library), nothing heavy on the
 login node; attribution lines on commits as the session's rules give them.

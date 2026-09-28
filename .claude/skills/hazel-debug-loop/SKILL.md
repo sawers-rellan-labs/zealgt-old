@@ -44,9 +44,10 @@ from `docs/REQUIREMENTS.md`.
 - **Everything that computes goes through Slurm**: `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h; `short` is
   not allowed on the default `compute` partition). Workflow 1 alignment of deep libraries uses compute/normal. Downloads use
   `--partition=xfer --mem=8G`. Never run nextflow or any heavy process on the login node — even a stub run is a tiny job.
-- **Conda envs are prebuilt once on the login node** from pinned ymls in the repo, into the **persistent** partition (envs under
-  `/share` get wiped). Compute nodes have no internet, so Nextflow must never build an env at task time; every `withLabel` points at
-  a prefix. `conda.enabled` per profile (on for slurm/local, off for stub).
+- **Conda envs are built by `bin/build_envs.sh` as an xfer job** from each module's pinned `environment.yml` (+ `build.sh` for
+  non-conda tools) into `/share/maize/frodrig4/conda/zealgt/` — fast GPFS, rebuilt from the repo whenever /share is wiped; never on
+  `/rsstu` (too slow to build on). Compute nodes have no internet, so Nextflow must never build an env at task time; every process
+  points at its prebuilt prefix with `withName` in conf/hazel.config. `conda.enabled` per profile (on for slurm/local, off for stub).
 
 ## Inner fix loop when a task fails
 1. `ssh hazel 'cat /share/maize/frodrig4/nf_work/<run>/<hash>/.command.err'` (also `.command.out`, `.command.log`, `.command.sh`).
