@@ -81,6 +81,25 @@ columns), so the import step is MARK_DUPLICATES + read groups, not realignment. 
 ~3% of a normal line (~6.5M; idxstats job 949252); PN6_SID484 also fails the zealtiger coverage QC, PN8_SID736 passes it. Development
 uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B73 control read groups not checked.
 
+## Identifiers: one physical key, biology in the registry (decided, user 2026-09-28)
+- **The key everywhere is the well-level `sample_id`** of `meta/samples.csv`: BC1 `S_<pool>_<column>`, batch 2 `P<plot>`, batch 1
+  `PN<plate>_SID<n>`. It names every file (FASTQ checkpoint, CRAM, QC), the CRAM read group (`ID` and `SM` = `sample_id`, `LB` = library,
+  `PU` = flowcell.lane list) and every internal table. It never changes: it is where the DNA physically was.
+- **Biology lives only in the registry** `meta/samples.csv` (built by `meta/build_samples.py` from `meta/sources/`, tracked in git):
+  `sample_id` → line / `pedigree`, short `nil_id` (zealhmm register), `donor`, `taxon`, `role`, source, batch. A relabelled well, a
+  register update or a pedigree fix is a registry commit; no CRAM is renamed or rewritten. Line or nil ids are never written into CRAM
+  headers (they would go stale).
+- **Traceability:** each CRAM's provenance record (`<sample_id>.provenance.json`) holds a snapshot of its registry row (at least donor,
+  line/pedigree, nil_id, taxon, role) and `code_version` (the repo commit, which also pins the registry version). A later registry change
+  is visible by comparing the snapshot with the current row.
+- **Translate at the edge:** the genotype workflow joins on `sample_id` internally and writes the short `nil_id` (or line id where no
+  nil_id exists, e.g. BC1 samples) only into its final outputs — genotype tables, VCF sample names, paintings, reports — by one join on
+  the current registry at the end, recording the registry commit it used.
+- **Read groups:** one read group per sample (lanes of a library are one pool; `PU` lists the lanes; duplicate marking reads
+  flowcell/lane/tile from the read names). Per-lane read groups only if lane QC ever shows a lane effect.
+- Status (2026-09-28): the CRAM workflow already follows the key and read-group rules; the provenance snapshot has `donor` but not yet
+  the line/pedigree and nil_id (to add on branch `simplify`); the edge translation is a rule for the genotype workflow (branch `genotype`).
+
 ## Unresolved
 1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another
    sequencing run? Its raw data location is unknown.
