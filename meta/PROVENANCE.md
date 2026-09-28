@@ -28,8 +28,10 @@ library, and every sample has a raw location.
 `meta/sources/SOURCES.tsv` lists every file with its class, Drive URL, Drive last-modified time, export date, how it was obtained, sha256,
 use and status. The builder reads only listed files and refuses to run on a sha256 mismatch.
 - **Re-export:** add a new row for the same `file` with the new sha; the last row wins, and git history keeps the old copy.
-- **Manual exports needed:** `CLY25-Fieldbook` and `23_NCS_PSU_LANGEBIO_FIELDS` are too large for the Drive connector. They are listed
-  but not pinned. Their content is not used or guessed.
+- **User-provided exports (2026-09-28):** `CLY25-Fieldbook` and `23_NCS_PSU_LANGEBIO_FIELDS` are too large for the Drive connector;
+  the user's browser exports of 2026-07-08 are pinned byte-for-byte as `drive/cly25_fieldbook.xlsx` and
+  `drive/23_ncs_psu_langebio_fields.xlsx`. CLY25-Fieldbook was edited on Drive on 2026-07-20, after the export, and the pinned copy has
+  not been re-checked against the current Drive version. 23_NCS was last modified on Drive on 2026-01-23, before the export.
 - **Catalogued, not pinned:** CLY23_D4_FieldBook, CLY25, BZeaV2_plates and Molbreeding samples. Their exports are in
   `agent/idcat/drive_exports/` only. The master-document audit is `agent/20260928_145808_id_source_catalog.md` + `.tsv`.
 
@@ -43,6 +45,8 @@ use and status. The builder reads only listed files and refuses to run on a sha2
 | `drive/24_ncs_psu_langebio_fields.xlsx` | `PV24-block1`: PV24 packet → female parent plant (batch-2 `mother_plant`); `CLY24-C8A`: the batch-2 field, plot → packet and sowing instruction (checked: packet = manifest origin 384/384) |
 | `drive/bzeabrb_library_prep_sheet_code.xlsx`, `drive/bzeabrb_manifest.xlsx`, `drive/bzeabrb_trimmed_read_statistics.txt` | BRB-seq summer 2023 (RNA, CLY23-D4 rep 3): prep sheet `library_prep_sheet_code` (Seq_ID, well, 14-bp barcode, i7/i5, pool, genotype, origin packet), manifest `Plate_manifest` (plate, well → CLY23-D4 plot), and the per-sample read statistics (only pool BZeaRP1 = plates 1–4 was sequenced; 5 of its 384 wells have no reads, flagged) |
 | `drive/some_bzea_nomenclature_conversions.xlsx` | evidence for correction C0001 only |
+| `drive/23_ncs_psu_langebio_fields.xlsx` | PV23 nursery book (co-PI account, Drive modified 2026-01-23; export 2026-07-08); **check only**. `PV23-BZea` is the master of RR-23-Fields `Sheet12`: packet → origin and female parent agree for 2,590/2,590 packets. `PV23-block4-BZea-Bulk` is the nursery record of the batch-1 tissue plots: for every batch-1 line, plot → packet (`Female parent`) and name (`Description`) equal the prep sheet's `seed_origin` and the delivered name. It differs for 26 check wells only: 25 B73 / Purple Check wells with a different check packet, and PN13_SID1225, whose prep-sheet plot PV23-8397 is a Zd line. Block4 plot PV23-8396 is `Purple Check-bulk`, which supports the Sample List in C0002. The tabs give no value the pinned sources lack, so nothing is read into the registry |
+| `drive/cly25_fieldbook.xlsx` | CLY25-B5 phenotype field book (Drive modified 2026-07-20, after the 2026-07-08 export; not re-checked). Pinned as evidence and **not read**: no sequenced sample in the registry was grown in CLY25. The batch-2 plots are CLY24-C8A (read from `24_NCS…`), and `REF_BC2S3` is in the separate `CLY25` workbook |
 | `register_bc2s3.csv`, `NIL_ID_README.md` | copies of the zealhmm nil_id register and its specification (untracked in zealhmm `agent/gdl_flowering/`, 2026-08-09); the README is the only written pedigree → nil_id rule; the register is a check, never a value source |
 | `bc1_well_map.csv`, `bc1_libraries.csv` | BC1 pool, column, barcode, `Sample_Id`, line, donor, taxon (zealbc1 `meta/`). Built by zealbc1 `nilhmm/bin/make_demux_inputs.R` @ `bd86bda` from the replate worklist `bc1_replate.csv` (Drive `Sequencing/ZeaL BC1s/replate/`, https://drive.google.com/file/d/1rngILJY1wlzxBey65ciqAI3Zy8EhTZHu), which Hannah confirmed is what the robot ran (Slack 2026-09-28, https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616377418009; `manual_replate` was an earlier iteration and is deleted). Routing each line through the worklist reproduces the map for 384/384 wells (`agent/20260927_233403_compare_bc1_manifest.py`) |
 | `bc2s3_batch1_sample_sheet.csv`, `bc2s3_batch1_tar_members.tsv` | NCSU GSL delivery sheet `BZea_Sample_ID.xlsx` (hazel `sara/DNA_Sequencing_raw/BZea/`, Dec 2023, sheet 1 as CSV) and the `tar -tvf` listing of `NVS188B_Rellan_Alvarez_R{1,2}.tar`; batch-1 sample_id, barcodes, plate index, delivered name, raw members |
@@ -198,8 +202,9 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
 
 ## Gaps
 1. **PN18_SID1633–1647** (15 wells) are in the Sample List only, with no delivery sheet, prep row or reads; they are not in the registry.
-2. **Crossing records:** the PV23 nursery book `23_NCS_PSU_LANGEBIO_FIELDS` needs a manual export. RR-23-Fields `CLY23-D1` has an empty row
-   for plot 837, so the D1 genotype of the batch-2 mothers could only be checked through J2Teo.
+2. **Crossing records:** the PV23 nursery book `23_NCS_PSU_LANGEBIO_FIELDS` is pinned (check only, above). Its `CLY23-D1` tab has not
+   been compared yet. RR-23-Fields `CLY23-D1` has an empty row for plot 837, so the D1 genotype of the batch-2 mothers could only be
+   checked through J2Teo. `CLY25-Fieldbook` is pinned from the 2026-07-08 export; the Drive edits of 2026-07-20 are not in it.
 3. **Seed-lot records:** no seed inventory with lot ids or quantities was found for the PV24 packets / CLY24-C8A plots; there are only
    packet-level records (`PV24-ISO`, `PV24-Tags`, J2Teo `REF_PV24`).
 4. **The written nil_id rule** exists only as the zealhmm `agent/` README (copied here). Nothing on Drive holds short nil_ids.
