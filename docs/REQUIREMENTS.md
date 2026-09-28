@@ -100,6 +100,25 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
 (≈ 0.5 TB) assumed in PLAN §5 rule 3; dropping `-trimlog` would bring it to ≈ 0.45 TB. CRAMs ≈ 0.30 × raw (1A: 41 MB for 1 M pairs →
 ≈ 75 GB for the library). Store per sample: CRAM + crai + markdup stats + stats + CollectWgsMetrics + provenance (+ 2 versions.yml) = 8 files.
 
+**Notes from Gate 2 (BC1 3A, full library, `-profile hazel,normal`, 2026-09-28; they supersede the estimates above where they differ).**
+- **ALIGN_MARKDUP memory.** All 12 first attempts were OOM-killed at 24 GB, and retries at 48 / 72 GB too, with the old sort budget
+  `-m` = (mem − 12 GiB) / 4 threads: the budget grows with the attempt, and sort fills it. Sampled RSS (main checkout
+  `agent/20260929_032000_align_rss.tsv`): minibwa ≈ 9–10.5 GB, flat; `samtools sort` grows to its full `-m` × threads budget + 5–10 %
+  for samples above ~20 M pairs, so a 12 GiB reserve was too little. New rule (main 0a61f9c, branch `simplify` Phase A): first attempt
+  24 GB × attempt (`params.align_memory_gb`), sort threads = min(4, cpus), sort `-m` = max(768 MB, (task.memory − 16 GiB) × 0.75 /
+  threads) (`align_mem_reserve_gb` 16, `align_sort_mem_share` 0.75) → 1.5 GB × 4 at 24 GB, 6 GB × 4 at 48 GB. Not yet rerun at scale.
+  The zealbc1 ALIGN row above (14–22 GB peak) had another sort setting and does not carry over.
+- **MARKDUP_IMPORT memory:** the same bounded share with its own reserve, sort `-m` = (task.memory − 2 GiB) × 0.75 / threads
+  (`import_mem_reserve_gb` 2; was half of the memory) → 7.5 GB of sort at the 12 GB first attempt.
+- **TRIMMOMATIC:** 25–31 k pairs/s on full samples (Gate 1's ~10 k pairs/s was start-up on tiny inputs), so the largest sample fits in
+  4 h × attempt; the 12 h `normal` override never applied (it lost to a combined selector, PLAN §6) and is removed. The "~7 h" estimate
+  in the Gate 1 table is superseded. `-trimlog` is no longer written (functional TRIMMOMATIC patch), which removes the trimlog share
+  of the `work/` peak.
+- Resources are set only by directives (`conf/hazel.config`, `conf/normal.config`, `conf/short.config`) and read in the scripts as
+  `task.cpus` / `task.memory` (nf-core standard, PLAN §2); `scripts/check_resources.sh` checks what each process actually gets.
+- The FASTQ checkpoint (PLAN §3, §5 rule 3) adds ≈ 1 × raw per library in flight on `/share`, hardlinked from `work/`, so no space or
+  inode beyond `work/` while the task dirs exist.
+
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for
 BC1 alignment of deep libraries; downloads on `--partition=xfer --mem=8G`. Genome-wide ≈ chr10 × 14 for the per-chromosome stages;
 demultiplexing and alignment are already genome-wide.
