@@ -37,9 +37,9 @@ nextflow_process {
             assertAll(
                 { assert process.success },
                 { assert snapshot(process.out).match() },
-                { assert file(process.out.calls[0][1]).name == "Zx.0001_P1.chrA_1-5000.tsv.gz" },
-                { assert file(process.out.summary[0][1]).name == "Zx.0001_P1.chrA_1-5000.summary.tsv" },
-                { assert file("${outputDir}/store_stub/genotype/test/gap_lines/gt_set/Zx.0001_P1.chrA_1-5000.tsv.gz").exists() }
+                { assert file(process.out.calls[0][1]).name == "Zx.0001_P1.chrA_1-5000.gap_lines.tsv.gz" },
+                { assert file(process.out.summary[0][1]).name == "Zx.0001_P1.chrA_1-5000.gap_lines.summary.tsv" },
+                { assert file("${outputDir}/store_stub/genotype/test/gap_lines/gt_set/Zx.0001_P1.chrA_1-5000.gap_lines.tsv.gz").exists() }
             )
         }
     }

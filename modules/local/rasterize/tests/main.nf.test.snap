@@ -9,7 +9,7 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.genotypes.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "1": [
@@ -19,11 +19,11 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.matrix.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.genotypes.matrix.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "2": [
-                    "Zx.0001_P1.chrA_1-5000.rasterize.versions.yml:md5,53e09c80615bd7bff6394ae310a8c7fb"
+                    "Zx.0001_P1.chrA_1-5000.genotypes.rasterize.versions.yml:md5,53e09c80615bd7bff6394ae310a8c7fb"
                 ],
                 "genotypes": [
                     [
@@ -32,7 +32,7 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.genotypes.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "matrix": [
@@ -42,15 +42,15 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.matrix.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.genotypes.matrix.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "versions": [
-                    "Zx.0001_P1.chrA_1-5000.rasterize.versions.yml:md5,53e09c80615bd7bff6394ae310a8c7fb"
+                    "Zx.0001_P1.chrA_1-5000.genotypes.rasterize.versions.yml:md5,53e09c80615bd7bff6394ae310a8c7fb"
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:57:55.53228",
+        "timestamp": "2026-09-28T09:09:50.756534",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

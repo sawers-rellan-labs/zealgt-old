@@ -9,7 +9,7 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.gap_lines.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "1": [
@@ -19,11 +19,11 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.gap_lines.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "2": [
-                    "Zx.0001_P1.chrA_1-5000.gap_filling_lines.versions.yml:md5,c24233ec6529c0613037cde055cd01a9"
+                    "Zx.0001_P1.chrA_1-5000.gap_lines.gap_filling_lines.versions.yml:md5,c24233ec6529c0613037cde055cd01a9"
                 ],
                 "calls": [
                     [
@@ -32,7 +32,7 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.gap_lines.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "summary": [
@@ -42,15 +42,15 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "Zx.0001_P1.chrA_1-5000.gap_lines.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "versions": [
-                    "Zx.0001_P1.chrA_1-5000.gap_filling_lines.versions.yml:md5,c24233ec6529c0613037cde055cd01a9"
+                    "Zx.0001_P1.chrA_1-5000.gap_lines.gap_filling_lines.versions.yml:md5,c24233ec6529c0613037cde055cd01a9"
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:56:13.706537",
+        "timestamp": "2026-09-28T09:09:47.955437",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
