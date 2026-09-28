@@ -100,6 +100,43 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
 (≈ 0.5 TB) assumed in PLAN §5 rule 3; dropping `-trimlog` would bring it to ≈ 0.45 TB. CRAMs ≈ 0.30 × raw (1A: 41 MB for 1 M pairs →
 ≈ 75 GB for the library). Store per sample: CRAM + crai + markdup stats + stats + CollectWgsMetrics + provenance (+ 2 versions.yml) = 8 files.
 
+**Measured usage, genotype workflow Gate 1 (2026-09-28, `-profile hazel,short`, code d9dbd92; Zx.0540_P3: 5 BC1 pools + 39
+lines, B73_skim10, chr10:1-20,000,000; `trace.txt` of `results/zealgt/genotype_gate1_zx0540/{nomask,mask}`; pass A key
+`gate1_zx0540_nomask_r3`, pass B `gate1_zx0540_mask`).** Every task attempt 1; pass B (5′ mask on) within ±15 % of pass A.
+
+| entry (head wall) | process | cpus alloc → used | peak RSS | realtime |
+|---|---|---|---|---|
+| sample_quality_control (3.5 min) | MIN_COVERAGE, SAMPLE_QC_TABLE | 1 → 0.1–0.4 | 2 MB | < 1 s |
+| variant_discovery (10.6 min) | REGION_BED | 1 | 2 MB | < 1 s |
+| | MASK_READ_STARTS (bc1 5 / lines 39 / b73 1 samples) | 4 → 1.4–2.8 | 40–143 MB | 4–10 s |
+| | WITNESS_POOL (39 lines) | 8 → 2.5 | 103 MB | 2.5 s |
+| | CRISP (6 pools, 4.24 Mb of BED) | 2 → 1.0 | 178 MB | 1 min 6 s |
+| | BED_CLIP, WITNESS_VETO | 1 | < 7 MB | < 1 s |
+| | B73_CONTROL_COUNTS (ALLELE_COUNTS) | 2 → 0.7 | 201 MB | 1.5 s |
+| | POOLED_LIKELIHOOD_TIERS (4,350 sites; annotation panels loaded) | 1 → 0.9 | **2.4 GB** | 17 s |
+| ancestry_inference (4.7 min) | RTIGER_MARKERS, REGION_BED | 1 | 7 MB | < 1 s |
+| | MASK_READ_STARTS (39 lines) | 4 → 2.7 | 39 MB | 8 s |
+| | LINE_ALLELE_COUNTS | 2 → 0.8 | 208 MB | 5 s |
+| | LINE_MARKER_QC | 1 | 2 MB | 1 s |
+| | RTIGER (39 lines, 2,985 markers, r500) | 4 → 0.6 | 101 MB | 1.5 s |
+| marker_union (2.6 min) | MARKER_UNION (8,245 union alleles) | 1 | 2 MB | 1 s |
+| donor_allele_calling (8.6 min) | MASK_READ_STARTS ×3 | 4 → 1.4–2.8 | 37–125 MB | 4–10 s |
+| | B73_UNION_COUNTS, UNION_SITE_COUNTS, LINE_UNION_COUNTS | 2 → 0.8–0.9 | 200–209 MB | 1–6 s |
+| | JOINT_POOLED_LIKELIHOOD | 1 | 35 MB | 2 s |
+| | GAP_FILLING_BC1, GAP_FILLING_LINES, DONOR_FOUNDER | 1 → 0.7–0.9 | 7–58 MB | < 4 s |
+| genotype_imputation (2.6 min) | RASTERIZE (39 lines × 8,245 sites) | 1 → 0.6 | 41 MB | 4 s |
+| reporting (5.2 min) | MASK_READ_STARTS ×2, READ_POSITION_QC ×4 | 4 / 2 → 0.5–2.9 | 40–130 MB | 3–9 s |
+| | GENOTYPE_SUMMARY, CHROMOSOME_PAINTING | 1 | 104–157 MB | 3–8 s |
+| head jobs (all 7) | Nextflow | 1 | 0.40–0.43 GB (sacct MaxRSS) | 2.5–10.6 min |
+
+The walls are Slurm queueing plus 1-min task polling, not compute: the largest task (CRISP) runs 66 s. `work/` per entry
+0.3–185 MB, 9–209 files (pass A total ≈ 530 MB, 774 files); 0 "Creating env" lines; every task that sources the helper logs
+`zg_resources … source=slurm`. For one donor × whole chr10 (26.0 Mb of BED, 6.1 × the region's 4.24 Mb) CRISP scales to ≈ 7 min
+(zealbc1 measured 8 min 14 s, 245 MB, for the same donor on all of chr10) and POOLED_LIKELIHOOD_TIERS memory is dominated by the four annotation panels (2.4 GB here, ≈ constant);
+everything fits the short QOS. Two failures fixed on the way (ALLELE_COUNTS SIGPIPE 141, RTIGER nested threads) and one
+unfixed intermittent: a storeDir output on `/rsstu` not yet visible to the head node ("Missing output file(s)" after exit 0,
+2 of ~90 storeDir tasks), recovered by `-resume`.
+
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for
 BC1 alignment of deep libraries; downloads on `--partition=xfer --mem=8G`. Genome-wide ≈ chr10 × 14 for the per-chromosome stages;
 demultiplexing and alignment are already genome-wide.
