@@ -12,8 +12,9 @@
 # zealbc1 did (nilHMM min_reads = 1). When no line passed LINE_MARKER_QC the CSV has the header only and a warning is written
 # (exit 0): the region has no ancestry, which every later stage sees as "ancestry unknown".
 # Threads: ZG_CPUS from bin/export_slurm_resources.sh (run through bash here, since this is an R template), passed to nilHMM
-# (threads = parallel chains, identical results to 1 thread) and to RcppParallel (RCPP_PARALLEL_NUM_THREADS, set before the
-# package loads). Options (ext.args): --seed N (nilHMM rtiger's randomised init, default 1 = the nilHMM default).
+# (threads = parallel chains, identical results to 1 thread). RcppParallel gets 1 thread (RCPP_PARALLEL_NUM_THREADS, set
+# before the package loads): nilHMM threads > 1 together with RcppParallel threads > 1 crashed R on hazel ('C stack usage
+# too close to the limit', segfault; Gate 1, job 974346), while either one alone ran and gave identical segments. Options (ext.args): --seed N (nilHMM rtiger's randomised init, default 1 = the nilHMM default).
 # The versions of R, nilHMM and data.table go into <prefix>.rtiger.versions.yml (the process uses storeDir).
 
 prefix <- "${task.ext.prefix ?: meta.id}"
@@ -41,7 +42,7 @@ status <- attr(res, "status")
 if (!is.null(status) && status != 0L) stop(sprintf("%s: export_slurm_resources.sh failed (status %d)", proc, status))
 threads <- as.integer(utils::tail(res, 1L))
 if (length(threads) != 1L || is.na(threads) || threads < 1L) stop(sprintf("%s: could not read ZG_CPUS", proc))
-Sys.setenv(RCPP_PARALLEL_NUM_THREADS = as.character(threads))
+Sys.setenv(RCPP_PARALLEL_NUM_THREADS = "1")
 
 suppressPackageStartupMessages({
   library(data.table)
