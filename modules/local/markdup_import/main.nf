@@ -5,7 +5,8 @@
 // Read group, decided from the input HEADER (meta/dev_import.csv's read_groups column is wrong for the bc2s3_realign rows):
 //   exactly one @RG line whose SM is the sample -> that line is kept (ID/SM/LB as written) and applied to every record;
 //   none or several       -> the sample-sheet read group (meta.read_group) replaces them (merged pools keep one RG, §4 #1b);
-//                            with several, the old @RG header lines are dropped first (gawk), so no stale sample remains.
+//                            whenever the sheet RG is used, the input's @RG header lines are dropped first (gawk), so no stale
+//                            sample remains in the header.
 // The inputs keep their zealbc1 MAPQ 20 / -F 0x904 filter (the provenance record says so); reads whose mate was filtered are
 // marked as single-end by markdup. storeDir <store>/cram_import (conf/modules.config), separate from new CRAMs (<store>/cram).
 // Threads / memory from bin/slurm_resources.sh; sort memory (ZG_MEM_MB - 2 GB) split over up to 4 threads, >= 768 MB each.
@@ -73,7 +74,7 @@ process MARKDUP_IMPORT {
     echo "markdup_import threads=\$threads sort_mem_mb=\$sort_mem_mb rg_source=\$rg_source rg=\$rg_line" >&2
 
     add_rg() {
-        if [ "\$n_rg" -gt 1 ]; then
+        if [ "\$n_rg" -gt 0 ] && [ "\$rg_source" != "header" ]; then
             samtools view -h --reference ${fasta} ${input} \\
             | gawk '!/^@RG\t/' \\
             | samtools addreplacerg -@ "\$threads" -m overwrite_all -w -r "\$rg_line" -O BAM --output-fmt-option level=0 -o - -
