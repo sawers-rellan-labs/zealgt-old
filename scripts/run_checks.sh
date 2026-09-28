@@ -2,8 +2,9 @@
 # scripts/run_checks.sh — the local replacement for nf-core's GitHub Actions CI (no GitHub CI for zealgt: .nf-core.yml,
 # docs/CONTRIBUTING.md). Run it on the laptop before every push; it stops at the first failing check.
 #
-#   bash scripts/run_checks.sh            nf-core lint, schema lint, nextflow lint, nf-test (all local tests, stub)
-#   bash scripts/run_checks.sh --quick    the three lints only
+#   bash scripts/run_checks.sh            nf-core lint, schema lint, nextflow lint, no task.* in ext.args closures,
+#                                         nf-test (all local tests, stub), resolved hazel resources (scripts/check_resources.sh)
+#   bash scripts/run_checks.sh --quick    the three lints and the ext.args check only
 #
 # Needs on PATH: nextflow (>= 25.10.4; NXF_VER pins it), nf-core (tools 4.1), nf-test (0.9.x). ZG_CHECK_PATH is prepended to
 # PATH when set, e.g. the laptop's local tool dirs. The nf-test stub runs still evaluate the tool versions of the nf-core
@@ -28,6 +29,9 @@ nf-core pipelines schema lint nextflow_schema.json
 step "nextflow lint (errors fail, warnings are reported)"
 nextflow lint main.nf workflows subworkflows/local modules/local nextflow.config conf
 
+step "no task.* inside an ext.args closure in conf/*.config (it enters the task hash; nextflow-cache skill)"
+python3 scripts/check_ext_args.py
+
 if [ "${1:-}" = "--quick" ]; then
     echo "quick checks passed"
     exit 0
@@ -35,5 +39,8 @@ fi
 
 step "nf-test (local modules, local subworkflows, pipeline; stub)"
 nf-test test --tag stub
+
+step "resolved hazel resources per process (hazel,normal and hazel,short stub runs vs tests/expected_resources.tsv)"
+bash scripts/check_resources.sh
 
 echo "all checks passed"
