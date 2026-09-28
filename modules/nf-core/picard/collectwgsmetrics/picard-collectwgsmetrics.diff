@@ -1,0 +1,33 @@
+Changes in component 'nf-core/picard/collectwgsmetrics'
+'modules/nf-core/picard/collectwgsmetrics/environment.yml' is unchanged
+'modules/nf-core/picard/collectwgsmetrics/meta.yml' is unchanged
+Changes in 'picard/collectwgsmetrics/main.nf':
+--- modules/nf-core/picard/collectwgsmetrics/main.nf
++++ modules/nf-core/picard/collectwgsmetrics/main.nf
+@@ -23,17 +23,14 @@
+     script:
+     def args = task.ext.args ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+-    def avail_mem = 3072
+     def interval = intervallist ? "--INTERVALS ${intervallist}" : ''
+-    if (!task.memory) {
+-        log.info('[Picard CollectWgsMetrics] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this.')
+-    }
+-    else {
+-        avail_mem = (task.memory.mega * 0.8).intValue()
+-    }
++    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/slurm_resources.sh at run
++    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
++    // -Xmx = ZG_MEM_MB minus the helper's fixed 2048 MB headroom (was task.memory * 0.8).
+     """
++    source "${projectDir}/bin/slurm_resources.sh"
+     picard \\
+-        -Xmx${avail_mem}M \\
++        -Xmx\${ZG_JAVA_MEM_MB}M \\
+         CollectWgsMetrics \\
+         ${args} \\
+         --INPUT ${bam} \\
+
+'modules/nf-core/picard/collectwgsmetrics/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/picard/collectwgsmetrics/tests/main.nf.test' is unchanged
+************************************************************

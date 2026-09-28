@@ -1,0 +1,26 @@
+Changes in component 'nf-core/samtools/stats'
+'modules/nf-core/samtools/stats/environment.yml' is unchanged
+'modules/nf-core/samtools/stats/meta.yml' is unchanged
+Changes in 'samtools/stats/main.nf':
+--- modules/nf-core/samtools/stats/main.nf
++++ modules/nf-core/samtools/stats/main.nf
+@@ -22,11 +22,14 @@
+     def args = task.ext.args ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+     def reference = fasta ? "--reference ${fasta}" : ""
++    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/slurm_resources.sh at run
++    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
+     """
++    source "${projectDir}/bin/slurm_resources.sh"
+     samtools \\
+         stats \\
+         ${args} \\
+-        --threads ${task.cpus} \\
++        --threads \${ZG_CPUS} \\
+         ${reference} \\
+         ${input} \\
+         > ${prefix}.stats
+
+'modules/nf-core/samtools/stats/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/samtools/stats/tests/main.nf.test' is unchanged
+************************************************************

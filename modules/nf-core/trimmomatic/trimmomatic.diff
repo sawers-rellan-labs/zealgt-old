@@ -1,0 +1,29 @@
+Changes in component 'nf-core/trimmomatic'
+'modules/nf-core/trimmomatic/environment.yml' is unchanged
+'modules/nf-core/trimmomatic/meta.yml' is unchanged
+Changes in 'trimmomatic/main.nf':
+--- modules/nf-core/trimmomatic/main.nf
++++ modules/nf-core/trimmomatic/main.nf
+@@ -29,10 +29,15 @@
+         "${prefix}.SE.paired.trim.fastq.gz" // HACK to avoid unpaired and paired in the trimmed_reads output
+         : "${prefix}.paired.trim_1.fastq.gz ${prefix}.unpaired.trim_1.fastq.gz ${prefix}.paired.trim_2.fastq.gz ${prefix}.unpaired.trim_2.fastq.gz"
+     def qual_trim = task.ext.args2 ?: ''
++    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/slurm_resources.sh at run
++    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
++    // The bioconda wrapper otherwise starts the JVM with its default -Xmx1g.
+     """
++    source "${projectDir}/bin/slurm_resources.sh"
+     trimmomatic \\
++        -Xmx\${ZG_JAVA_MEM_MB}m \\
+         $trimmed \\
+-        -threads $task.cpus \\
++        -threads \${ZG_CPUS} \\
+         -trimlog ${prefix}_trim.log \\
+         -summary ${prefix}.summary \\
+         $reads \\
+
+'modules/nf-core/trimmomatic/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/trimmomatic/tests/nextflow_SE.config' is unchanged
+'modules/nf-core/trimmomatic/tests/nextflow_PE.config' is unchanged
+'modules/nf-core/trimmomatic/tests/main.nf.test' is unchanged
+************************************************************
