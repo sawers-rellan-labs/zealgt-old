@@ -60,7 +60,7 @@ output:
             e.g. [ id:'test', single_end:false ]
       - "*_trim.log":
           type: file
-          description: trimmomatic log file, from the trim_log parameter
+          description: trimmomatic log file, from the trim_log parameter (zealgt patch - not written, the module runs without -trimlog)
           pattern: "*.log"
           ontologies: []
   out_log:

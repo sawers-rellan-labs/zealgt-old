@@ -18,6 +18,7 @@ nextflow_process {
                         file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true)
                     ]
                 ]
+                input[1] = file("${projectDir}/assets/adapters/TruSeq3-PE-2.fa", checkIfExists: true) // zealgt patch: adapters input
                 """
             }
         }
@@ -27,7 +28,7 @@ nextflow_process {
                 { assert process.success },
                 { assert snapshot(process.out.trimmed_reads,
                                   process.out.summary,
-                                  file(process.out.trim_log[0][1]).name,
+                                  process.out.trim_log, // zealgt patch: empty, no -trimlog
                                   process.out.findAll { key, val -> key.startsWith("versions")}
                                   ).match() }
             )
@@ -46,6 +47,7 @@ nextflow_process {
                         file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true)
                     ]
                 ]
+                input[1] = file("${projectDir}/assets/adapters/TruSeq3-PE-2.fa", checkIfExists: true) // zealgt patch: adapters input
                 """
             }
         }
@@ -55,7 +57,7 @@ nextflow_process {
                 { assert process.success },
                 { assert snapshot(process.out.trimmed_reads,
                                   process.out.summary,
-                                  file(process.out.trim_log[0][1]).name,
+                                  process.out.trim_log, // zealgt patch: empty, no -trimlog
                                   process.out.findAll { key, val -> key.startsWith("versions")}
                                   ).match() }
             )
@@ -74,6 +76,7 @@ nextflow_process {
                         file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true)
                     ]
                 ]
+                input[1] = file("${projectDir}/assets/adapters/TruSeq3-PE-2.fa", checkIfExists: true) // zealgt patch: adapters input
                 """
             }
         }
@@ -96,6 +99,7 @@ nextflow_process {
                         file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true)
                     ]
                 ]
+                input[1] = file("${projectDir}/assets/adapters/TruSeq3-PE-2.fa", checkIfExists: true) // zealgt patch: adapters input
                 """
             }
         }

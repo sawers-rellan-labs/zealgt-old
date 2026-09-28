@@ -14,7 +14,7 @@ process TRIMMOMATIC {
     output:
     tuple val(meta), path("*.paired.trim*.fastq.gz")   , emit: trimmed_reads
     tuple val(meta), path("*.unpaired.trim_*.fastq.gz"), emit: unpaired_reads, optional:true
-    tuple val(meta), path("*_trim.log")                , emit: trim_log
+    tuple val(meta), path("*_trim.log")                , emit: trim_log, optional:true // zealgt patch: never written (no -trimlog, see script)
     tuple val(meta), path("*_out.log")                 , emit: out_log
     tuple val(meta), path("*.summary")                 , emit: summary
     tuple val("${task.process}"), val('trimmomatic'), eval("trimmomatic -version"), topic: versions, emit: versions_trimmomatic
@@ -34,13 +34,15 @@ process TRIMMOMATIC {
     // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
     // The bioconda wrapper otherwise starts the JVM with its default -Xmx1g.
     // zealgt patch: the adapter FASTA is an input (staged, so no absolute path in ext.args or the script).
+    // zealgt patch (user, 2026-09-28): no per-read -trimlog. It is ~160 B per read pair, uncompressed (~282 GB of work/ for a
+    // 1A-size library, Gate 1), and nothing downstream reads it; MultiQC parses the stdout/stderr log (*_out.log) and the
+    // -summary file, both kept. The trim_log output stays declared, as optional, so the module interface is unchanged.
     """
     source export_slurm_resources.sh
     trimmomatic \\
         -Xmx\${ZG_JAVA_MEM_MB}m \\
         $trimmed \\
         -threads \${ZG_CPUS} \\
-        -trimlog ${prefix}_trim.log \\
         -summary ${prefix}.summary \\
         $reads \\
         $output \\
@@ -63,7 +65,6 @@ process TRIMMOMATIC {
     """
     $output_command
     touch ${prefix}.summary
-    touch ${prefix}_trim.log
     touch ${prefix}_out.log
     """
 
