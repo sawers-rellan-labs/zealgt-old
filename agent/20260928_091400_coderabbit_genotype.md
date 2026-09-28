@@ -50,3 +50,10 @@ card: pass-A key gate1_zx0540_nomask_r2, mappability_priors set); 3 files: **0 f
 | round | base | head | findings | action |
 |---|---|---|---|---|
 | 3 | d570ac7 | f9416d4 | 0 | none |
+
+## Round 4 (Gate 1 fix loop): base 163bcb7, head be5dbd3
+`coderabbit review --committed --base-commit 163bcb7 --agent` (2026-09-28, Gate 1 agent): commits b7877cf (RTIGER: RcppParallel 1 thread, nilHMM threads = ZG_CPUS; nested threads crashed R, job 974290) and be5dbd3 (Gate 1 card: pass-A key gate1_zx0540_nomask_r3); 4 files: **0 findings**. Clean at **be5dbd3**.
+
+| round | base | head | findings | action |
+|---|---|---|---|---|
+| 4 | 163bcb7 | be5dbd3 | 0 | none |
