@@ -14,3 +14,5 @@
 Running, submitting or debugging anything on the hazel cluster follows the **`hazel-debug-loop` skill**
 (`.claude/skills/hazel-debug-loop/`, adapted from zealbc1): git-only transfer, Slurm `short` QOS for all compute, the fix loop, and
 killing a run safely. Invoke it when iterating on hazel. The testing ladder (gates) is in `docs/PLAN_pipeline.md` §6.
+Writing, reviewing or pushing pipeline code (modules, subworkflows, configs, schemas) follows the **`nfcore-compliance` skill**
+(`.claude/skills/nfcore-compliance/`): nf-core spec rules, module patching, deliberate deviations, pre-push checklist.

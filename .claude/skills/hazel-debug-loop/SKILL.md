@@ -2,15 +2,15 @@
 name: hazel-debug-loop
 description: Run and debug the zealgt Nextflow pipeline (read processing + genotyping) on the hazel HPC cluster from the laptop.
   Use whenever iterating on, submitting, or troubleshooting zealgt on the cluster — covers git-only transfer, the two filesystem
-  facts (core.fileMode false + interpreter-invoked scripts), login-node policy (short QOS for all compute), where work/ and the
-  store live, the inner fix loop, and killing a run safely.
+  facts (core.fileMode false + interpreter-invoked scripts), login-node policy (short QOS for all compute), job environment and
+  node sizes, conda env builds, where work/ and the store live, the inner fix loop, testing-ladder lessons, and killing a run safely.
 ---
 
 # Hazel debug loop (zealgt)
 
 Adapted from zealbc1 `.claude/skills/hazel-debug-loop/`. How code is written on the laptop, moved to hazel, and iterated until a
-pipeline step works. Stage names, profiles and storage rules come from `docs/PLAN_pipeline.md`; inputs, envs and measured resources
-from `docs/REQUIREMENTS.md`.
+pipeline step works. Stage names, profiles, storage rules and the testing ladder (gates, §6) come from `docs/PLAN_pipeline.md`;
+inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config conventions: the `nfcore-compliance` skill.
 
 ## Paths
 - `ZEAL` = `/rsstu/users/r/rrellan/BZea/ZEAL` (persistent). zealgt checkout on hazel: **`ZEAL/zealgt`** (next to zealbc1's
@@ -18,10 +18,12 @@ from `docs/REQUIREMENTS.md`.
 - Nextflow `workDir`: `/share/maize/frodrig4/nf_work/<run>` (2 TB, **not persistent**), never under `/rsstu`.
 - Durable outputs: `storeDir` under `ZEAL/store/` (CRAMs, demux QC, step-4 tables, reference variants); published results under
   `ZEAL/results/`.
+- Old nilhmm `ZEAL/results/work` (demuxed per-sample FASTQs) is **gone**: PLAN §0 Task 1 ("align from existing FASTQs") is void;
+  every library demuxes again from raw.
 
 ## Branch model
 - `main` only, as in zealbc1. Branch only for a risky change you might discard, and delete that branch when it is merged.
-- Stage files **explicitly** (`git add <paths>`), never `git add -A` / `git commit -a`.
+- Stage files **explicitly** (`git add <paths>`), never `git add -A` / `git commit -a`. Other agents may commit in the same repo.
 
 ## How code moves (laptop → hazel)
 - Edits happen **locally**. `git commit` → `git push origin main` → `ssh hazel 'cd /rsstu/users/r/rrellan/BZea/ZEAL/zealgt && git pull'`.
@@ -30,33 +32,68 @@ from `docs/REQUIREMENTS.md`.
 
 ## Two filesystem facts
 - **`git config core.fileMode false`** on the hazel checkout (the `/rsstu` ACL strips the exec bit; otherwise every pull shows
-  spurious "modified" scripts). Set once after cloning.
+  spurious mode-only "modified" scripts). Set once after cloning.
 - **Invoke scripts through their interpreter with an explicit path** — `Rscript "${projectDir}/bin/x.R"`, `bash "${projectDir}/bin/x.sh"`,
   `python "${projectDir}/bin/x.py"` — never rely on `+x` + PATH. zealgt's task scripts avoid `${projectDir}` in the script text
   (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`), and the resource helper is
-  sourced by name, `source export_slurm_resources.sh` — bash `source` searches the task PATH (Nextflow adds `bin/`) and needs no
-  exec bit. Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`).
+  sourced by name, `source export_slurm_resources.sh` (`bin/`) — bash `source` searches the task PATH (Nextflow adds `bin/`) and
+  needs no exec bit. Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`).
 
 ## How commands run
 - Each hazel action is one **non-interactive, one-line** `ssh hazel '<cmd>'`, self-contained (`cd`, `conda activate`). No state
   persists between calls. Avoid `set -u` in job wrappers (`source ~/.bashrc` trips on `$PS1`); keep parentheses out of remote `echo`s.
+- **Permission allow rules match single plain commands only** (`.claude/settings.json`: `git push *`, `ssh hazel *`, `sbatch *`).
+  Run `git -C <repo> push origin main`, `ssh hazel '…'`, `sbatch …` each as its own call — never chained with `cd`/`&&`/`;`/pipes.
 - **Multi-line remote commands**: write them to `agent/<YYYYMMDD_HHMMSS>_<desc>.sh` (repo rule, `CLAUDE.md`) and run with
-  `ssh hazel 'bash -s' < agent/<file>.sh` — stdin is byte-faithful, nothing is pasted. Anything that must outlive the session
-  (sbatch wrappers, pipeline code) is tracked in the repo and reaches hazel by git instead.
+  `ssh hazel 'bash -s' < agent/<file>.sh` (or `ssh hazel 'sbatch' < agent/<file>.sbatch`) — stdin is byte-faithful, nothing is
+  pasted. Anything that must outlive the session (sbatch wrappers, pipeline code) is tracked in the repo and reaches hazel by git.
 - **Only trivial commands run over ssh directly**: `git pull`, `squeue`, `scancel <id>`, `cat`/`tail` logs, `seff`, `sacct`, `ls`, `du`.
 - **Everything that computes goes through Slurm**: `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h; `short` is
-  not allowed on the default `compute` partition). Workflow 1 alignment of deep libraries uses compute/normal. Downloads use
-  `--partition=xfer --mem=8G`. Never run nextflow or any heavy process on the login node — even a stub run is a tiny job.
-- **Conda envs are built by `scripts/build_envs.sh` as an xfer job** from each module's pinned `environment.yml` (+ `build.sh` for
-  non-conda tools) into `/share/maize/frodrig4/conda/zealgt/` — fast GPFS, rebuilt from the repo whenever /share is wiped; never on
-  `/rsstu` (too slow to build on). Compute nodes have no internet, so Nextflow must never build an env at task time; every process
-  points at its prebuilt prefix with `withName` in conf/hazel.config. `conda.enabled` per profile (on for slurm/local, off for stub).
+  not allowed on the default `compute` partition). Full-library runs use compute/normal (`-profile hazel,normal`). Downloads and env
+  builds use `--partition=xfer`. Never run nextflow or any heavy process on the login node — even a stub run is a tiny job.
+- **Before any `rm`, `ls` the exact path** — `rm -f`/`rm -rf` on a wrong path fails silently. Removals still need user consent.
+
+## Job environment (measured)
+- The user's login env exports **`NXF_OFFLINE=true`** and **`NXF_ANSI_LOG=false`**; Slurm propagates both into every job. Any
+  download/install step (e.g. `nextflow plugin install`) must `export NXF_OFFLINE=false` first.
+- `<prefix>/bin/nextflow` fails with `java: command not found` unless `<prefix>/bin` is on PATH (or `JAVA_HOME=<prefix>`).
+- Tasks see `SLURM_CPUS_PER_TASK` and `SLURM_MEM_PER_NODE` (MB, from `--mem`); `SLURM_MEM_PER_CPU` is unset. `nproc` is cgroup-limited.
+- `module` is undefined in a non-login `sbatch --wrap` shell: use `bash -l -c '…'` or source the module init first.
+- Quota: `/usr/lpp/mmfs/bin/mmlsquota -g maize gpfsHPCcommon2` (not on the default PATH). Watch the **file count** (1 M limit).
+
+## Node sizes
+- Smallest compute / compute_partners nodes: **20 cpu / 125000 MB** → `resourceLimits` 16 cpu / 120 GB so a task fits any node.
+- xfer: 32 cpu / 188000 MB, no time limit (QOS `xfer` auto-set). Partition time limits show infinite; the QOS sets the real one.
+
+## Conda envs
+- Built by **`scripts/build_envs.sh` as an xfer job** (`sbatch scripts/build_envs.sbatch [<id>]`, submitted from the checkout so
+  `SLURM_SUBMIT_DIR` is the repo) from each module's pinned `environment.yml` (+ `build.sh` for non-conda tools) into
+  `/share/maize/frodrig4/conda/zealgt/<module>-<sha8>` (sha8 = content hash of environment.yml + build.sh).
+- Never on `/rsstu` (too slow), never at task time (compute nodes are offline): `conf/env_prefixes.config` (generated,
+  `--write-config`) points every process at its prefix; a `.nextflow.log` line "Creating env" means a missing entry.
+- Editing an `environment.yml`/`build.sh` or renaming a `modules/local` dir changes the prefix: rebuild before running.
+- A failed build leaves its prefix in place; removing it is the user's call.
 
 ## Inner fix loop when a task fails
 1. `ssh hazel 'cat /share/maize/frodrig4/nf_work/<run>/<hash>/.command.err'` (also `.command.out`, `.command.log`, `.command.sh`).
 2. Fix the **module `.nf`** (not `main.nf`, which rehashes every task).
-3. commit → push → `git pull` on hazel (after the run has stopped).
-4. Re-run with **`-resume <session-id>`** (explicit id; a bare `-resume` can attach to an empty stub session).
+3. Run the local checks, then **CodeRabbit on the exact commit** (user rule: before any real-data run and after every fix; findings
+   fixed or rejected in writing in `agent/`). Stub runs may go first.
+4. commit → push → `git pull` on hazel (after the run has stopped).
+5. Re-run with **`-resume <session-id>`** (explicit id; a bare `-resume` can attach to an empty stub session).
+
+## Testing-ladder lessons (gates: PLAN §6)
+- **The small test run must exercise the same code path as the full run** — a subsample option must not switch to different I/O
+  code. E.g. Gate 1's `--subsample` wrote real files, hiding the full-library FIFO path that failed at Gate 2.
+- **Read the tool's documented input model before designing I/O.** E.g. cutadapt takes one input file per read and infers the
+  format from the extension; `.gz`-named FIFOs failed with "File or stream is not seekable" → demux per lane, merge per sample with `cat`.
+- **Propagate a killed stage's exit code** from pipes (OOM 137/140), or memory-escalation retries never fire. E.g. an OOM-killed
+  `samtools sort` surfaced as markdup's exit 1 until `|| zg_pipe_fail "${PIPESTATUS[@]}"` was added.
+- Tools can reject valid-but-filtered input: Picard needs `VALIDATION_STRINGENCY SILENT` on MAPQ-filtered imported CRAMs.
+- Cache: resource-only changes keep the task hash (scripts read Slurm values, not `task.*`); `ext.args` changes rerun the task.
+  Check with `-dump-hashes json` and `-resume <id>`.
+- Record measured resources (trace, `sacct`/`seff`) in `docs/REQUIREMENTS.md` and extrapolate `work/` size and file count before
+  scaling up.
 
 ## Killing a run safely (never a name glob)
 With the slurm executor each process is its own Slurm job next to the head; `scancel <head>` alone orphans the children.
