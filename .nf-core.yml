@@ -2,37 +2,48 @@ repository_type: pipeline
 
 nf_core_version: 4.1.0
 
+# zealgt deliberate deviations from the nf-core pipeline requirements (docs/usage.md "Deliberate deviations"):
+#   - No Docker / Singularity (spec pipelines/requirements/docker, MUST): hazel compute nodes are offline and run no
+#     container engine for this project; every module runs in a prebuilt, build-pinned conda prefix on /share
+#     (scripts/build_envs.sh, conf/env_prefixes.config). The template's container configs (conf/containers_*.config) were
+#     stale (FastQC / MultiQC only), never included, and are removed; `nf-core modules install/patch` regenerates them, so
+#     they are gitignored and the container_configs lint test is off.
+#   - No GitHub Actions CI (spec pipelines/requirements/ci_testing, MUST): the pipeline runs on a private offline cluster.
+#     scripts/run_checks.sh runs the same checks locally before every push (nf-core lint, schema lint, nf-test, stub runs;
+#     docs/CONTRIBUTING.md), so the github / ci template features are skipped and their files are not required.
 lint:
+  container_configs: false
   files_unchanged:
     - .prettierignore
     - docs/CONTRIBUTING.md
-    - .prettierignore
+    - docs/README.md
     - CODE_OF_CONDUCT.md
+    - assets/email_template.txt
     - assets/nf-core-zealgt_logo_light.png
     - docs/images/nf-core-zealgt_logo_light.png
     - docs/images/nf-core-zealgt_logo_dark.png
-    - .github/ISSUE_TEMPLATE/bug_report.yml
-    - .github/PULL_REQUEST_TEMPLATE.md
-    - assets/email_template.txt
-    - docs/README.md
+    - .github/.dockstore.yml
     - .github/ISSUE_TEMPLATE/bug_report.yml
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/ISSUE_TEMPLATE/feature_request.yml
     - .github/PULL_REQUEST_TEMPLATE.md
     - .github/workflows/branch.yml
-    - .github/workflows/pr-comment.yml
     - .github/workflows/linting.yml
-    - .github/.dockstore.yml
+    - .github/workflows/pr-comment.yml
   nextflow_config:
     # zealgt: these defaults point into the checkout (${projectDir}/meta, assets/); lint expands projectDir in the
     # config but not in the schema, so the two strings never compare equal.
     - config_defaults:
-        - params.samples
+        - params.input
+        - params.import_sheet
         - params.registry_seed
         - params.trim_adapters
+    # zealgt: resources are set per process in conf/hazel.config and read from Slurm at run time
+    # (bin/export_slurm_resources.sh, PLAN §2 rule 4), not as process.cpus / memory / time defaults.
     - process.cpus
     - process.memory
     - process.time
+    # zealgt: no nf-core/configs (skipped template feature nf_core_configs; the hazel profile lives in conf/hazel.config)
     - custom_config
     - params.custom_config_version
     - params.custom_config_base
@@ -41,34 +52,31 @@ lint:
   multiqc_config:
     - report_comment
   files_exist:
-    # zealgt: .gitattributes belongs to the skipped 'github' template feature (GitHub linguist hints only; no GitHub CI here)
+    # zealgt: files of the skipped template features github / ci / igenomes / email / nf-core branding (see above)
     - .gitattributes
-    - .github/workflows/branch.yml
-    - .github/workflows/nf-test.yml
-    - .github/actions/get-shards/action.yml
-    - .github/actions/nf-test/action.yml
-    - .github/workflows/pr-comment.yml
-    - .github/workflows/linting.yml
-    - conf/igenomes.config
-    - assets/email_template.html
-    - assets/sendmail_template.txt
-    - assets/email_template.txt
-    - conf/igenomes.config
-    - conf/igenomes_ignored.config
-    - CODE_OF_CONDUCT.md
-    - assets/nf-core-zealgt_logo_light.png
-    - docs/images/nf-core-zealgt_logo_light.png
-    - docs/images/nf-core-zealgt_logo_dark.png
-    - .github/ISSUE_TEMPLATE/config.yml
-    - .github/workflows/awstest.yml
-    - .github/workflows/awsfulltest.yml
+    - .github/.dockstore.yml
     - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/ISSUE_TEMPLATE/config.yml
     - .github/ISSUE_TEMPLATE/feature_request.yml
     - .github/PULL_REQUEST_TEMPLATE.md
-    - .github/.dockstore.yml
-    - docs/CONTRIBUTING.md
+    - .github/actions/get-shards/action.yml
+    - .github/actions/nf-test/action.yml
+    - .github/workflows/awsfulltest.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/branch.yml
+    - .github/workflows/linting.yml
+    - .github/workflows/nf-test.yml
+    - .github/workflows/pr-comment.yml
+    - CODE_OF_CONDUCT.md
+    - assets/email_template.html
+    - assets/email_template.txt
+    - assets/nf-core-zealgt_logo_light.png
+    - assets/sendmail_template.txt
+    - conf/igenomes.config
+    - conf/igenomes_ignored.config
+    - docs/images/nf-core-zealgt_logo_dark.png
+    - docs/images/nf-core-zealgt_logo_light.png
   readme:
-    - nextflow_badge
     - nextflow_badge
     - nfcore_template_badge
   included_configs: false
