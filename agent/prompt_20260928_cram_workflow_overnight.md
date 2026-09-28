@@ -11,9 +11,10 @@ CollectWgsMetrics, MultiQC per library) and the provenance record. Build the gen
 stub modules) only if it costs nothing; do not develop it.
 
 Done by morning means, in this order:
-0. The nf-core template scaffolded and committed untouched first (the build prompt's "Template" section); nf-core modules installed
-   for fastqc, trimmomatic (batch-1 parameters, PLAN §3 row 1b; cutadapt is the demuxer only), samtools, picard/collectwgsmetrics, multiqc; minibwa, DEMUX+ALIGN, registry and provenance as
-   modules/local/ to nf-core conventions; `nf-core pipelines lint` and the stub nf-tests clean before the first push.
+0. The nf-core template scaffolded and committed untouched first (the build prompt's "Template" section); the DEMUX+ALIGN
+   library task as one local module exactly as PLAN §0 (cutadapt → Trimmomatic → FastQC → minibwa | samtools → CRAM inside the task;
+   env/assembly + zealgt_reads/bin on PATH, see the build prompt); nf-core modules only for the CRAM-level steps (samtools stats, the
+   markdup-only import pass, picard/collectwgsmetrics, multiqc); registry and provenance as modules/local/ to nf-core conventions; `nf-core pipelines lint` and the stub nf-tests clean before the first push.
 1. Code written locally, committed in small explicit steps (`git add <paths>`), CodeRabbit run on it (`coderabbit review --committed
    --base main --agent`), findings applied or rejected with a reason in agent/, pushed, pulled on hazel (ZEAL/zealgt).
 2. Gate 0: `-stub-run` of every CRAM entry as a small short-QOS job; the DAG wires (channel joins, filenames, storeDir paths under
@@ -29,6 +30,9 @@ Done by morning means, in this order:
 5. docs/REQUIREMENTS.md §4 updated with measured cpu / peak RSS / wall / disk / file counts per module from trace.txt and seff.
 6. A handover agent/handover_<YYYYMMDD_HHMMSS>_cram_workflow.md: file layout, gate reached per entry with job ids and Nextflow session ids,
    CodeRabbit findings applied / rejected, measured resources, everything left open, the exact next command.
+
+You are authorised (user, 2026-09-27) to write, run and debug the CRAM workflow without asking: commit, push, pull on hazel, submit
+short-QOS jobs, fix and rerun, all within the hard limits below. Stub work/ was already cleaned by the user.
 
 Run unattended: after every submission use /loop to wake yourself every 20–30 minutes, or at the job's expected length, and check
 `squeue -u frodrig4`, `sacct -j <ids>`, the run's `.nextflow.log` and the failed task's `.command.err`; fix the module, commit, push,

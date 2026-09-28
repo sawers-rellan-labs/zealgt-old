@@ -10,9 +10,17 @@ Template (not optional; no hand-rolled layout)
   (nextflow_schema.json + samplesheet schema in assets/), nf-test, MultiQC, conf/base.config + conf/modules.config, the `test` profile,
   modules.json. Drop: igenomes, nf-core institutional configs (compute nodes are offline), email / Slack / Teams, GitHub CI, the
   gitpod/codespaces files. Commit the untouched scaffold as its own first commit so every later change is a readable diff against it.
-- Modules: use nf-core modules (`nf-core modules install`) wherever one exists for the step — check `nf-core modules list remote` for
-  fastqc, trimmomatic (batch-1 parameters, PLAN §3 row 1b; cutadapt only demuxes), samtools (fixmate, sort, markdup, index, stats, collate), picard/collectwgsmetrics, multiqc,
-  bcftools/mpileup. Everything else (minibwa, DEMUX+ALIGN library task, registry, provenance, CRISP, RTIGER, stages 3–6) goes in
+- The library task stays as PLAN §0 says (user, 2026-09-27): ONE local DEMUX+ALIGN process per library runs cutadapt demux →
+  Trimmomatic → FastQC → minibwa | samtools fixmate | sort | markdup -d 2500 → CRAM for every sample inside the task, FASTQs in task
+  scratch only. Its env: conda `/share/maize/frodrig4/conda/env/assembly` (cutadapt, minibwa, samtools), and the script's first line
+  prepends `/rsstu/users/r/rrellan/BZea/ZEAL/envs/zealgt_reads/bin` to PATH for trimmomatic, fastqc and their java — the zealbc1 way
+  (tools by prefix); no new env, no bundled env. Trimmomatic parameters: Snirwan's batch-1 run (PLAN §3 row 1b: ILLUMINACLIP 2:30:10,
+  LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36); find the adapter FASTA their run used from the batch-1 scripts / logs that sit
+  with `sara/BZea/filtered_S/` (read-only, one bounded find); if not found, use the env's `share/trimmomatic*/adapters/TruSeq3-PE-2.fa`
+  and flag it in the handover.
+- nf-core modules (`nf-core modules install`) for the steps that run on CRAMs: samtools/stats, samtools (collate, fixmate, sort, markdup,
+  index) for the markdup-only import pass, picard/collectwgsmetrics, multiqc, later bcftools/mpileup; env overrides: samtools →
+  env/assembly, picard + multiqc → env/qc. Everything else (DEMUX+ALIGN library task, registry, provenance, CRISP, RTIGER, stages 3–6) goes in
   modules/local/ written to nf-core module conventions: `meta` map in / out, `versions.yml` emitted, `task.ext.args` for flags,
   `stub:` block, an nf-test with a stub test. Subworkflows likewise (nf-core subworkflows where they fit, else subworkflows/local/).
 - Two workflows in the template: workflows/cram.nf and workflows/genotype.nf, chosen by one `--workflow cram|genotype` param validated in
