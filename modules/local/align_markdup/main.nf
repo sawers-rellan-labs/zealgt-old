@@ -5,7 +5,11 @@
 // storeDir <store>/cram (conf/modules.config): a stored CRAM is never recomputed, whatever changed in this module (PLAN §2 rule 3).
 // storeDir does not allow `eval` outputs, so the tool versions go into one versions.yml (one line per tool).
 // Threads / memory from bin/export_slurm_resources.sh at run time (hash hygiene): minibwa gets all ZG_CPUS; sort gets up to 4
-// threads and (ZG_MEM_MB - 12 GB reserved for the minibwa index and the pipe) split across them, at least 768 MB per thread.
+// threads and 3/4 of (ZG_MEM_MB - 16 GB) split across them, at least 768 MB per thread. Memory model (Gate 2, 3A): peak =
+// minibwa 9-10.5 GB (B73 index, flat) + sort (-m x threads, grows to its full budget for any sample above ~20 M pairs, plus
+// some overshoot) + ~1-2 GB (fixmate, markdup, pipes). The earlier (ZG_MEM_MB - 12 GB) budget OOM-killed all 12 first
+// attempts at 24 GB (MaxRSS 23.9 GB) and was bound to fail at 48 / 72 GB too; the 16 GB reserve and the 3/4 share leave
+// room for minibwa, the overshoot and the pipe (24 GB -> 4 x 1536 MB).
 // A pipe stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so the 24 / 48 / 72 GB retry
 // escalation of conf/hazel.config actually fires (Gate 1: an OOM-killed sort otherwise surfaced as markdup's exit 1).
 // Sort and markdup temporaries go to TMPDIR (/share, conf/hazel.config) and are removed by samtools.
@@ -42,7 +46,7 @@ process ALIGN_MARKDUP {
     source export_slurm_resources.sh
 
     sort_threads=\$(( ZG_CPUS < 4 ? ZG_CPUS : 4 ))
-    sort_mem_mb=\$(( (ZG_MEM_MB - 12288) / sort_threads ))
+    sort_mem_mb=\$(( (ZG_MEM_MB - 16384) * 3 / 4 / sort_threads ))
     [ "\$sort_mem_mb" -ge 768 ] || sort_mem_mb=768
     tmp="\${TMPDIR:-.}/${prefix}.align_markdup.\$\$"
     mkdir -p "\$tmp"

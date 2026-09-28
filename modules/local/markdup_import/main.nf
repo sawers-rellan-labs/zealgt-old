@@ -11,7 +11,8 @@
 // marked as single-end by markdup. storeDir <store>/cram_import (conf/modules.config), separate from new CRAMs (<store>/cram).
 // Threads / memory from bin/export_slurm_resources.sh; sort memory = half of ZG_MEM_MB split over up to 4 threads, >= 768 MB
 // each (Gate 1, job 969706: (ZG_MEM_MB - 2 GB) for sort left too little for collate / fixmate / markdup and was OOM-killed
-// at 12 GB). A stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so it is retried. storeDir forbids `eval` outputs, so the versions go into one versions.yml (samtools, gawk).
+// at 12 GB). Checked against the Gate 2 ALIGN_MARKDUP memory model: no index in this pipe, so a bounded half for the sort is
+// the same kind of share (Gate 1 S_2A_11 peaked at 7.5 of 12 GB); kept. A stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so it is retried. storeDir forbids `eval` outputs, so the versions go into one versions.yml (samtools, gawk).
 // ext.args = markdup flags (-d 2500), ext.args2 = fixmate, ext.args3 = sort.
 process MARKDUP_IMPORT {
     tag "${meta.id}"
