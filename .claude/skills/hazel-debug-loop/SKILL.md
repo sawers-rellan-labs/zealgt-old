@@ -99,7 +99,10 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 
 ## Killing a run safely (never a name glob)
 With the slurm executor each process is its own Slurm job next to the head; `scancel <head>` alone orphans the children.
-1. **Graceful:** `scancel --signal=INT --batch <head>` — Nextflow cancels its own children.
+1. **Graceful:** `scancel --signal=INT --full <head>` — the signal reaches the nextflow process itself, which cancels its own
+   children and exits ("Execution complete -- Goodbye"). Not `--batch`: that signals only the wrapper shell of
+   `scripts/submit_head_job.sbatch`, which keeps waiting on nextflow while the head goes on submitting jobs (Gate 2, job 972212,
+   2026-09-28). Check afterwards that the head job is gone and the log ends with the shutdown lines.
 2. **Orphans:** cancel them by **exact job IDs** read from that run's `.nextflow.log` (`grep -oE "jobId: [0-9]+"`).
 3. **Never `scancel` by name (`nf-*`)** — zealbc1 agents run Nextflow on the same account.
 
