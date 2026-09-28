@@ -1,0 +1,879 @@
+##### DEMUX_QC summary
+library	cutadapt_version	input_pairs	assigned_pairs	unassigned_pairs	assignment_rate	n_samples	samples_zero_pairs	subsample
+1A	4.9	1000000	949830	50170	0.949830	12	-	1000000
+##### DEMUX_QC per sample
+library	sample_id	barcode_r1	barcode_r2	read_pairs	share_of_input	subsample
+1A	S_1A_1	GCCATA	GCCATA	88521	0.088521	1000000
+1A	S_1A_2	TCTGGT	TCTGGT	113035	0.113035	1000000
+1A	S_1A_3	TGGCTT	TGGCTT	105030	0.105030	1000000
+1A	S_1A_4	AACACT	AACACT	82700	0.082700	1000000
+1A	S_1A_5	TCAGGA	TCAGGA	91065	0.091065	1000000
+1A	S_1A_6	TGGTCC	TGGTCC	138116	0.138116	1000000
+1A	S_1A_7	CAACTG	CAACTG	101373	0.101373	1000000
+1A	S_1A_8	CGGACC	CGGACC	127748	0.127748	1000000
+1A	S_1A_9	ATCGAG	ATCGAG	34949	0.034949	1000000
+1A	S_1A_10	ATGGTG	ATGGTG	33653	0.033653	1000000
+1A	S_1A_11	CTTAAG	CTTAAG	18289	0.018289	1000000
+1A	S_1A_12	GAGTGC	GAGTGC	15351	0.015351	1000000
+##### read start: max base share at positions 1-4 per sample x read, and TruSeq read-through share
+S_1A_1 R1 pos1 top=T 0.373  A=0.2333 C=0.2180 G=0.1752 T=0.3734 N=0.0000  readthrough=0.106314 n=88521
+S_1A_1 R1 pos2 top=T 0.300  A=0.2842 C=0.2666 G=0.1488 T=0.3003 N=0.0000  readthrough=0.106314 n=88521
+S_1A_1 R1 pos3 top=A 0.315  A=0.3148 C=0.2264 G=0.2042 T=0.2546 N=0.0000  readthrough=0.106314 n=88521
+S_1A_1 R1 pos4 top=A 0.297  A=0.2974 C=0.2226 G=0.2279 T=0.2522 N=0.0000  readthrough=0.106314 n=88521
+S_1A_1 R2 pos1 top=T 0.366  A=0.2356 C=0.2169 G=0.1814 T=0.3661 N=0.0000  readthrough=0.097435 n=88521
+S_1A_1 R2 pos2 top=T 0.301  A=0.2860 C=0.2623 G=0.1504 T=0.3013 N=0.0000  readthrough=0.097435 n=88521
+S_1A_1 R2 pos3 top=A 0.313  A=0.3134 C=0.2227 G=0.2048 T=0.2592 N=0.0000  readthrough=0.097435 n=88521
+S_1A_1 R2 pos4 top=A 0.297  A=0.2970 C=0.2211 G=0.2267 T=0.2552 N=0.0000  readthrough=0.097435 n=88521
+S_1A_2 R1 pos1 top=C 0.445  A=0.1775 C=0.4452 G=0.2336 T=0.1438 N=0.0000  readthrough=0.110160 n=100000
+S_1A_2 R1 pos2 top=T 0.352  A=0.2392 C=0.2252 G=0.1840 T=0.3516 N=0.0000  readthrough=0.110160 n=100000
+S_1A_2 R1 pos3 top=T 0.291  A=0.2794 C=0.2679 G=0.1614 T=0.2913 N=0.0000  readthrough=0.110160 n=100000
+S_1A_2 R1 pos4 top=A 0.316  A=0.3155 C=0.2284 G=0.2069 T=0.2492 N=0.0000  readthrough=0.110160 n=100000
+S_1A_2 R2 pos1 top=C 0.449  A=0.1779 C=0.4485 G=0.2311 T=0.1425 N=0.0000  readthrough=0.100570 n=100000
+S_1A_2 R2 pos2 top=T 0.353  A=0.2402 C=0.2218 G=0.1851 T=0.3528 N=0.0000  readthrough=0.100570 n=100000
+S_1A_2 R2 pos3 top=T 0.288  A=0.2813 C=0.2673 G=0.1632 T=0.2882 N=0.0000  readthrough=0.100570 n=100000
+S_1A_2 R2 pos4 top=A 0.316  A=0.3157 C=0.2270 G=0.2074 T=0.2499 N=0.0000  readthrough=0.100570 n=100000
+S_1A_3 R1 pos1 top=T 0.373  A=0.2196 C=0.2250 G=0.1828 T=0.3726 N=0.0000  readthrough=0.116310 n=100000
+S_1A_3 R1 pos2 top=T 0.296  A=0.2771 C=0.2646 G=0.1622 T=0.2962 N=0.0000  readthrough=0.116310 n=100000
+S_1A_3 R1 pos3 top=A 0.309  A=0.3092 C=0.2223 G=0.2134 T=0.2551 N=0.0000  readthrough=0.116310 n=100000
+S_1A_3 R1 pos4 top=A 0.303  A=0.3029 C=0.2182 G=0.2299 T=0.2490 N=0.0000  readthrough=0.116310 n=100000
+S_1A_3 R2 pos1 top=T 0.368  A=0.2255 C=0.2248 G=0.1819 T=0.3678 N=0.0000  readthrough=0.105070 n=100000
+S_1A_3 R2 pos2 top=T 0.300  A=0.2759 C=0.2627 G=0.1616 T=0.2998 N=0.0000  readthrough=0.105070 n=100000
+S_1A_3 R2 pos3 top=A 0.308  A=0.3085 C=0.2251 G=0.2119 T=0.2546 N=0.0000  readthrough=0.105070 n=100000
+S_1A_3 R2 pos4 top=A 0.304  A=0.3036 C=0.2172 G=0.2317 T=0.2475 N=0.0000  readthrough=0.105070 n=100000
+S_1A_4 R1 pos1 top=C 0.447  A=0.1975 C=0.4472 G=0.2340 T=0.1213 N=0.0000  readthrough=0.105151 n=82700
+S_1A_4 R1 pos2 top=T 0.359  A=0.2472 C=0.2066 G=0.1868 T=0.3594 N=0.0000  readthrough=0.105151 n=82700
+S_1A_4 R1 pos3 top=T 0.295  A=0.2900 C=0.2566 G=0.1588 T=0.2947 N=0.0000  readthrough=0.105151 n=82700
+S_1A_4 R1 pos4 top=A 0.316  A=0.3155 C=0.2262 G=0.2090 T=0.2494 N=0.0000  readthrough=0.105151 n=82700
+S_1A_4 R2 pos1 top=C 0.450  A=0.1947 C=0.4498 G=0.2330 T=0.1225 N=0.0000  readthrough=0.098730 n=82700
+S_1A_4 R2 pos2 top=T 0.361  A=0.2459 C=0.2082 G=0.1851 T=0.3609 N=0.0000  readthrough=0.098730 n=82700
+S_1A_4 R2 pos3 top=T 0.296  A=0.2889 C=0.2570 G=0.1577 T=0.2965 N=0.0000  readthrough=0.098730 n=82700
+S_1A_4 R2 pos4 top=A 0.313  A=0.3133 C=0.2267 G=0.2090 T=0.2509 N=0.0000  readthrough=0.098730 n=82700
+S_1A_5 R1 pos1 top=C 0.461  A=0.1842 C=0.4606 G=0.2196 T=0.1356 N=0.0000  readthrough=0.116620 n=91065
+S_1A_5 R1 pos2 top=T 0.350  A=0.2410 C=0.2234 G=0.1859 T=0.3496 N=0.0000  readthrough=0.116620 n=91065
+S_1A_5 R1 pos3 top=T 0.291  A=0.2760 C=0.2764 G=0.1567 T=0.2910 N=0.0000  readthrough=0.116620 n=91065
+S_1A_5 R1 pos4 top=A 0.307  A=0.3071 C=0.2339 G=0.2008 T=0.2583 N=0.0000  readthrough=0.116620 n=91065
+S_1A_5 R2 pos1 top=C 0.462  A=0.1874 C=0.4615 G=0.2172 T=0.1339 N=0.0000  readthrough=0.105233 n=91065
+S_1A_5 R2 pos2 top=T 0.342  A=0.2482 C=0.2217 G=0.1881 T=0.3421 N=0.0000  readthrough=0.105233 n=91065
+S_1A_5 R2 pos3 top=T 0.288  A=0.2791 C=0.2768 G=0.1558 T=0.2883 N=0.0000  readthrough=0.105233 n=91065
+S_1A_5 R2 pos4 top=A 0.307  A=0.3069 C=0.2329 G=0.2044 T=0.2558 N=0.0000  readthrough=0.105233 n=91065
+S_1A_6 R1 pos1 top=T 0.337  A=0.2449 C=0.2205 G=0.1976 T=0.3371 N=0.0000  readthrough=0.103860 n=100000
+S_1A_6 R1 pos2 top=A 0.287  A=0.2866 C=0.2551 G=0.1763 T=0.2820 N=0.0000  readthrough=0.103860 n=100000
+S_1A_6 R1 pos3 top=A 0.314  A=0.3135 C=0.2245 G=0.2179 T=0.2442 N=0.0000  readthrough=0.103860 n=100000
+S_1A_6 R1 pos4 top=A 0.304  A=0.3041 C=0.2220 G=0.2331 T=0.2407 N=0.0000  readthrough=0.103860 n=100000
+S_1A_6 R2 pos1 top=T 0.334  A=0.2483 C=0.2174 G=0.2007 T=0.3336 N=0.0000  readthrough=0.093080 n=100000
+S_1A_6 R2 pos2 top=A 0.287  A=0.2872 C=0.2539 G=0.1760 T=0.2829 N=0.0000  readthrough=0.093080 n=100000
+S_1A_6 R2 pos3 top=A 0.314  A=0.3137 C=0.2256 G=0.2188 T=0.2418 N=0.0000  readthrough=0.093080 n=100000
+S_1A_6 R2 pos4 top=A 0.304  A=0.3044 C=0.2213 G=0.2327 T=0.2416 N=0.0000  readthrough=0.093080 n=100000
+S_1A_7 R1 pos1 top=T 0.382  A=0.2296 C=0.2175 G=0.1713 T=0.3816 N=0.0000  readthrough=0.113510 n=100000
+S_1A_7 R1 pos2 top=T 0.320  A=0.2693 C=0.2785 G=0.1320 T=0.3202 N=0.0000  readthrough=0.113510 n=100000
+S_1A_7 R1 pos3 top=A 0.316  A=0.3160 C=0.2245 G=0.1951 T=0.2644 N=0.0000  readthrough=0.113510 n=100000
+S_1A_7 R1 pos4 top=A 0.307  A=0.3071 C=0.2158 G=0.2194 T=0.2577 N=0.0000  readthrough=0.113510 n=100000
+S_1A_7 R2 pos1 top=T 0.379  A=0.2321 C=0.2157 G=0.1735 T=0.3787 N=0.0000  readthrough=0.105890 n=100000
+S_1A_7 R2 pos2 top=T 0.322  A=0.2726 C=0.2741 G=0.1311 T=0.3221 N=0.0000  readthrough=0.105890 n=100000
+S_1A_7 R2 pos3 top=A 0.316  A=0.3157 C=0.2214 G=0.1978 T=0.2651 N=0.0000  readthrough=0.105890 n=100000
+S_1A_7 R2 pos4 top=A 0.304  A=0.3039 C=0.2170 G=0.2210 T=0.2581 N=0.0000  readthrough=0.105890 n=100000
+S_1A_8 R1 pos1 top=T 0.338  A=0.2535 C=0.2094 G=0.1991 T=0.3380 N=0.0000  readthrough=0.105390 n=100000
+S_1A_8 R1 pos2 top=A 0.289  A=0.2895 C=0.2562 G=0.1673 T=0.2870 N=0.0000  readthrough=0.105390 n=100000
+S_1A_8 R1 pos3 top=A 0.315  A=0.3145 C=0.2279 G=0.2098 T=0.2478 N=0.0000  readthrough=0.105390 n=100000
+S_1A_8 R1 pos4 top=A 0.306  A=0.3059 C=0.2220 G=0.2278 T=0.2442 N=0.0000  readthrough=0.105390 n=100000
+S_1A_8 R2 pos1 top=T 0.339  A=0.2560 C=0.2081 G=0.1973 T=0.3387 N=0.0000  readthrough=0.091970 n=100000
+S_1A_8 R2 pos2 top=T 0.291  A=0.2877 C=0.2537 G=0.1677 T=0.2909 N=0.0000  readthrough=0.091970 n=100000
+S_1A_8 R2 pos3 top=A 0.316  A=0.3161 C=0.2249 G=0.2117 T=0.2473 N=0.0000  readthrough=0.091970 n=100000
+S_1A_8 R2 pos4 top=A 0.305  A=0.3054 C=0.2205 G=0.2260 T=0.2480 N=0.0000  readthrough=0.091970 n=100000
+S_1A_9 R1 pos1 top=C 0.455  A=0.2045 C=0.4550 G=0.2256 T=0.1149 N=0.0000  readthrough=0.102721 n=34949
+S_1A_9 R1 pos2 top=T 0.351  A=0.2576 C=0.2040 G=0.1876 T=0.3507 N=0.0000  readthrough=0.102721 n=34949
+S_1A_9 R1 pos3 top=T 0.308  A=0.2825 C=0.2628 G=0.1468 T=0.3078 N=0.0000  readthrough=0.102721 n=34949
+S_1A_9 R1 pos4 top=A 0.315  A=0.3147 C=0.2305 G=0.2013 T=0.2535 N=0.0000  readthrough=0.102721 n=34949
+S_1A_9 R2 pos1 top=C 0.448  A=0.2088 C=0.4479 G=0.2306 T=0.1127 N=0.0000  readthrough=0.093422 n=34949
+S_1A_9 R2 pos2 top=T 0.347  A=0.2626 C=0.1978 G=0.1929 T=0.3467 N=0.0000  readthrough=0.093422 n=34949
+S_1A_9 R2 pos3 top=T 0.308  A=0.2830 C=0.2609 G=0.1476 T=0.3085 N=0.0000  readthrough=0.093422 n=34949
+S_1A_9 R2 pos4 top=A 0.314  A=0.3135 C=0.2335 G=0.1986 T=0.2545 N=0.0000  readthrough=0.093422 n=34949
+S_1A_10 R1 pos1 top=C 0.476  A=0.1678 C=0.4762 G=0.2241 T=0.1318 N=0.0000  readthrough=0.109619 n=33653
+S_1A_10 R1 pos2 top=T 0.375  A=0.2312 C=0.2206 G=0.1729 T=0.3753 N=0.0000  readthrough=0.109619 n=33653
+S_1A_10 R1 pos3 top=T 0.293  A=0.2868 C=0.2708 G=0.1490 T=0.2935 N=0.0000  readthrough=0.109619 n=33653
+S_1A_10 R1 pos4 top=A 0.316  A=0.3164 C=0.2287 G=0.2010 T=0.2540 N=0.0000  readthrough=0.109619 n=33653
+S_1A_10 R2 pos1 top=C 0.477  A=0.1695 C=0.4767 G=0.2226 T=0.1311 N=0.0000  readthrough=0.100764 n=33653
+S_1A_10 R2 pos2 top=T 0.372  A=0.2375 C=0.2161 G=0.1744 T=0.3721 N=0.0000  readthrough=0.100764 n=33653
+S_1A_10 R2 pos3 top=T 0.299  A=0.2848 C=0.2725 G=0.1441 T=0.2987 N=0.0000  readthrough=0.100764 n=33653
+S_1A_10 R2 pos4 top=A 0.310  A=0.3102 C=0.2284 G=0.2013 T=0.2600 N=0.0000  readthrough=0.100764 n=33653
+S_1A_11 R1 pos1 top=C 0.476  A=0.1924 C=0.4756 G=0.2148 T=0.1172 N=0.0000  readthrough=0.102302 n=18289
+S_1A_11 R1 pos2 top=T 0.342  A=0.2586 C=0.2077 G=0.1918 T=0.3420 N=0.0000  readthrough=0.102302 n=18289
+S_1A_11 R1 pos3 top=A 0.299  A=0.2990 C=0.2655 G=0.1523 T=0.2832 N=0.0000  readthrough=0.102302 n=18289
+S_1A_11 R1 pos4 top=A 0.310  A=0.3100 C=0.2358 G=0.2061 T=0.2481 N=0.0000  readthrough=0.102302 n=18289
+S_1A_11 R2 pos1 top=C 0.482  A=0.1845 C=0.4820 G=0.2205 T=0.1130 N=0.0000  readthrough=0.095577 n=18289
+S_1A_11 R2 pos2 top=T 0.339  A=0.2623 C=0.2049 G=0.1935 T=0.3393 N=0.0000  readthrough=0.095577 n=18289
+S_1A_11 R2 pos3 top=A 0.291  A=0.2911 C=0.2635 G=0.1608 T=0.2847 N=0.0000  readthrough=0.095577 n=18289
+S_1A_11 R2 pos4 top=A 0.311  A=0.3113 C=0.2369 G=0.2081 T=0.2438 N=0.0000  readthrough=0.095577 n=18289
+S_1A_12 R1 pos1 top=T 0.375  A=0.2373 C=0.2185 G=0.1689 T=0.3753 N=0.0000  readthrough=0.095173 n=15351
+S_1A_12 R1 pos2 top=T 0.291  A=0.2865 C=0.2653 G=0.1571 T=0.2911 N=0.0000  readthrough=0.095173 n=15351
+S_1A_12 R1 pos3 top=A 0.314  A=0.3140 C=0.2315 G=0.2062 T=0.2484 N=0.0000  readthrough=0.095173 n=15351
+S_1A_12 R1 pos4 top=A 0.307  A=0.3071 C=0.2162 G=0.2244 T=0.2524 N=0.0000  readthrough=0.095173 n=15351
+S_1A_12 R2 pos1 top=T 0.373  A=0.2386 C=0.2150 G=0.1732 T=0.3733 N=0.0000  readthrough=0.085532 n=15351
+S_1A_12 R2 pos2 top=T 0.293  A=0.2823 C=0.2685 G=0.1565 T=0.2927 N=0.0000  readthrough=0.085532 n=15351
+S_1A_12 R2 pos3 top=A 0.319  A=0.3189 C=0.2214 G=0.2060 T=0.2537 N=0.0000  readthrough=0.085532 n=15351
+S_1A_12 R2 pos4 top=A 0.308  A=0.3079 C=0.2139 G=0.2309 T=0.2473 N=0.0000  readthrough=0.085532 n=15351
+##### read start: library-wide mean composition per read x position (1-10)
+R1 1 A=0.212 C=0.339 G=0.204 T=0.245
+R1 2 A=0.264 C=0.239 G=0.171 T=0.325
+R1 3 A=0.300 C=0.246 G=0.181 T=0.273
+R1 4 A=0.309 C=0.225 G=0.216 T=0.251
+R1 5 A=0.312 C=0.213 G=0.228 T=0.246
+R1 6 A=0.289 C=0.214 G=0.214 T=0.284
+R1 7 A=0.257 C=0.233 G=0.207 T=0.303
+R1 8 A=0.243 C=0.242 G=0.213 T=0.302
+R1 9 A=0.263 C=0.221 G=0.216 T=0.300
+R1 10 A=0.280 C=0.227 G=0.238 T=0.255
+R2 1 A=0.213 C=0.339 G=0.205 T=0.243
+R2 2 A=0.266 C=0.237 G=0.172 T=0.325
+R2 3 A=0.300 C=0.245 G=0.182 T=0.274
+R2 4 A=0.308 C=0.225 G=0.216 T=0.251
+R2 5 A=0.315 C=0.212 G=0.227 T=0.246
+R2 6 A=0.289 C=0.212 G=0.214 T=0.284
+R2 7 A=0.258 C=0.231 G=0.208 T=0.303
+R2 8 A=0.244 C=0.242 G=0.212 T=0.302
+R2 9 A=0.264 C=0.220 G=0.215 T=0.301
+R2 10 A=0.279 C=0.228 G=0.238 T=0.255
+##### cutadapt log head
+This is cutadapt 4.9 with Python 3.12.14
+Command line parameters: -j 6 -e 0 --no-indels --discard-untrimmed -Z -g ^file:barcodes_r1.fa -G ^file:barcodes_r2.fa --pair-adapters --json 1A.cutadapt.json -o demux/{name}_R1.fastq.gz -p demux/{name}_R2.fastq.gz in_R1.fastq in_R2.fastq
+Processing paired-end reads on 6 cores ...
+Finished in 4.461 s (4.461 µs/read; 13.45 M reads/minute).
+
+=== Summary ===
+
+Total read pairs processed:          1,000,000
+  Read 1 with adapter:                 949,830 (95.0%)
+  Read 2 with adapter:                 949,830 (95.0%)
+
+== Read fate breakdown ==
+Pairs discarded as untrimmed:           50,170 (5.0%)
+Pairs written (passing filters):       949,830 (95.0%)
+
+Total basepairs processed:   300,000,000 bp
+  Read 1:   150,000,000 bp
+  Read 2:   150,000,000 bp
+Total written (filtered):    269,751,720 bp (89.9%)
+  Read 1:   134,875,860 bp
+  Read 2:   134,875,860 bp
+
+=== First read: Adapter S_1A_1 ===
+
+Sequence: GCCATANN; Type: anchored 5'; Length: 8; Trimmed: 88521 times
+
+No. of allowed errors: 0
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+8	88521	15.3	0	88521
+
+
+=== First read: Adapter S_1A_2 ===
+
+Sequence: TCTGGTNN; Type: anchored 5'; Length: 8; Trimmed: 113035 times
+
+No. of allowed errors: 0
+
+Overview of removed sequences
+##### CRAMs (1A subsample): RG, duplicates, index
+S_1A_1.cram records=173646 with_RG=173646 dup_flagged=6069 sec_supp=1264 mapq_ge1=125123 unmapped=535 crai=yes size=3758770
+@RG	ID:S_1A_1	SM:S_1A_1	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_1\tSM:S_1A_1\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_1.paired.trim_1.fastq.gz S_1A_1.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_1.align_markdup.4095670/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_1.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_1.align_markdup.4095670/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_10.cram records=65591 with_RG=65591 dup_flagged=2160 sec_supp=439 mapq_ge1=45317 unmapped=275 crai=yes size=1466320
+@RG	ID:S_1A_10	SM:S_1A_10	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_10\tSM:S_1A_10\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_10.paired.trim_1.fastq.gz S_1A_10
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_10.align_markdup.3631185/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_10.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_10.align_markdup.3631185/markdup --refe
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_11.cram records=35321 with_RG=35321 dup_flagged=1403 sec_supp=233 mapq_ge1=24781 unmapped=121 crai=yes size=814167
+@RG	ID:S_1A_11	SM:S_1A_11	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_11\tSM:S_1A_11\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_11.paired.trim_1.fastq.gz S_1A_11
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_11.align_markdup.2961798/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_11.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_11.align_markdup.2961798/markdup --refe
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_12.cram records=30594 with_RG=30594 dup_flagged=1166 sec_supp=184 mapq_ge1=22132 unmapped=88 crai=yes size=764353
+@RG	ID:S_1A_12	SM:S_1A_12	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_12\tSM:S_1A_12\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_12.paired.trim_1.fastq.gz S_1A_12
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_12.align_markdup.2490732/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_12.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_12.align_markdup.2490732/markdup --refe
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_2.cram records=214931 with_RG=214931 dup_flagged=7974 sec_supp=1357 mapq_ge1=154407 unmapped=612 crai=yes size=4490053
+@RG	ID:S_1A_2	SM:S_1A_2	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_2\tSM:S_1A_2\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_2.paired.trim_1.fastq.gz S_1A_2.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_2.align_markdup.1566552/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_2.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_2.align_markdup.1566552/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_3.cram records=204849 with_RG=204849 dup_flagged=6367 sec_supp=1545 mapq_ge1=140758 unmapped=1007 crai=yes size=4622112
+@RG	ID:S_1A_3	SM:S_1A_3	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_3\tSM:S_1A_3\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_3.paired.trim_1.fastq.gz S_1A_3.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_3.align_markdup.1565234/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_3.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_3.align_markdup.1565234/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_4.cram records=158895 with_RG=158895 dup_flagged=5666 sec_supp=995 mapq_ge1=110726 unmapped=509 crai=yes size=3372450
+@RG	ID:S_1A_4	SM:S_1A_4	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_4\tSM:S_1A_4\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_4.paired.trim_1.fastq.gz S_1A_4.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_4.align_markdup.3633014/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_4.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_4.align_markdup.3633014/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_5.cram records=172738 with_RG=172738 dup_flagged=6384 sec_supp=1228 mapq_ge1=124202 unmapped=579 crai=yes size=3700224
+@RG	ID:S_1A_5	SM:S_1A_5	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_5\tSM:S_1A_5\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_5.paired.trim_1.fastq.gz S_1A_5.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_5.align_markdup.1565855/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_5.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_5.align_markdup.1565855/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_6.cram records=272028 with_RG=272028 dup_flagged=9728 sec_supp=1404 mapq_ge1=197212 unmapped=761 crai=yes size=6048276
+@RG	ID:S_1A_6	SM:S_1A_6	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_6\tSM:S_1A_6\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_6.paired.trim_1.fastq.gz S_1A_6.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_6.align_markdup.1888050/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_6.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_6.align_markdup.1888050/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_7.cram records=201405 with_RG=201405 dup_flagged=6924 sec_supp=1311 mapq_ge1=142144 unmapped=547 crai=yes size=4380355
+@RG	ID:S_1A_7	SM:S_1A_7	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_7\tSM:S_1A_7\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_7.paired.trim_1.fastq.gz S_1A_7.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_7.align_markdup.3634657/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_7.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_7.align_markdup.3634657/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_8.cram records=253663 with_RG=253663 dup_flagged=8489 sec_supp=1529 mapq_ge1=181579 unmapped=743 crai=yes size=5929634
+@RG	ID:S_1A_8	SM:S_1A_8	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_8\tSM:S_1A_8\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_8.paired.trim_1.fastq.gz S_1A_8.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_8.align_markdup.2963896/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_8.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_8.align_markdup.2963896/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+S_1A_9.cram records=67033 with_RG=67033 dup_flagged=2429 sec_supp=369 mapq_ge1=48418 unmapped=212 crai=yes size=1495752
+@RG	ID:S_1A_9	SM:S_1A_9	LB:1A	PL:ILLUMINA	PU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -t 8 -x sr -R @RG\tID:S_1A_9\tSM:S_1A_9\tLB:1A\tPL:ILLUMINA\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7 B73.fa S_1A_9.paired.trim_1.fastq.gz S_1A_9.pai
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools fixmate -@ 2 -m -u - -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 4 -m 3072M -u -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_9.align_markdup.3323307/sort -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools markdup -@ 2 -d 2500 -f S_1A_9.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_9.align_markdup.3323307/markdup --refere
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:/share/maize/frodrig4/conda/zealgt/align_markdup-1bd0900b/bin/samtools view -H /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A
+PN5_SID464.cram records=5471495 with_RG=5471495 dup_flagged=282944 sec_supp=0 mapq_ge1=5471495 unmapped=0 crai=yes size=154720474
+@PG	ID:minibwa	PN:minibwa	VN:0.7-r421	CL:minibwa map -x sr -t 8 /rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa /rsstu/users/r/rrellan/BZea/ZEAL/work/tmp_935095_0/r1.fq /rsstu/users/r/rrellan/BZea/Z
+@PG	ID:samtools	PN:samtools	PP:minibwa	VN:1.21	CL:samtools addreplacerg -r ID:PN5_SID464 -r SM:PN5_SID464 -r PL:ILLUMINA -r LB:batch1 -O SAM -
+@PG	ID:samtools.1	PN:samtools	PP:samtools	VN:1.21	CL:samtools sort -@ 2 -T /rsstu/users/r/rrellan/BZea/ZEAL/work/tmp_935095_0/sort -o /rsstu/users/r/rrellan/BZea/ZEAL/work/tmp_935095_0/aln.bam -
+@PG	ID:samtools.2	PN:samtools	PP:samtools.1	VN:1.21	CL:samtools view -T /rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa -C -F 0x904 -q 20 -o /rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0540_chr
+@PG	ID:samtools.3	PN:samtools	PP:samtools.2	VN:1.21	CL:samtools addreplacerg -@ 4 -m overwrite_all -w -r @RG\tID:PN5_SID464\tSM:PN5_SID464\tPL:ILLUMINA\tLB:batch1 --reference B73.fa -O BAM --output-fm
+@PG	ID:samtools.4	PN:samtools	PP:samtools.3	VN:1.21	CL:samtools collate -@ 4 -O -u - /share/maize/frodrig4/nf_work/gate1_import/tmp/PN5_SID464.markdup_import.138412/collate
+@PG	ID:samtools.5	PN:samtools	PP:samtools.4	VN:1.21	CL:samtools fixmate -@ 4 -m -u - -
+@PG	ID:samtools.6	PN:samtools	PP:samtools.5	VN:1.21	CL:samtools sort -@ 4 -m 2560M -u -T /share/maize/frodrig4/nf_work/gate1_import/tmp/PN5_SID464.markdup_import.138412/sort -
+##### markdup stats (first sample of each store)
+== /rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram/S_1A_1.markdup.stats
+COMMAND: samtools markdup -@ 2 -d 2500 -f S_1A_1.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_1A/tmp/S_1A_1.align_markdup.4095670/markdup --reference B73.fa -O cram - S_1A_1.cram
+READ: 173646
+WRITTEN: 173646
+EXCLUDED: 1799
+EXAMINED: 171847
+PAIRED: 171744
+SINGLE: 103
+DUPLICATE PAIR: 6066
+DUPLICATE SINGLE: 3
+DUPLICATE PAIR OPTICAL: 5836
+DUPLICATE SINGLE OPTICAL: 2
+DUPLICATE NON PRIMARY: 0
+DUPLICATE NON PRIMARY OPTICAL: 0
+DUPLICATE PRIMARY TOTAL: 6069
+DUPLICATE TOTAL: 6069
+ESTIMATED_LIBRARY_SIZE: 29891325
+
+== /rsstu/users/r/rrellan/BZea/ZEAL/store_gate1/cram_import/PN5_SID464.markdup.stats
+COMMAND: samtools markdup -@ 4 -d 2500 -f PN5_SID464.markdup.stats -T /share/maize/frodrig4/nf_work/gate1_import/tmp/PN5_SID464.markdup_import.138412/markdup --reference B73.fa -O cram - PN5_SID464.cram
+READ: 5471495
+WRITTEN: 5471495
+EXCLUDED: 0
+EXAMINED: 5471495
+PAIRED: 5457584
+SINGLE: 13911
+DUPLICATE PAIR: 281768
+DUPLICATE SINGLE: 1176
+DUPLICATE PAIR OPTICAL: 119506
+DUPLICATE SINGLE OPTICAL: 348
+DUPLICATE NON PRIMARY: 0
+DUPLICATE NON PRIMARY OPTICAL: 0
+DUPLICATE PRIMARY TOTAL: 282944
+DUPLICATE TOTAL: 282944
+ESTIMATED_LIBRARY_SIZE: 43008618
+
+##### QC files in stores
+total 41444
+drwxrws---+ 2 frodrig4 oit-rsrch-rrellan-bzea    8192 Sep 28 02:22 .
+drwxrws---+ 5 frodrig4 oit-rsrch-rrellan-bzea    4096 Sep 28 02:15 ..
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3015 Sep 28 02:20 S_1A_1.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_1.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  3758770 Sep 28 02:12 S_1A_1.cram
+-rw-r--r--+ 1 frodrig4 maize                     5859 Sep 28 02:12 S_1A_1.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      517 Sep 28 02:12 S_1A_1.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_1.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_1.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   80497 Sep 28 02:14 S_1A_1.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3012 Sep 28 02:21 S_1A_10.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_10.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  1466320 Sep 28 02:12 S_1A_10.cram
+-rw-r--r--+ 1 frodrig4 maize                     5233 Sep 28 02:12 S_1A_10.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      514 Sep 28 02:12 S_1A_10.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2493 Sep 28 02:15 S_1A_10.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_10.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   78778 Sep 28 02:14 S_1A_10.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3008 Sep 28 02:21 S_1A_11.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_11.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                   814167 Sep 28 02:12 S_1A_11.cram
+-rw-r--r--+ 1 frodrig4 maize                     4113 Sep 28 02:12 S_1A_11.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      513 Sep 28 02:12 S_1A_11.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2492 Sep 28 02:15 S_1A_11.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_11.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   77235 Sep 28 02:14 S_1A_11.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3008 Sep 28 02:22 S_1A_12.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_12.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                   764353 Sep 28 02:12 S_1A_12.cram
+-rw-r--r--+ 1 frodrig4 maize                     3814 Sep 28 02:12 S_1A_12.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      513 Sep 28 02:12 S_1A_12.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2492 Sep 28 02:15 S_1A_12.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_12.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   77179 Sep 28 02:14 S_1A_12.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3018 Sep 28 02:21 S_1A_2.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_2.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  4490053 Sep 28 02:12 S_1A_2.cram
+-rw-r--r--+ 1 frodrig4 maize                     6066 Sep 28 02:12 S_1A_2.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      519 Sep 28 02:12 S_1A_2.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_2.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_2.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   81072 Sep 28 02:15 S_1A_2.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3011 Sep 28 02:21 S_1A_3.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_3.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  4622112 Sep 28 02:12 S_1A_3.cram
+-rw-r--r--+ 1 frodrig4 maize                     5994 Sep 28 02:12 S_1A_3.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      517 Sep 28 02:12 S_1A_3.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_3.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_3.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   80702 Sep 28 02:14 S_1A_3.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3010 Sep 28 02:22 S_1A_4.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_4.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  3372450 Sep 28 02:12 S_1A_4.cram
+-rw-r--r--+ 1 frodrig4 maize                     5879 Sep 28 02:12 S_1A_4.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      516 Sep 28 02:12 S_1A_4.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_4.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_4.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   80544 Sep 28 02:14 S_1A_4.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3015 Sep 28 02:22 S_1A_5.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:12 S_1A_5.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  3700224 Sep 28 02:12 S_1A_5.cram
+-rw-r--r--+ 1 frodrig4 maize                     5938 Sep 28 02:12 S_1A_5.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      519 Sep 28 02:12 S_1A_5.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_5.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_5.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   81015 Sep 28 02:14 S_1A_5.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3023 Sep 28 02:21 S_1A_6.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:14 S_1A_6.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  6048276 Sep 28 02:14 S_1A_6.cram
+-rw-r--r--+ 1 frodrig4 maize                     6199 Sep 28 02:14 S_1A_6.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      517 Sep 28 02:14 S_1A_6.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_6.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_6.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   82066 Sep 28 02:15 S_1A_6.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3015 Sep 28 02:22 S_1A_7.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:14 S_1A_7.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  4380355 Sep 28 02:14 S_1A_7.cram
+-rw-r--r--+ 1 frodrig4 maize                     6010 Sep 28 02:14 S_1A_7.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      519 Sep 28 02:14 S_1A_7.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_7.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_7.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   80704 Sep 28 02:15 S_1A_7.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3016 Sep 28 02:22 S_1A_8.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:14 S_1A_8.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  5929634 Sep 28 02:14 S_1A_8.cram
+-rw-r--r--+ 1 frodrig4 maize                     6182 Sep 28 02:14 S_1A_8.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      517 Sep 28 02:14 S_1A_8.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_8.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_8.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   81365 Sep 28 02:15 S_1A_8.stats
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    3008 Sep 28 02:22 S_1A_9.CollectWgsMetrics.coverage_metrics
+-rw-r--r--+ 1 frodrig4 maize                      102 Sep 28 02:13 S_1A_9.align_markdup.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  1495752 Sep 28 02:13 S_1A_9.cram
+-rw-r--r--+ 1 frodrig4 maize                     5090 Sep 28 02:13 S_1A_9.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                      511 Sep 28 02:13 S_1A_9.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                     2486 Sep 28 02:15 S_1A_9.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                       97 Sep 28 02:15 S_1A_9.provenance.versions.yml
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   78680 Sep 28 02:15 S_1A_9.stats
+total 151832
+drwxrws---+ 2 frodrig4 oit-rsrch-rrellan-bzea      4096 Sep 28 02:11 .
+drwxrws---+ 3 frodrig4 oit-rsrch-rrellan-bzea      4096 Sep 28 02:10 ..
+-rw-r--r--+ 1 frodrig4 maize                  154720474 Sep 28 02:10 PN5_SID464.cram
+-rw-r--r--+ 1 frodrig4 maize                      15155 Sep 28 02:10 PN5_SID464.cram.crai
+-rw-r--r--+ 1 frodrig4 maize                        549 Sep 28 02:10 PN5_SID464.markdup.stats
+-rw-r--r--+ 1 frodrig4 maize                         94 Sep 28 02:10 PN5_SID464.markdup_import.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                       1433 Sep 28 02:10 PN5_SID464.provenance.json
+-rw-r--r--+ 1 frodrig4 maize                         94 Sep 28 02:10 PN5_SID464.provenance.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                        101 Sep 28 02:09 PN5_SID464.read_group.txt
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea     87644 Sep 28 02:11 PN5_SID464.stats
+/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/demux_qc:
+total 60
+drwxrws---+ 2 frodrig4 oit-rsrch-rrellan-bzea  4096 Sep 28 02:12 .
+drwxrws---+ 5 frodrig4 oit-rsrch-rrellan-bzea  4096 Sep 28 02:15 ..
+-rw-r--r--+ 1 frodrig4 maize                  14498 Sep 28 02:11 1A.cutadapt.json
+-rw-r--r--+ 1 frodrig4 maize                   6417 Sep 28 02:11 1A.cutadapt.log
+-rw-r--r--+ 1 frodrig4 maize                     81 Sep 28 02:12 1A.demux_qc.versions.yml
+-rw-r--r--+ 1 frodrig4 maize                  15866 Sep 28 02:12 1A.read_start.tsv
+-rw-r--r--+ 1 frodrig4 maize                    174 Sep 28 02:11 1A.summary.tsv
+-rw-r--r--+ 1 frodrig4 maize                    648 Sep 28 02:11 1A.tsv
+
+/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/registry:
+total 12
+drwxrws---+ 2 frodrig4 oit-rsrch-rrellan-bzea 4096 Sep 28 02:15 .
+drwxrws---+ 5 frodrig4 oit-rsrch-rrellan-bzea 4096 Sep 28 02:15 ..
+-rw-r--r--+ 1 frodrig4 maize                  2023 Sep 28 02:15 1A.registry.tsv
+-rw-r--r--+ 1 frodrig4 maize                    61 Sep 28 02:15 1A.registry.versions.yml
+##### registry
+library	sample_id	demux_read_pairs	cram_bytes	store	subsample	run_id	code_version	registered_utc
+1A	S_1A_1	88521	3758770	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_10	33653	1466320	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_11	18289	814167	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_12	15351	764353	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_2	113035	4490053	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_3	105030	4622112	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_4	82700	3372450	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_5	91065	3700224	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_6	138116	6048276	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_7	101373	4380355	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_8	127748	5929634	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+1A	S_1A_9	34949	1495752	/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000	1000000	gate1_1A	77818dd3a5c956493c198ea564f54b367c08842c	2026-09-28T06:15:02Z
+##### provenance (one BC1, one import)
+{
+  "alignment": {
+    "args": "-x sr",
+    "read_group": "@RG\\tID:S_1A_1\\tSM:S_1A_1\\tLB:1A\\tPL:ILLUMINA\\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7",
+    "tool": "minibwa map"
+  },
+  "code_version": "77818dd3a5c956493c198ea564f54b367c08842c",
+  "cram_bytes": 3758770,
+  "cram_file": "S_1A_1.cram",
+  "donor": "Zx.0410_P2",
+  "entry": "read_demultiplexing",
+  "library": "1A",
+  "mapq_filter": "none (applied by the genotype workflow at read time)",
+  "markdup": "samtools markdup -d 2500",
+  "origin": {
+    "args": "-e 0 --no-indels --discard-untrimmed -Z",
+    "barcode_r1": "GCCATA",
+    "barcode_r2": "GCCATA",
+    "kind": "demux",
+    "layout": "symmetric",
+    "library": "1A",
+    "raw_files_r1": [
+      "BC1_1Ar_WKDL260013245-1A_255FKVLT4_L5_1.fq.gz",
+      "BC1_1Ar_WKDL260013245-1A_255FKVLT4_L6_1.fq.gz",
+      "BC1_1Ar_WKDL260013245-1A_255FKVLT4_L7_1.fq.gz"
+    ],
+    "raw_files_r2": [
+      "BC1_1Ar_WKDL260013245-1A_255FKVLT4_L5_2.fq.gz",
+      "BC1_1Ar_WKDL260013245-1A_255FKVLT4_L6_2.fq.gz",
+      "BC1_1Ar_WKDL260013245-1A_255FKVLT4_L7_2.fq.gz"
+    ],
+    "raw_location": "/rsstu/users/r/rrellan/BZea/BC1_dna_raw/01.RawData/BC1_1Ar",
+    "read_structure": "6B2S+T 6B2S+T",
+    "subsample": 1000000,
+    "tar_members_r1": [],
+    "tar_members_r2": [],
+    "tool": "cutadapt"
+  },
+  "pipeline": "sawers-rellan-labs/zealgt 0.1.0dev",
+  "profile": "hazel,short",
+  "read_group": "@RG\\tID:S_1A_1\\tSM:S_1A_1\\tLB:1A\\tPL:ILLUMINA\\tPU:255FKVLT4.5,255FKVLT4.6,255FKVLT4.7",
+  "record_written_utc": "2026-09-28T06:15:18Z",
+  "reference": "/rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa",
+  "role": "bc1_sample",
+  "run_id": "gate1_1A",
+  "run_name": "furious_shaw",
+  "sample": "S_1A_1",
+  "schema": "zealgt.provenance/1",
+  "session_id": "c9d42ced-3489-47e8-82d8-a243be6b30d2",
+  "session_tool_versions": {
+    "cutadapt": "4.9",
+    "fastqc": "0.12.1",
+    "pigz": "2.8",
+    "tar": "1.35",
+    "trimmomatic": "0.39"
+  },
+  "source": "bc1",
+  "store_dir": "/rsstu/users/r/rrellan/BZea/ZEAL/store/subsample_1000000/cram",
+  "tool_versions_yml": {
+    "S_1A_1.align_markdup.versions.yml": "\"SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP\":\n    minibwa: 0.7-r421\n    samtools: 1.21\n"
+  },
+  "trimming": {
+    "adapters": "/rsstu/users/r/rrellan/BZea/ZEAL/zealgt/assets/adapters/TruSeq3-PE-2.fa",
+    "args": "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36",
+    "illuminaclip": "2:30:10",
+    "phred": "auto-detected",
+    "tool": "trimmomatic"
+  }
+}
+
+{
+  "code_version": "77818dd3a5c956493c198ea564f54b367c08842c",
+  "cram_bytes": 154720474,
+  "cram_file": "PN5_SID464.cram",
+  "donor": "Zx.0540_P3",
+  "entry": "markdup_import",
+  "library": "BZea5",
+  "mapq_filter": "none (applied by the genotype workflow at read time)",
+  "markdup": "samtools markdup -d 2500",
+  "origin": {
+    "input_filters": "as made by zealbc1 / nilhmm (minibwa -x sr, MAPQ 20, -F 0x904)",
+    "kind": "import",
+    "made_by": "zealbc1 PHG/bin/bc2s3_realign.sbatch",
+    "note": "",
+    "path": "/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID464.cram"
+  },
+  "pipeline": "sawers-rellan-labs/zealgt 0.1.0dev",
+  "profile": "hazel,short",
+  "read_group": "from the input header if it has exactly one @RG with SM = sample, else the sample sheet (see <sample>.read_group.txt)",
+  "record_written_utc": "2026-09-28T06:10:55Z",
+  "reference": "/rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa",
+  "role": "line",
+  "run_id": "gate1_import",
+  "run_name": "confident_jang",
+  "sample": "PN5_SID464",
+  "schema": "zealgt.provenance/1",
+  "session_id": "5b212c9c-bcd1-4cee-a01d-9fca0fa50757",
+  "source": "bc2s3_batch1",
+  "store_dir": "/rsstu/users/r/rrellan/BZea/ZEAL/store_gate1/cram_import",
+  "tool_versions_yml": {
+    "PN5_SID464.markdup_import.versions.yml": "\"SAWERSRELLANLABS_ZEALGT:CRAM:CRAM_IMPORT:MARKDUP_IMPORT\":\n    samtools: 1.21\n    gawk: 5.4.1\n"
+  }
+}
+
+##### published outputs
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_10_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_10_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_10_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_10_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_11_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_11_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_11_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_11_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_12_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_12_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_12_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_12_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_1_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_1_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_1_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_1_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_2_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_2_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_2_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_2_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_3_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_3_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_3_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_3_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_4_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_4_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_4_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_4_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_5_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_5_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_5_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_5_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_6_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_6_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_6_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_6_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_7_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_7_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_7_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_7_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_8_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_8_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_8_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_8_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_9_1_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_9_1_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_9_2_fastqc.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/fastqc/1A/S_1A_9_2_fastqc.zip
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/cutadapt_filtered_reads_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/cutadapt_trimmed_sequences_plot_default_Counts.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/cutadapt_trimmed_sequences_plot_default_Obs_Exp.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc-status-check-heatmap.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_adapter_content_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_per_base_n_content_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_per_base_sequence_quality_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_per_sequence_gc_content_plot_Counts.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_per_sequence_gc_content_plot_Percentages.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_per_sequence_quality_scores_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_sequence_counts_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_sequence_duplication_levels_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/fastqc_sequence_length_distribution_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/llms-full.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc.parquet
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_citations.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_cutadapt.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_data.json
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_fastqc.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_general_stats.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_picard_wgsmetrics.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_samtools_stats.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_software_versions.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_sources.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/multiqc_trimmomatic.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/picard_MarkIlluminaAdapters_histogram.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/picard_MeanQualityByCycle_histogram.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/picard_MeanQualityByCycle_histogram_1.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/picard_QualityScoreDistribution_histogram.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/picard_wgs_metrics_bases.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/picard_wgs_metrics_histogram_Counts_Histogram.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/picard_wgs_metrics_histogram_Percentage_Drop-Off.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/samtools-stats-dp.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/samtools_alignment_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/samtools_insert_size.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_data/trimmomatic_plot.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_plots
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_plots/pdf
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_plots/png
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/multiqc/1A_multiqc_report_plots/svg
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info/execution_report_2026-09-28_02-09-22.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info/execution_timeline_2026-09-28_02-09-22.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info/execution_trace_2026-09-28_02-09-22.txt
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info/params_2026-09-28_02-09-35.json
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info/pipeline_dag_2026-09-28_02-09-22.html
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info/zealgt_software_mqc_versions.yml
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_1.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_10.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_10_out.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_11.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_11_out.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_12.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_12_out.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_1_out.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_2.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_2_out.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_3.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_3_out.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_4.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_4_out.log
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_5.summary
+/rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/trimmomatic/1A/S_1A_5_out.log
+##### trimmomatic trimlog sizes, summaries
+2466659 /share/maize/frodrig4/nf_work/gate1_1A/work/44/4c0b832d394383e8a0d9c4b55470e8/S_1A_12_trim.log
+2936692 /share/maize/frodrig4/nf_work/gate1_1A/work/a5/4926d5abdca741f032f0a8a220b0bf/S_1A_11_trim.log
+5403656 /share/maize/frodrig4/nf_work/gate1_1A/work/d5/4f6846e7722412dbdf05b29b668eba/S_1A_10_trim.log
+5611276 /share/maize/frodrig4/nf_work/gate1_1A/work/8b/aa931aece03f172f72d16d877f9ede/S_1A_9_trim.log
+13278312 /share/maize/frodrig4/nf_work/gate1_1A/work/7d/a190b53663bd08e854138b64e551f0/S_1A_4_trim.log
+14217573 /share/maize/frodrig4/nf_work/gate1_1A/work/d0/b89bc90eff4e6dc66661ec8eb06da8/S_1A_1_trim.log
+14611214 /share/maize/frodrig4/nf_work/gate1_1A/work/65/43ac50874f7766d5f8fb976895e237/S_1A_5_trim.log
+16285716 /share/maize/frodrig4/nf_work/gate1_1A/work/9b/9be034b9dcf27ca6f168a779762829/S_1A_7_trim.log
+16866504 /share/maize/frodrig4/nf_work/gate1_1A/work/eb/5240ca11f5831a9ec2bdf3d717d32d/S_1A_3_trim.log
+18142359 /share/maize/frodrig4/nf_work/gate1_1A/work/6e/d68cefdb5d0c14fd405b05f91b5f15/S_1A_2_trim.log
+20522285 /share/maize/frodrig4/nf_work/gate1_1A/work/0c/7dd1f80fe14449dbf85f0441764f3a/S_1A_8_trim.log
+22186448 /share/maize/frodrig4/nf_work/gate1_1A/work/ca/2528c0db1ecfdad4951c4b1d4b9e58/S_1A_6_trim.log
+== /share/maize/frodrig4/nf_work/gate1_1A/work/a2/9ec686ce2feda898b7f74b78f040d0/21/S_1A_9.summary
+Input Read Pairs: 34949
+Both Surviving Reads: 33332
+Both Surviving Read Percent: 95.37
+Forward Only Surviving Reads: 1418
+Forward Only Surviving Read Percent: 4.06
+Reverse Only Surviving Reads: 64
+Reverse Only Surviving Read Percent: 0.18
+Dropped Reads: 135
+Dropped Read Percent: 0.39
+== /share/maize/frodrig4/nf_work/gate1_1A/work/a2/9ec686ce2feda898b7f74b78f040d0/6/S_1A_12.summary
+Input Read Pairs: 15351
+Both Surviving Reads: 15205
+Both Surviving Read Percent: 99.05
+Forward Only Surviving Reads: 83
+Forward Only Surviving Read Percent: 0.54
+Reverse Only Surviving Reads: 30
+Reverse Only Surviving Read Percent: 0.20
+Dropped Reads: 33
+Dropped Read Percent: 0.21
+== /share/maize/frodrig4/nf_work/gate1_1A/work/a2/9ec686ce2feda898b7f74b78f040d0/3/S_1A_11.summary
+Input Read Pairs: 18289
+Both Surviving Reads: 17544
+Both Surviving Read Percent: 95.93
+Forward Only Surviving Reads: 595
+Forward Only Surviving Read Percent: 3.25
+Reverse Only Surviving Reads: 43
+Reverse Only Surviving Read Percent: 0.24
+Dropped Reads: 107
+Dropped Read Percent: 0.59
+##### TRIMMOMATIC command line
+    ILLUMINACLIP:TruSeq3-PE-2.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 2>| >(tee S_1A_5_out.log >&2)
+##### zg_resources lines
+      1 zg_resources: WARNING mem_mb=2048 leaves < 512 MB heap after 2048 MB headroom; ZG_JAVA_MEM_MB unset (JVM tools will fail)
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969723 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c205n09
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969722 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n06
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969721 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c205n09
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969720 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c205n06
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969719 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n07
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969718 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n06
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969717 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n03
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969716 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c207n02
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969715 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c205n06
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969714 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n07
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969713 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n06
+      1 zg_resources cpus=8 mem_mb=8192 java_mem_mb=6144 source=slurm job=969711 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n03
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969752 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c203n09
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969747 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n03
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969743 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c205n09
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969742 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n06
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969740 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c203n09
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969737 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c202n08
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969735 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c202n08
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969733 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c202n08
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969732 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c202n06
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969729 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c202n05
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969728 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c205n09
+      1 zg_resources cpus=8 mem_mb=24576 java_mem_mb=22528 source=slurm job=969726 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c203n09
+      1 zg_resources cpus=6 mem_mb=2048 java_mem_mb=unset source=slurm job=969707 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c207n02
+      1 zg_resources cpus=2 mem_mb=8192 java_mem_mb=6144 source=slurm job=969878 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n03
+      1 zg_resources cpus=2 mem_mb=8192 java_mem_mb=6144 source=slurm job=969877 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c200n03
+      1 zg_resources cpus=2 mem_mb=8192 java_mem_mb=6144 source=slurm job=969876 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c203n07
+      1 zg_resources cpus=2 mem_mb=8192 java_mem_mb=6144 source=slurm job=969875 tmpdir=/share/maize/frodrig4/nf_work/gate1_1A/tmp host=c207n01
+      1 zg_resources cpus=4 mem_mb=12288 java_mem_mb=10240 source=slurm job=969706 tmpdir=/share/maize/frodrig4/nf_work/gate1_import/tmp host=c207n04
+      1 zg_resources cpus=4 mem_mb=12288 java_mem_mb=10240 source=slurm job=969705 tmpdir=/share/maize/frodrig4/nf_work/gate1_import/tmp host=c207n02
+      1 zg_resources cpus=2 mem_mb=8192 java_mem_mb=6144 source=slurm job=969710 tmpdir=/share/maize/frodrig4/nf_work/gate1_import/tmp host=c207n03
+      1 zg_resources cpus=2 mem_mb=8192 java_mem_mb=6144 source=slurm job=969709 tmpdir=/share/maize/frodrig4/nf_work/gate1_import/tmp host=c207n02
+##### Creating env
+/share/maize/frodrig4/nf_work/gate1_1A/launch/.nextflow.log:0
+/share/maize/frodrig4/nf_work/gate1_import/launch/.nextflow.log:0
+##### work size / files
+427M	/share/maize/frodrig4/nf_work/gate1_1A/work
+881
+1.1M	/share/maize/frodrig4/nf_work/gate1_import/work
+46
+8.0K	/share/maize/frodrig4/nf_work/gate1_1A/tmp
+0
+2.8G	/share/maize/frodrig4/nf_work/gate1_import/tmp
+34
+##### trace
+== /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_1A/pipeline_info/execution_trace_2026-09-28_02-09-22.txt
+native_id  process                                                                                  tag      status     exit  realtime  cpus  %cpu    memory  peak_rss  peak_vmem
+969707     SAWERSRELLANLABS_ZEALGT:CRAM:READ_DEMULTIPLEXING:DEMUX                                   1A       COMPLETED  0     14.4s     6     162.9%  2 GB    621.5 MB  15.4 GB
+969711     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_11  COMPLETED  0     3.4s      8     248.0%  8 GB    211.2 MB  10.4 GB
+969713     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_10  COMPLETED  0     6.2s      8     184.2%  8 GB    272 MB    10.4 GB
+969714     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_12  COMPLETED  0     2.4s      8     298.9%  8 GB    167.1 MB  10.4 GB
+969716     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_2   COMPLETED  0     10.6s     8     247.7%  8 GB    376.4 MB  10.4 GB
+969718     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_5   COMPLETED  0     8.3s      8     264.5%  8 GB    385.5 MB  10.4 GB
+969715     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_1   COMPLETED  0     9.9s      8     264.3%  8 GB    376.9 MB  10.4 GB
+969717     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_3   COMPLETED  0     9.8s      8     250.6%  8 GB    409.4 MB  10.4 GB
+969719     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_4   COMPLETED  0     8.3s      8     257.1%  8 GB    385.1 MB  10.4 GB
+969725     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_11  COMPLETED  0     7.3s      2     80.6%   4 GB    218.6 MB  5 GB
+969723     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_9   COMPLETED  0     5s        8     265.8%  8 GB    286.9 MB  10.4 GB
+969727     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_10  COMPLETED  0     3.5s      2     175.0%  4 GB    233.6 MB  5 GB
+969730     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_12  COMPLETED  0     3.5s      2     164.3%  4 GB    183.3 MB  5 GB
+969731     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_1   COMPLETED  0     4.5s      2     164.1%  4 GB    289.6 MB  5 GB
+969724     SAWERSRELLANLABS_ZEALGT:CRAM:READ_DEMULTIPLEXING:DEMUX_QC                                1A       COMPLETED  0     9.9s      1     85.9%   2 GB    63.8 MB   90.8 MB
+969721     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_7   COMPLETED  0     12.3s     8     253.8%  8 GB    437.6 MB  10.4 GB
+969720     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_6   COMPLETED  0     14.7s     8     273.3%  8 GB    432.5 MB  10.4 GB
+969734     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_3   COMPLETED  0     5.7s      2     137.1%  4 GB    294.4 MB  5 GB
+969736     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_5   COMPLETED  0     4.5s      2     165.8%  4 GB    262.8 MB  5 GB
+969722     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:TRIMMOMATIC                                   S_1A_8   COMPLETED  0     12.6s     8     238.7%  8 GB    373.4 MB  10.4 GB
+969738     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_2   COMPLETED  0     4.5s      2     173.1%  4 GB    346.8 MB  5 GB
+969732     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_1   COMPLETED  0     22.6s     8     279.4%  24 GB   5.7 GB    13.5 GB
+969729     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_12  COMPLETED  0     17s       8     149.3%  24 GB   4.6 GB    12.9 GB
+969733     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_3   COMPLETED  0     24s       8     317.4%  24 GB   6.2 GB    13.4 GB
+969726     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_10  COMPLETED  0     23.7s     8     137.1%  24 GB   4.9 GB    13.5 GB
+969728     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_11  COMPLETED  0     19.3s     8     141.2%  24 GB   4.8 GB    13.5 GB
+969735     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_5   COMPLETED  0     19.3s     8     322.0%  24 GB   5.8 GB    13 GB
+969739     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_4   COMPLETED  0     4.9s      2     154.4%  4 GB    286.6 MB  5 GB
+969740     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_4   COMPLETED  0     16.8s     8     319.8%  24 GB   5.8 GB    18.4 GB
+969737     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_2   COMPLETED  0     20.4s     8     343.0%  24 GB   6.2 GB    19.7 GB
+969741     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_8   COMPLETED  0     7s        2     133.5%  4 GB    344.5 MB  5 GB
+969742     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_9   COMPLETED  0     18.2s     8     165.8%  24 GB   4.9 GB    13.5 GB
+969756     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_11  COMPLETED  0     4.3s      2     153.4%  8 GB    779.8 MB  927.2 MB
+969758     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_1   COMPLETED  0     4.1s      2     167.0%  8 GB    801.9 MB  925.2 MB
+969860     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_12  COMPLETED  0     3.7s      2     167.4%  8 GB    788 MB    934.2 MB
+969861     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_3   COMPLETED  0     4.4s      2     165.6%  8 GB    799.8 MB  928.1 MB
+969862     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_5   COMPLETED  0     5.1s      2     154.7%  8 GB    801.1 MB  926.6 MB
+969865     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_4   COMPLETED  0     4s        2     171.1%  8 GB    799.5 MB  926.4 MB
+969743     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_8   COMPLETED  0     22.4s     8     362.5%  24 GB   6.3 GB    13.5 GB
+969747     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_6   COMPLETED  0     24.7s     8     320.3%  24 GB   6.6 GB    19.6 GB
+969752     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:ALIGN_MARKDUP                                S_1A_7   COMPLETED  0     18.2s     8     343.3%  24 GB   6.1 GB    19.6 GB
+969744     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_7   COMPLETED  0     5.6s      2     136.2%  4 GB    382.7 MB  5 GB
+969745     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_9   COMPLETED  0     3.5s      2     175.5%  4 GB    236.5 MB  5 GB
+969755     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_10  COMPLETED  0     4.7s      2     142.3%  8 GB    795.7 MB  936.6 MB
+969746     SAWERSRELLANLABS_ZEALGT:CRAM:READ_TRIMMING:FASTQC                                        S_1A_6   COMPLETED  0     5.6s      2     161.4%  4 GB    433.7 MB  5 GB
+969869     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_2   COMPLETED  0     4.6s      2     164.5%  8 GB    761.1 MB  869.9 MB
+969870     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_9   COMPLETED  0     4.1s      2     164.1%  8 GB    797 MB    938 MB
+969873     SAWERSRELLANLABS_ZEALGT:CRAM:REGISTRY                                                    1A       COMPLETED  0     1s        1     5.9%    2 GB    1.5 MB    2.6 MB
+969872     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_8   COMPLETED  0     4.4s      2     167.6%  8 GB    805.2 MB  924 MB
+969876     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_6   COMPLETED  0     5.4s      2     156.6%  8 GB    809.2 MB  924.1 MB
+969877     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            S_1A_7   COMPLETED  0     7.7s      2     96.1%   8 GB    802.3 MB  925.4 MB
+969879     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_1   COMPLETED  0     502ms     1     11.7%   2 GB    1.5 MB    2.6 MB
+969880     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_3   COMPLETED  0     179ms     1     40.9%   2 GB    6.2 MB    12.1 MB
+969881     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_2   COMPLETED  0     159ms     1     45.2%   2 GB    6.2 MB    12.1 MB
+969882     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_4   COMPLETED  0     158ms     1     45.7%   2 GB    280 KB    7 MB
+969883     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_5   COMPLETED  0     81ms      1     58.3%   2 GB    0         0
+969884     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_6   COMPLETED  0     76ms      1     50.3%   2 GB    0         0
+969885     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_7   COMPLETED  0     139ms     1     51.4%   2 GB    6.2 MB    12.1 MB
+969886     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_8   COMPLETED  0     90ms      1     54.1%   2 GB    7.4 MB    29.6 MB
+969887     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_9   COMPLETED  0     88ms      1     53.6%   2 GB    10.1 MB   32.4 MB
+969888     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_10  COMPLETED  0     85ms      1     55.6%   2 GB    0         0
+969889     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_11  COMPLETED  0     155ms     1     40.2%   2 GB    6.2 MB    12.1 MB
+969890     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PROVENANCE                S_1A_12  COMPLETED  0     68ms      1     56.5%   2 GB    0         0
+969796     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_1   COMPLETED  0     6m 22s    2     102.6%  8 GB    2.2 GB    9 GB
+969753     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_11  COMPLETED  0     7m 30s    2     101.5%  8 GB    2.5 GB    9 GB
+969863     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_3   COMPLETED  0     6m 48s    2     102.9%  8 GB    2.2 GB    9 GB
+969754     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_10  COMPLETED  0     7m 20s    2     101.6%  8 GB    2.5 GB    9 GB
+969874     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_6   COMPLETED  0     6m 40s    2     103.1%  8 GB    2.2 GB    9 GB
+969868     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_2   COMPLETED  0     6m 46s    2     102.7%  8 GB    2.2 GB    9 GB
+969875     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_7   COMPLETED  0     7m 22s    2     102.2%  8 GB    2.2 GB    9 GB
+969871     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_9   COMPLETED  0     7m 10s    2     102.0%  8 GB    2.5 GB    9 GB
+969878     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_8   COMPLETED  0     7m 6s     2     103.1%  8 GB    2.2 GB    9 GB
+969757     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_12  COMPLETED  0     7m 36s    2     101.5%  8 GB    3.8 GB    9 GB
+969866     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_4   COMPLETED  0     7m 25s    2     103.4%  8 GB    2.3 GB    9 GB
+969864     SAWERSRELLANLABS_ZEALGT:CRAM:READ_ALIGNMENT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  S_1A_5   COMPLETED  0     7m 33s    2     102.8%  8 GB    2.4 GB    9 GB
+969894     SAWERSRELLANLABS_ZEALGT:CRAM:MULTIQC                                                     1A       COMPLETED  0     2m        1     6.7%    4 GB    610.9 MB  11.3 GB
+== /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_import/pipeline_info/execution_trace_2026-09-28_02-09-25.txt
+native_id  process                                                                               tag         status     exit  realtime  cpus  %cpu    memory  peak_rss  peak_vmem
+969705     SAWERSRELLANLABS_ZEALGT:CRAM:CRAM_IMPORT:MARKDUP_IMPORT                               PN5_SID464  COMPLETED  0     44.2s     4     264.4%  12 GB   3.2 GB    17.4 GB
+969712     SAWERSRELLANLABS_ZEALGT:CRAM:CRAM_IMPORT:CRAM_QC_PROVENANCE:PROVENANCE                PN5_SID464  COMPLETED  0     939ms     1     7.5%    2 GB    1.5 MB    2.6 MB
+969709     SAWERSRELLANLABS_ZEALGT:CRAM:CRAM_IMPORT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS            PN5_SID464  COMPLETED  0     21s       2     164.8%  8 GB    387 MB    527.3 MB
+969710     SAWERSRELLANLABS_ZEALGT:CRAM:CRAM_IMPORT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS  PN5_SID464  FAILED     1     3ms       2     -       8 GB    -         -
+969706     SAWERSRELLANLABS_ZEALGT:CRAM:CRAM_IMPORT:MARKDUP_IMPORT                               S_2A_11     FAILED     1     2m        4     -       12 GB   -         -
+== /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate1_import/pipeline_info/execution_trace_2026-09-28_02-34-17.txt
+native_id  process  tag  status  exit  realtime  cpus  %cpu  memory  peak_rss  peak_vmem
+
+------------------------------------------------------------
+Resource usage summary:
+
+    Job ID            : 969904
+    Job name          : zg_gate1_check
+    User / Account    : frodrig4 / maize_cpu
+    Partition / QOS   : compute_partners / short
+    Submitted         : 2026-09-28T02:34:19
+    Started           : 2026-09-28T02:34:20
+    Wait time         : 1 sec
+    Elapsed (wall)    : 00:00:09
+    Nodes             : 1 (c207n02)
+    CPUs allocated    : 4
+    Tasks             : 1
+    CPU time (total)  : 15.25 sec  (user 11.44, sys 3.82)
+    CPU efficiency    : 42.4%
+    Memory in use     : 269.37 MB  (sampled at job end; see seff for peak)
+    Memory requested  : 8G
+    Working directory : /home/frodrig4
+    Exit code         : 0:0
+
+    For final accounting (Slurm's MaxRSS, billing, etc.):  seff 969904
+------------------------------------------------------------

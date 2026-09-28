@@ -75,6 +75,31 @@ Implications: DEMUX needs ~1 GB, not 16 GB, and uses ~4–5 cores of 8; deep ALI
 48 / 72 GB retries cover the ~20× samples that OOMed); the head job sits at its 4 GB limit — request 8 GB. Not measured anywhere yet:
 Trimmomatic, FastQC, Picard CollectWgsMetrics (never ran in zealbc1), variant_discovery memory beyond CRISP.
 
+**Measured usage, zealgt Gate 1 (2026-09-28, `trace.txt` of `results/zealgt/gate1_1A` and `gate1_import`; head jobs 969703,
+969903; `agent/handover_20260928_233000_gate01.md`).** BC1 pool 1A, first 1,000,000 read pairs (949,830 assigned, 15–138 k pairs per
+sample, 12 samples), `-profile hazel,short`; full 1A = 1,848,115,736 pairs (nilhmm `results/demux/1A/1A.cutadapt.json`), i.e. × 1848.
+
+| process | tasks | cpus alloc → used | peak RSS | realtime | full-library estimate (× 1848, linear in pairs) |
+|---|---|---|---|---|---|
+| DEMUX (cutadapt, 1 M pairs) | 1 | 6 → 1.6 | 0.62 GB | 14 s (cutadapt 4.5 µs/pair) | ~2.3 h on 6 cores at that rate (zealbc1: 53–72 min for 94–140 GB pools on 8) |
+| DEMUX_QC | 1 | 1 → 0.9 | 64 MB | 10 s | constant (first 100 k reads per sample) |
+| TRIMMOMATIC | 12 | 8 → 1.8–3.0 | 0.17–0.44 GB | 2.4–14.7 s (~10 k pairs/s) | **~7 h** for the largest sample (S_1A_6, ~255 M pairs); I/O-bound (2.5–3 of 8 cores) |
+| FASTQC | 12 | 2 → 0.8–1.8 | 0.18–0.43 GB | 3.5–7.3 s (~58 k pairs/s after JVM start) | ~1.2–2 h for the largest sample (over the 1 h short cap: FASTQC added to the `normal` profile list) |
+| ALIGN_MARKDUP | 12 | 8 → 1.4–3.6 | 4.6–6.6 GB (index load) | 17–25 s | zealbc1 deep samples: 1 h 46 – 2 h 01, 14–22 GB (above) |
+| SAMTOOLS_STATS | 12 + 2 | 2 → 1.5–1.7 | 0.38–0.81 GB | 4–8 s; import S_2A_11 (1.16 GB CRAM) 2 min 58 | ~20 min for a ~7 GB CRAM |
+| PICARD_COLLECTWGSMETRICS | 12 + 2 | 2 → 1.0 | 2.2–3.8 GB | **6 min 22 – 7 min 36 on near-empty CRAMs** (genome-walk floor); PN5_SID464 (155 MB) 8 min 48; S_2A_11 (1.16 GB) 20 min 33 | ~1–2 h for a ~7 GB CRAM (normal profile, 4 h) |
+| PROVENANCE, REGISTRY | 12 + 2, 1 | 1 | < 10 MB | < 1 s | constant |
+| MULTIQC | 1 + 1 | 1 → 0.07 | 0.6 GB | ~2 min | ~constant |
+| MARKDUP_IMPORT | 2 | 4 → 2.6–2.9 | PN5_SID464 3.2 GB (44 s); S_2A_11 **7.5 GB** (5 min 54) after the fix | — | S_2A_11 was OOM-killed at 12 GB with sort = (mem − 2 GB) (job 969706); sort now gets half of the memory |
+| head job | 7 | 1 | 0.35–0.60 GB (sacct MaxRSS) | 3–33 min | — |
+
+Disk / files (Gate 1 1A): `work/` 427 MB, **881 files** for 76 tasks (file count does not grow with depth); TMPDIR empty after the run
+(the OOM-killed import task left 2.8 GB / 34 files in `gate1_import/tmp`). Largest parts: demux FASTQs 128 MB, Trimmomatic
+`-trimlog` 153 MB (**uncompressed, ~160 B per pair, larger than the trimmed FASTQs**), trimmed FASTQs ~110 MB. Full 1A, × 1848: demux
+FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak ≈ 0.8 TB** (plus sort temps in TMPDIR), above the 2 × library
+(≈ 0.5 TB) assumed in PLAN §5 rule 3; dropping `-trimlog` would bring it to ≈ 0.45 TB. CRAMs ≈ 0.30 × raw (1A: 41 MB for 1 M pairs →
+≈ 75 GB for the library). Store per sample: CRAM + crai + markdup stats + stats + CollectWgsMetrics + provenance (+ 2 versions.yml) = 8 files.
+
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for
 BC1 alignment of deep libraries; downloads on `--partition=xfer --mem=8G`. Genome-wide ≈ chr10 × 14 for the per-chromosome stages;
 demultiplexing and alignment are already genome-wide.
