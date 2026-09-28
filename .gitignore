@@ -20,3 +20,5 @@ testing*
 null/
 .lineage/
 .nf-test/
+# build record written on hazel by bin/build_envs.sh (fetch with ssh hazel cat; not tracked)
+envs/manifest.tsv

@@ -1,0 +1,10 @@
+---
+# Nextflow launcher for the zealgt head job (as zealbc1 ran it: envs/legacy_zealbc1/nextflow.list.txt).
+# Built first by bin/build_envs.sh; build.sh adds the nf-schema plugin into the prefix for the offline head job.
+name: nextflow
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::nextflow=26.04.6=h2a3209d_1
+  - conda-forge::openjdk=25.0.2=h1602c4f_26
