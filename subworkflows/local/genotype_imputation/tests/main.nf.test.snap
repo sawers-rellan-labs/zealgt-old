@@ -1,0 +1,26 @@
+{
+    "Zx.9001_P1 x chr10:1-16000 - stub": {
+        "content": [
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.genotypes.matrix.tsv.gz"
+                ]
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.genotypes.rasterize.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T08:16:36.666189",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

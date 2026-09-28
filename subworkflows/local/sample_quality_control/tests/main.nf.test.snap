@@ -1,0 +1,61 @@
+{
+    "Zx.9001_P1 cohort, QC panel - stub": {
+        "content": [
+            [
+                [
+                    "cohort",
+                    "cohort.sample_qc.tsv"
+                ]
+            ],
+            [
+                [
+                    "cohort",
+                    "cohort.min_coverage.tsv"
+                ]
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.bc1 Zx.9001_P1.chr10_1-16000.bc1.ad.tsv.gz",
+                "Zx.9001_P1.chr10_1-16000.lines Zx.9001_P1.chr10_1-16000.lines.ad.tsv.gz",
+                "b73.chr10_1-16000.b73 b73.chr10_1-16000.b73.ad.tsv.gz"
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.bc1.allele_counts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.bc1.mask_read_starts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.allele_counts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.mask_read_starts.versions.yml",
+                "b73.chr10_1-16000.b73.allele_counts.versions.yml",
+                "b73.chr10_1-16000.b73.mask_read_starts.versions.yml",
+                "chr10_1-16000.region_bed.versions.yml",
+                "cohort.coverage_qc.versions.yml",
+                "cohort.donor_content_qc.versions.yml",
+                "cohort.min_coverage.versions.yml",
+                "cohort.relatedness_qc.versions.yml",
+                "cohort.sample_qc_table.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T08:12:59.062416",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "Zx.9001_P1 cohort, no QC panel (Gate 1 path) - stub": {
+        "content": [
+            [
+                [
+                    "cohort",
+                    "cohort.sample_qc.tsv"
+                ]
+            ],
+            [
+                "cohort.min_coverage.versions.yml",
+                "cohort.sample_qc_table.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T08:13:02.394323",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

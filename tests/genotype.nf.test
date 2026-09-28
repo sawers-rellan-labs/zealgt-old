@@ -1,0 +1,337 @@
+// Genotype workflow pipeline tests (genotype design §7.1-7.2): one stub run per entry on the fixtures of
+// tests/fixtures/genotype (profile test_genotype, conf/test_genotype.config), plus the initialisation refusals.
+// Each entry test starts from an empty store_stub under its own outputDir and copies in, from
+// tests/fixtures/genotype/store_seed/genotype/test/, the store kinds written by the entries before it (--entry X runs stage X
+// only and reads its inputs from the keyed store; design §0.1). The seed files have the real column formats (make_fixtures.py),
+// so the wiring that reads them (the sample_qc.tsv pass list) sees real content even in a stub run.
+
+// Store kinds of the stages in entry order (design §1.3); an entry gets the kinds of every stage before it.
+class GenotypeSeed {
+    static final List ENTRIES = ['sample_quality_control', 'variant_discovery', 'ancestry_inference', 'marker_union',
+                                 'donor_allele_calling', 'genotype_imputation', 'reporting']
+    static final List KINDS   = [['sample_qc'], ['step4'], ['ancestry'], ['union'], ['donor_alleles'], ['genotypes'], []]
+
+    static void copyBefore(String base, String out, String entry) {
+        def src = java.nio.file.Paths.get("${base}/tests/fixtures/genotype/store_seed/genotype/test")
+        def dst = java.nio.file.Paths.get("${out}/store_stub/genotype/test")
+        java.nio.file.Files.createDirectories(dst)
+        KINDS.take(ENTRIES.indexOf(entry)).flatten().each { kind ->
+            java.nio.file.Files.walk(src.resolve(kind)).each { p ->
+                def t = dst.resolve(src.relativize(p).toString())
+                if (java.nio.file.Files.isDirectory(p)) {
+                    java.nio.file.Files.createDirectories(t)
+                } else {
+                    java.nio.file.Files.copy(p, t, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                }
+            }
+        }
+    }
+    // Names of the files a task staged into <subdir> of its work dir; the task is the first trace row whose name contains
+    // `task` (nf-test keeps meta/trace.csv and work/ next to outputDir)
+    static List stagedInputs(String out, String task, String subdir) {
+        def rows = new File("${out}/../meta/trace.csv").readLines().drop(1).collect { l -> l.split('\t') }
+        def hash = rows.find { r -> r[3].contains(task) }[1].tokenize('/')
+        def dir  = new File("${out}/../work/${hash[0]}").listFiles().find { f -> f.name.startsWith(hash[1]) }
+        return new File(dir, subdir).list().toList().sort()
+    }
+}
+
+nextflow_pipeline {
+
+    name "Test genotype workflow"
+    script "../main.nf"
+    profile "test_genotype"
+    tag "pipeline"
+    tag "genotype"
+    tag "stub"
+
+    // ---------------------------------------------------------------------------------------------------- one test per entry
+    // store outputs each entry must leave in <store>/genotype/test/ (design §1.3; zgStoreRel in genotype_functions.nf)
+    // unit = Zx.9001_P1.chr10_1-16000, set = test_set.chr10_1-16000
+
+    test("-profile test_genotype, --entry sample_quality_control - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'sample_quality_control'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'sample_quality_control')
+            }
+        }
+        then {
+            def store = "$outputDir/store_stub/genotype/test"
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'store_stub/genotype/test/settings/*'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore', ignore: ['store_stub/genotype/test/settings/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$store/settings/sample_quality_control.json").exists() },
+                { assert path("$store/sample_qc/cohort.sample_qc.tsv").exists() },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_genotype_sample_quality_control_software_versions.yml")
+                        .collectEntries { proc, tools -> [proc, proc == 'BED_CLIP' ? tools.keySet().toList() : tools] },
+                    stable_path, stable_content).match() }
+            )
+        }
+    }
+
+    test("-profile test_genotype, --entry variant_discovery - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'variant_discovery'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'variant_discovery')
+            }
+        }
+        then {
+            def store = "$outputDir/store_stub/genotype/test"
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'store_stub/genotype/test/settings/*'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore', ignore: ['store_stub/genotype/test/settings/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$store/settings/variant_discovery.json").exists() },
+                { assert path("$store/step4/Zx.9001_P1.chr10_1-16000.sites.tsv.gz").exists() },
+                // LINE_LOW fails MIN_COVERAGE in the seeded sample_qc.tsv: it must be dropped before any read consumer
+                // (log.info lines reach only the run's nextflow.log, which nf-test keeps next to outputDir)
+                { assert path("${outputDir}/../meta/nextflow.log").text.contains('zealgt genotype: LINE_LOW excluded by sample QC') },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_genotype_variant_discovery_software_versions.yml")
+                        .collectEntries { proc, tools -> [proc, proc == 'BED_CLIP' ? tools.keySet().toList() : tools] },
+                    stable_path, stable_content).match() }
+            )
+        }
+    }
+
+    test("-profile test_genotype, --entry ancestry_inference - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'ancestry_inference'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'ancestry_inference')
+            }
+        }
+        then {
+            def store = "$outputDir/store_stub/genotype/test"
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'store_stub/genotype/test/settings/*'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore', ignore: ['store_stub/genotype/test/settings/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$store/settings/ancestry_inference.json").exists() },
+                { assert path("$store/ancestry/Zx.9001_P1.chr10_1-16000.segments.csv").exists() },
+                { assert path("$store/ancestry/Zx.9001_P1.chr10_1-16000.line_qc.tsv").exists() },
+                { assert path("$store/ancestry/Zx.9001_P1.chr10_1-16000.tierA_sites.tsv").exists() },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_genotype_ancestry_inference_software_versions.yml")
+                        .collectEntries { proc, tools -> [proc, proc == 'BED_CLIP' ? tools.keySet().toList() : tools] },
+                    stable_path, stable_content).match() }
+            )
+        }
+    }
+
+    test("-profile test_genotype, --entry marker_union - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'marker_union'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'marker_union')
+            }
+        }
+        then {
+            def store = "$outputDir/store_stub/genotype/test"
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'store_stub/genotype/test/settings/*'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore', ignore: ['store_stub/genotype/test/settings/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$store/settings/marker_union.json").exists() },
+                { assert path("$store/union/test_set.chr10_1-16000.tsv.gz").exists() },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_genotype_marker_union_software_versions.yml")
+                        .collectEntries { proc, tools -> [proc, proc == 'BED_CLIP' ? tools.keySet().toList() : tools] },
+                    stable_path, stable_content).match() }
+            )
+        }
+    }
+
+    test("-profile test_genotype, --entry donor_allele_calling - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'donor_allele_calling'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'donor_allele_calling')
+            }
+        }
+        then {
+            def store = "$outputDir/store_stub/genotype/test"
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'store_stub/genotype/test/settings/*'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore', ignore: ['store_stub/genotype/test/settings/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$store/settings/donor_allele_calling.json").exists() },
+                { assert path("$store/donor_alleles/test_set/Zx.9001_P1.chr10_1-16000.tsv.gz").exists() },
+                // cumulative exclusions: LINE_LOW (2b, min_coverage) and LINE_2 (stage 4, LINE_MARKER_QC) are not counted
+                { assert path("${outputDir}/../meta/nextflow.log").text.contains('zealgt genotype: LINE_LOW excluded by sample QC') },
+                { assert path("${outputDir}/../meta/nextflow.log").text.contains('zealgt genotype: LINE_2 excluded by LINE_MARKER_QC (Zx.9001_P1.chr10_1-16000)') },
+                { assert GenotypeSeed.stagedInputs(outputDir.toString(), 'LINE_UNION_COUNTS', 'bam') ==
+                         ['LINE_1.bam', 'LINE_1.bam.bai', 'LINE_3.bam', 'LINE_3.bam.bai', 'LINE_4.bam', 'LINE_4.bam.bai'] },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_genotype_donor_allele_calling_software_versions.yml")
+                        .collectEntries { proc, tools -> [proc, proc == 'BED_CLIP' ? tools.keySet().toList() : tools] },
+                    stable_path, stable_content).match() }
+            )
+        }
+    }
+
+    test("-profile test_genotype, --entry genotype_imputation - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'genotype_imputation'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'genotype_imputation')
+            }
+        }
+        then {
+            def store = "$outputDir/store_stub/genotype/test"
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'store_stub/genotype/test/settings/*'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore', ignore: ['store_stub/genotype/test/settings/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$store/settings/genotype_imputation.json").exists() },
+                { assert path("$store/genotypes/test_set/Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz").exists() },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_genotype_genotype_imputation_software_versions.yml")
+                        .collectEntries { proc, tools -> [proc, proc == 'BED_CLIP' ? tools.keySet().toList() : tools] },
+                    stable_path, stable_content).match() }
+            )
+        }
+    }
+
+    test("-profile test_genotype, --entry reporting - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'reporting'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'reporting')
+            }
+        }
+        then {
+            def store = "$outputDir/store_stub/genotype/test"
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'store_stub/genotype/test/settings/*'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore', ignore: ['store_stub/genotype/test/settings/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$store/settings/reporting.json").exists() },
+                // cumulative exclusions: both dropped lines are absent from the read-position QC and listed with stage + reason
+                { assert GenotypeSeed.stagedInputs(outputDir.toString(), 'READ_POSITION_QC (Zx.9001_P1.chr10_1-16000.lines.raw)', 'aln') ==
+                         ['LINE_1.cram', 'LINE_1.cram.crai', 'LINE_3.cram', 'LINE_3.cram.crai', 'LINE_4.cram', 'LINE_4.cram.crai'] },
+                { assert path("$outputDir/genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.exclusions.tsv").readLines() ==
+                         ['sample\trole\tstage\treason', 'LINE_LOW\tline\tsample_quality_control\tmin_coverage',
+                          'LINE_2\tline\tancestry_inference\tbelow_marker_floor'] },
+                { assert path("$outputDir/genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.genotype_summary.tsv").exists() },
+                { assert path("$outputDir/genotype/test/reporting/test_set/Zx.9001_P1.chr10_1-16000.painting.png").exists() },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_genotype_reporting_software_versions.yml")
+                        .collectEntries { proc, tools -> [proc, proc == 'BED_CLIP' ? tools.keySet().toList() : tools] },
+                    stable_path, stable_content).match() }
+            )
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------- refusals (initialisation)
+
+    test("genotype refusal: CRAM entry under --workflow genotype") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'read_demultiplexing'
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert (workflow.stdout + workflow.stderr).any { l -> l.contains('--entry read_demultiplexing is not an entry of --workflow genotype') } }
+            )
+        }
+    }
+
+    test("genotype refusal: upstream store outputs missing") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'variant_discovery'   // no seed: sample_qc.tsv is not in the store
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert (workflow.stdout + workflow.stderr).any { l -> l.contains('Run --entry sample_quality_control first') } },
+                { assert workflow.trace.tasks().size() == 0 }
+            )
+        }
+    }
+
+    test("genotype refusal: same store key, other stage settings (review #7)") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'variant_discovery'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'variant_discovery')
+                // settings stored by an earlier run of this key with --veto_min_alt_reads 2
+                def s = new File("$outputDir/store_stub/genotype/test/settings")
+                s.mkdirs()
+                new File(s, 'variant_discovery.json').text = groovy.json.JsonOutput.toJson(
+                    [stage: 'variant_discovery', genotype_store_key: 'test', params: [veto_min_alt_reads: '2'], code: [:], units: [:]])
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert (workflow.stdout + workflow.stderr).any { l -> l.contains("params.veto_min_alt_reads: stored '2' vs now '1'") } },
+                { assert workflow.trace.tasks().size() == 0 }
+            )
+        }
+    }
+
+    test("genotype refusal: provenance does not match the read-processing settings") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'sample_quality_control'
+                // a copy of the fixture CRAM store in which LINE_1 was duplicate-marked with other settings
+                def src = new File("${baseDir}/tests/fixtures/genotype/cram_store/cram_import")
+                def dst = new File("$outputDir/cram_store/cram_import")
+                dst.mkdirs()
+                src.eachFile { f -> java.nio.file.Files.copy(f.toPath(), new File(dst, f.name).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING) }
+                def prov = new File(dst, 'LINE_1.provenance.json')
+                prov.text = prov.text.replace('"samtools markdup -d 2500"', '"samtools markdup -d 100"')
+                cram_store = "$outputDir/cram_store"
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert (workflow.stdout + workflow.stderr).any { l -> l.contains('provenance of LINE_1') && l.contains("markdup 'samtools markdup -d 100'") } },
+                { assert workflow.trace.tasks().size() == 0 }
+            )
+        }
+    }
+}

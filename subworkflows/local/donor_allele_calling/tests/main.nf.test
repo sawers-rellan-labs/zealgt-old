@@ -1,0 +1,72 @@
+nextflow_workflow {
+
+    name "Test Subworkflow DONOR_ALLELE_CALLING"
+    script "../main.nf"
+    workflow "DONOR_ALLELE_CALLING"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "donor_allele_calling"
+    tag "region_bed"
+    tag "mask_read_starts"
+    tag "allele_counts"
+    tag "pooled_likelihood_tiers"
+    tag "gap_filling_bc1"
+    tag "gap_filling_lines"
+    tag "donor_founder"
+    tag "stub"
+
+    test("test_set (Zx.9001_P1) x chr10:1-16000 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                donor_set          = 'test_set'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def cs = fx + '/cram_store/cram_import/'
+                def seed = fx + '/store_seed/genotype/test/'
+                def group = { role, tag, donor, ids -> [[id: (donor ?: 'b73') + '.chr10_1-16000.' + tag, unit: (donor ?: 'b73') + '.chr10_1-16000', donor: donor,
+                                                         region: 'chr10_1-16000', interval: 'chr10:1-16000', role: role, taxon: donor ? 'mexicana' : ''],
+                                                        ids.collect { i -> file(cs + i + '.cram') }, ids.collect { i -> file(cs + i + '.cram.crai') }, ids, ids.collect { _i -> [0, 0] }] }
+                def unit = [id: 'Zx.9001_P1.chr10_1-16000', donor: 'Zx.9001_P1', region: 'chr10_1-16000', interval: 'chr10:1-16000']
+                input[0] = channel.of(group.call('bc1_sample', 'bc1', 'Zx.9001_P1', ['BC1_A', 'BC1_B']), group.call('line', 'lines', 'Zx.9001_P1', ['LINE_1', 'LINE_2']),
+                                      group.call('b73_control', 'b73', '', ['B73_CTL']))
+                input[1] = channel.of([[id: 'test_set.chr10_1-16000', donor_set: 'test_set', region: 'chr10_1-16000', interval: 'chr10:1-16000'],
+                                       file(seed + 'union/test_set.chr10_1-16000.tsv.gz', checkIfExists: true),
+                                       file(seed + 'union/test_set.chr10_1-16000.union_sites.tsv', checkIfExists: true)])
+                input[2] = channel.of([unit, file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.segments.csv', checkIfExists: true),
+                                       file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.line_qc.tsv', checkIfExists: true)])
+                input[3] = channel.of(['Zx.9001_P1', file(fx + '/priors/mexicana.prior.tsv', checkIfExists: true)])
+                input[4] = channel.value(['Zx.9001_P1': 'mexicana'])
+                input[5] = ['Zx.9001_P1']
+                input[6] = channel.of([[id: 'chr10_1-16000'], 'chr10:1-16000'])
+                input[7] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[8] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/genotype/test/joint_step4/test_set/Zx.9001_P1.chr10_1-16000.sites.tsv.gz").exists() },
+                { assert file("${outputDir}/store_stub/genotype/test/gap_bc1/test_set.chr10_1-16000.gap_bc1.tsv.gz").exists() },
+                { assert file("${outputDir}/store_stub/genotype/test/gap_lines/test_set/Zx.9001_P1.chr10_1-16000.gap_lines.tsv.gz").exists() },
+                { assert file("${outputDir}/store_stub/genotype/test/donor_alleles/test_set/Zx.9001_P1.chr10_1-16000.tsv.gz").exists() },
+                { assert snapshot(
+                    workflow.out.donor_alleles.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.gap_bc1.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.gap_lines.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.joint.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+}

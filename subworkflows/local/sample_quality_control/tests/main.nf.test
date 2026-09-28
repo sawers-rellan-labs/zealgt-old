@@ -1,0 +1,105 @@
+nextflow_workflow {
+
+    name "Test Subworkflow SAMPLE_QUALITY_CONTROL"
+    script "../main.nf"
+    workflow "SAMPLE_QUALITY_CONTROL"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "sample_quality_control"
+    tag "min_coverage"
+    tag "region_bed"
+    tag "mask_read_starts"
+    tag "allele_counts"
+    tag "coverage_qc"
+    tag "relatedness_qc"
+    tag "donor_content_qc"
+    tag "sample_qc_table"
+    tag "stub"
+
+    test("Zx.9001_P1 cohort, QC panel - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                qc_panel           = "${projectDir}/tests/fixtures/genotype/panel.tsv"
+                regions            = 'chr10:1-16000'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def cs = fx + '/cram_store/cram_import/'
+                def sample = { id, role, donor -> [[id: id, sample: id, role: role, donor: donor, taxon: donor ? 'mexicana' : '', single_end: false],
+                                                   file(cs + id + '.cram'), file(cs + id + '.cram.crai'), file(cs + id + '.CollectWgsMetrics.coverage_metrics'), [0, 0]] }
+                def group = { role, tag, donor, ids -> [[id: (donor ?: 'b73') + '.chr10_1-16000.' + tag, unit: (donor ?: 'b73') + '.chr10_1-16000', donor: donor,
+                                                         region: 'chr10_1-16000', interval: 'chr10:1-16000', role: role, taxon: donor ? 'mexicana' : ''],
+                                                        ids.collect { i -> file(cs + i + '.cram') }, ids.collect { i -> file(cs + i + '.cram.crai') }, ids, ids.collect { _i -> [2, 2] }] }
+                input[0] = channel.of(sample.call('BC1_A', 'bc1_sample', 'Zx.9001_P1'), sample.call('LINE_1', 'line', 'Zx.9001_P1'), sample.call('B73_CTL', 'b73_control', ''))
+                input[1] = channel.of(group.call('bc1_sample', 'bc1', 'Zx.9001_P1', ['BC1_A']), group.call('line', 'lines', 'Zx.9001_P1', ['LINE_1']), group.call('b73_control', 'b73', '', ['B73_CTL']))
+                input[2] = channel.of([[id: 'chr10_1-16000'], 'chr10:1-16000'])
+                input[3] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[4] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                input[5] = file(fx + '/panel.tsv', checkIfExists: true)
+                input[6] = 0.05
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/genotype/test/sample_qc/cohort.sample_qc.tsv").exists() },
+                { assert workflow.out.panel_counts.size() == 3 },
+                { assert snapshot(
+                    workflow.out.sample_qc.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.min_coverage.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.panel_counts.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+
+    test("Zx.9001_P1 cohort, no QC panel (Gate 1 path) - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                qc_panel           = null
+            }
+            workflow {
+                """
+                def cs = '${projectDir}/tests/fixtures/genotype/cram_store/cram_import/'
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def sample = { id, role, donor -> [[id: id, sample: id, role: role, donor: donor, taxon: donor ? 'mexicana' : '', single_end: false],
+                                                   file(cs + id + '.cram'), file(cs + id + '.cram.crai'), file(cs + id + '.CollectWgsMetrics.coverage_metrics'), [0, 0]] }
+                input[0] = channel.of(sample.call('BC1_A', 'bc1_sample', 'Zx.9001_P1'), sample.call('LINE_1', 'line', 'Zx.9001_P1'), sample.call('B73_CTL', 'b73_control', ''))
+                input[1] = channel.empty()
+                input[2] = channel.empty()
+                input[3] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[4] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                input[5] = []
+                input[6] = 0.05
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/genotype/test/sample_qc/cohort.sample_qc.tsv").exists() },
+                { assert workflow.out.panel_counts.size() == 0 },
+                { assert snapshot(
+                    workflow.out.sample_qc.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+}

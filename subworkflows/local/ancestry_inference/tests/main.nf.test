@@ -1,0 +1,60 @@
+nextflow_workflow {
+
+    name "Test Subworkflow ANCESTRY_INFERENCE"
+    script "../main.nf"
+    workflow "ANCESTRY_INFERENCE"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "ancestry_inference"
+    tag "rtiger_markers"
+    tag "region_bed"
+    tag "mask_read_starts"
+    tag "allele_counts"
+    tag "line_marker_qc"
+    tag "rtiger"
+    tag "stub"
+
+    test("Zx.9001_P1 x chr10:1-16000 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def cs = fx + '/cram_store/cram_import/'
+                def ids = ['LINE_1', 'LINE_2', 'LINE_3']
+                def unit = [id: 'Zx.9001_P1.chr10_1-16000', donor: 'Zx.9001_P1', region: 'chr10_1-16000', interval: 'chr10:1-16000']
+                input[0] = channel.of([unit + [id: 'Zx.9001_P1.chr10_1-16000.lines', unit: unit.id, role: 'line', taxon: 'mexicana'],
+                                       ids.collect { i -> file(cs + i + '.cram') }, ids.collect { i -> file(cs + i + '.cram.crai') }, ids, ids.collect { _i -> [12, 0] }])
+                input[1] = channel.of([unit, file(fx + '/store_seed/genotype/test/step4/Zx.9001_P1.chr10_1-16000.sites.tsv.gz', checkIfExists: true)])
+                input[2] = channel.of([[id: 'chr10_1-16000'], 'chr10:1-16000'])
+                input[3] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[4] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                input[5] = 3
+                input[6] = 2
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.segments.csv").exists() },
+                { assert file("${outputDir}/store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.line_qc.tsv").exists() },
+                { assert file("${outputDir}/store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.tierA_sites.tsv").exists() },
+                { assert snapshot(
+                    workflow.out.segments.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.line_qc.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.markers.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+}

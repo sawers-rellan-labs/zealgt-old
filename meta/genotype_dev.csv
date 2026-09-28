@@ -1,0 +1,97 @@
+sample_id,role,donor,taxon,source,store_dir,mask_r1,mask_r2,include,mask_source
+B73_ERR3288215,b73_control,,,b73_control,cram_import,0,0,TRUE,"SRA reads, no inline barcode or randomer"
+B73_skim10,b73_control,,,b73_control,cram_import,12,0,TRUE,inferred: merge of 10 batch-1 B73 checks
+PN5_SID464,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID465,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID466,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID467,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID469,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID470,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID471,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID472,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID473,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID474,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID475,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID476,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID477,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID479,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN5_SID480,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID481,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID482,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID483,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID484,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,FALSE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID485,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID486,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID487,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID488,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID489,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID490,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID491,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID492,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID493,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID494,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID495,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID496,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID497,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID498,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID499,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID500,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID501,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID502,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID503,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID504,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN6_SID505,line,Zx.0540_P3,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID733,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID734,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID735,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID736,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,FALSE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID737,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID738,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID740,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID741,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID742,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID743,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID744,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID745,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID746,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID747,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID748,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID749,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID750,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID752,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID753,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID754,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID755,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID756,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID757,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID758,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID759,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID760,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID761,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID762,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID763,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID764,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID765,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID766,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID767,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN8_SID768,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID769,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID770,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID771,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID772,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID773,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID774,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID775,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID776,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID777,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+PN9_SID778,line,Zx.0570_P2,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,inferred: batch-1 R1 12-nt random primer left by zealbc1 demux
+S_2A_11,bc1_sample,Zx.0540_P3,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_2A_3,bc1_sample,Zx.0540_P3,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_2B_8,bc1_sample,Zx.0540_P3,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_2F_1,bc1_sample,Zx.0540_P3,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_2F_12,bc1_sample,Zx.0540_P3,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_2H_1,bc1_sample,Zx.0570_P2,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_3B_11,bc1_sample,Zx.0570_P2,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_3C_9,bc1_sample,Zx.0570_P2,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_3D_8,bc1_sample,Zx.0570_P2,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux
+S_3E_7,bc1_sample,Zx.0570_P2,mexicana,bc1,cram_import,2,2,TRUE,inferred: BC1 2-bp CT junction left by zealbc1 demux

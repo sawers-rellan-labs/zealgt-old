@@ -1,0 +1,133 @@
+# Run card: genotype workflow Gate 1, donor Zx.0540_P3 x chr10:1-20000000 (narrative: docs/runs/genotype_gate1_zx0540.md).
+# Genotype design §7.4. Real tools, hazel, -profile hazel,short. One head job per entry, in order, each after the previous
+# one finished (an entry reads the earlier entries' outputs from the keyed store and refuses to start without them):
+#   ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
+#   entries: sample_quality_control variant_discovery ancestry_inference marker_union donor_allele_calling genotype_imputation reporting
+#
+# TWO PASSES, two store keys (review #7: a key is one set of settings):
+#   pass A = this file as it stands: genotype_store_key gate1_zx0540_nomask, mask_read_starts false (comparable with zealbc1)
+#   pass B = the same card with three overrides on the command line (run ids genotype_gate1_mask_<entry>):
+#            --genotype_store_key gate1_zx0540_mask --mask_read_starts true
+#            --outdir /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/genotype_gate1_zx0540/mask
+#   Pass B may start its sample_quality_control only after pass A's has finished (both read the same CRAMs; nothing is shared).
+#
+# Every open decision of the genotype design (§7, §10) and of PLAN §4 is set here explicitly, with its value and why.
+# [OPEN] = not decided by the user yet; the value is the default the design proposes. [STOP-GAP] = replace before Gate 2.
+
+# ------------------------------------------------------------------------------------------------ selection
+workflow: genotype
+# entry: given per head job on the command line (--entry <stage>); --workflow genotype without --entry is refused
+donors: Zx.0540_P3
+donor_set: gate1_zx0540
+# [decided, design §7.4] 20 Mb, not all of chr10: the RTIGER floor (min_markers_factor x rigidity = 1,000 covered own tier-A
+# markers per line in the region) needs ~5-6 k tier-A sites (Zx.0540_P3: 40,941 on chr10, zealbc1 step 4); a smaller
+# region would exclude most lines. Any size is a card change (new key).
+regions: "chr10:1-20000000"
+# B73 controls = the zero class of step 4. [OPEN] B73_ERR3288215 is NOT in store_genotype_dev (its CollectWgsMetrics, ~2.5 h,
+# does not fit the short QOS; job 972246 imported the sheet without it). Gate 1 therefore uses B73_skim10 alone (mask 12/0).
+# To add B73_ERR3288215: import it with -profile hazel,normal into this cram_store, then a NEW key with both controls.
+b73_controls: B73_skim10
+
+# ------------------------------------------------------------------------------------------------ inputs
+genotype_input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/meta/genotype_dev.csv
+# the genotype-only markdup_import of meta/dev_import.csv (read-only for this workflow; the production ZEAL/store and
+# ZEAL/store_gate1 belong to the CRAM session and are not used)
+cram_store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
+fasta: /rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa
+# [decided, REQUIREMENTS.md:17] the zealbc1 pilot's union BED; chr10 only (design §10 item 7)
+lowcopy_bed: /rsstu/users/r/rrellan/BZea/ZEAL/results/pilot_1B_chr10/union/union_chr10.bed
+# [OPEN, design §10 item 6] the blind QC panel does not exist yet (REQUIREMENTS.md:24): stage 2b decides by MIN_COVERAGE only
+qc_panel: null
+# the four annotation columns of the zealbc1 step-4 tables (in_TIL18 in_Gigi in_schnable in_mgdb26), for a like-for-like
+# comparison; annotation only, never a filter (REQUIREMENTS.md:25)
+annotation_panels: "TIL18=/rsstu/users/r/rrellan/BZea/ZEAL/results/crisp_bench/TIL18_vs_B73_chr10_snps.tsv,Gigi=/rsstu/users/r/rrellan/BZea/ZEAL/results/crisp_bench/Gigi_vs_B73_chr10_snps.tsv,schnable=/rsstu/users/r/rrellan/BZea/ZEAL/results/pilot_1B_chr10/panel_positions/wideseq_chr10_snps.tsv,mgdb26=/rsstu/users/r/rrellan/BZea/ZEAL/results/pilot_1B_chr10/panel_positions/mgdb26hq_chr10_snps.tsv"
+# [decided, design §2.4 / §10 item 2] single-donor Gate 1: the zealbc1 step-4 table of Zx.0570_P2 (read-only, not re-called)
+# supplies the gaps of Zx.0540_P3 and the k / m of the step-1 prior. Bias noted in the .md (m counts its REF only where its
+# own table has the site).
+reference_donor_tables: "Zx.0570_P2=/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0570_chr10/step4/Zx.0570_P2.sites.tsv.gz"
+# [STOP-GAP, CIRCULAR: design §10 item 4, review #11] no calibrated mappability prior exists (PLAN:148-191, calibration not
+# run). This directory must hold mexicana.prior.tsv (columns c weight, 31 bins 0..1.5), derived ONCE by an agent script from
+# ZEAL/results/zealgt_checks/perline_hypotheses_20260926/qc_depth_TIL18.tsv with the step-2 script's c_prior() (nominal
+# depths 44 / 20, B73 DP >= 5, clip 1.5, +1). It is estimated on the same QC set the step-2 calls are later judged on, hence
+# circular. NOT YET WRITTEN, so it is null here: every entry's guard refuses a named directory that does not exist, and only
+# donor_allele_calling reads it. Once the directory exists, set it on that entry's command line (it is in that stage's
+# settings only, so the other stages' keys are unaffected):
+#   --mappability_priors /rsstu/users/r/rrellan/BZea/ZEAL/reference/calibration/mappability/qcset_til18_v0
+mappability_priors: null
+# [decided] taxon prior; the review #11 sensitivity run is `flat` under another key
+mappability_prior_mode: taxon
+
+# ------------------------------------------------------------------------------------------------ store and outputs
+# genotype outputs go to <store>/genotype/<genotype_store_key>/ (settings/<stage>.json guards the key); next to the imported
+# CRAMs (cram_import/) in the genotype-only store, never in ZEAL/store
+store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
+genotype_store_key: gate1_zx0540_nomask
+input_store_key: null            # = genotype_store_key
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/genotype_gate1_zx0540/nomask
+# [decided, PLAN:113] a CRAM whose provenance markdup differs from `samtools markdup ${markdup_args}` stops the run
+provenance_check: strict
+# pass A false (every mask 0, same code path; comparable with zealbc1, which did not mask); pass B true (design Decision 6:
+# the sheet's per-sample masks, batch-1 12/0, BC1 2/2, B73_skim10 12/0)
+mask_read_starts: false
+# [OPEN, PLAN §7] raster (the user's leaning); phg / both are not implemented (WP-PHG)
+imputation_method: raster
+read_position_qc: true
+
+# ------------------------------------------------------------------------------------------------ stage 2b: sample QC
+min_coverage: 0.05               # [decided, PLAN:243] MEAN_COVERAGE below it -> fail, excluded everywhere
+panel_min_markers: 1000          # report only (2 x rigidity); unused without qc_panel
+relatedness_method: vanraden_pseudohaploid   # [OPEN, PLAN:261] unused without qc_panel
+relatedness_seed: 1
+relatedness_flag_sd: 3           # [OPEN] unused without qc_panel
+donor_content_expected: 0.125
+donor_content_flag_low: 0.03     # [OPEN] unused without qc_panel
+
+# ------------------------------------------------------------------------------------------------ counts (all stages)
+pileup_args: "-q 20 -Q 20 -d 10000"   # [decided, PLAN:119-120]; -I is in the module (PLAN §4 #3)
+
+# ------------------------------------------------------------------------------------------------ stage 3: discovery, step 4
+# [OPEN, PLAN §4 #2] --filterreads 0 as zealbc1; [OPEN, review #10] --minc 2
+crisp_args: "-p 12 --mmq 20 --filterreads 0 --minc 2"
+veto_min_alt_reads: 1            # [decided, §4 #5] witness veto at >= 1 ALT read (finding 4 withdrawn)
+tier_counts_source: crisp        # [OPEN, PLAN §4 #6] tiers from CRISP's counts, as zealbc1 (mpileup = the stage-6 counter)
+tier_eps0: 0.005
+tier_prior: 0.5
+tier_plants: 6                   # Bin(6, 1/2) lattice (6 plants per BC1 pool)
+tier_zero_class_llr: -3
+tier_zero_class_min_reads: 20
+tier_eps_floor: 0.001
+tier_llr_a: 6.9
+tier_llr_b: 4.6
+tier_llr_c: 2.2
+tier_llr_ref: -4
+tier_ref_min_depth: 12
+tier_a_min_pools_alt: 2          # [OPEN, review #10] zealbc1 rule
+tier_a_single_pool_min_alt: 0    # [OPEN, review #10] off, as zealbc1 (proposal: 1 pool with >= 3 ALT reads for small donors)
+tier_ref_min_pools: 1            # [OPEN, review #10]
+hidepth_factor: 2
+af_gt_half_p: 0.01
+
+# ------------------------------------------------------------------------------------------------ stage 4: ancestry
+rigidity: 500                    # [OPEN, PLAN §4 #7 / #10] the zealbc1 value (r500)
+min_markers_factor: 2            # [decided, PLAN §4 #13] line excluded below 2 x rigidity covered own tier-A markers
+rtiger_drop_invariant_sites: true   # as zealbc1
+
+# ------------------------------------------------------------------------------------------------ stage 6: donor alleles
+gap_alt_posterior: 0.999         # [OPEN, review #6] chosen on the rejected truth; compared on the log-odds scale
+gap_prior_w: 2                   # [OPEN, review #5]
+gap_prior_scope: all             # zealbc1 dhd_bayes.py (same_taxon is the alternative)
+# [decided for Gate 1, design §2.4] other_donors = the reference donor Zx.0570_P2 (the run has one donor)
+gap_prior_source: other_donors
+gap_prior_fixed: 0.5             # used only with gap_prior_source fixed
+eps_prior_alpha: 1               # [OPEN, new, review #1b] zero-class eps prior, mean 1/201 ~ tier_eps0
+eps_prior_beta: 200
+b73_lines_alt_p: 0.01            # [OPEN, new, review #1b] ALT in x = 0 lines above the zero-class eps -> blocked_b73_lines
+c_grid_max: 1.5                  # step-2 mappability grid (step2 script :16)
+c_grid_step: 0.05
+ks_floor: 0.02                   # step2 script :44
+
+# ------------------------------------------------------------------------------------------------ stages 7-8
+phg_inbreeding: 0                # unused (raster)
+phg_prob_same_gamete: 0.99999    # unused (raster)
+reporting_expectation: bc2s2     # [OPEN, PLAN §4 #12] BC2S2 is the expectation (HET 1/16, TEO 3/32)
+breakpoint_window_markers: 500   # [OPEN, review #12]

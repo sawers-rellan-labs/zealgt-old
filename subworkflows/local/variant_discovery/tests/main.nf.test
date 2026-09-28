@@ -1,0 +1,101 @@
+nextflow_workflow {
+
+    name "Test Subworkflow VARIANT_DISCOVERY"
+    script "../main.nf"
+    workflow "VARIANT_DISCOVERY"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "variant_discovery"
+    tag "region_bed"
+    tag "mask_read_starts"
+    tag "witness_pool"
+    tag "crisp"
+    tag "bcftools/view"
+    tag "witness_veto"
+    tag "allele_counts"
+    tag "pooled_likelihood_tiers"
+    tag "stub"
+
+    test("Zx.9001_P1 x chr10:1-16000, crisp counts - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def cs = fx + '/cram_store/cram_import/'
+                def group = { role, tag, donor, ids -> [[id: (donor ?: 'b73') + '.chr10_1-16000.' + tag, unit: (donor ?: 'b73') + '.chr10_1-16000', donor: donor,
+                                                         region: 'chr10_1-16000', interval: 'chr10:1-16000', role: role, taxon: donor ? 'mexicana' : ''],
+                                                        ids.collect { i -> file(cs + i + '.cram') }, ids.collect { i -> file(cs + i + '.cram.crai') }, ids, ids.collect { _i -> [2, 2] }] }
+                input[0] = channel.of(group.call('bc1_sample', 'bc1', 'Zx.9001_P1', ['BC1_A', 'BC1_B']), group.call('line', 'lines', 'Zx.9001_P1', ['LINE_1', 'LINE_2']),
+                                      group.call('b73_control', 'b73', '', ['B73_CTL']))
+                input[1] = channel.of([[id: 'chr10_1-16000'], 'chr10:1-16000'])
+                input[2] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[3] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                input[4] = channel.value([[], []])
+                input[5] = 'crisp'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/genotype/test/step4/Zx.9001_P1.chr10_1-16000.sites.tsv.gz").exists() },
+                { assert snapshot(
+                    workflow.out.sites.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.summary.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.vcf.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.b73.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> v instanceof List ? "${v[0]} ${v[1]}".toString() : file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+
+    test("Zx.9001_P1 x chr10:1-16000, mpileup counts - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                tier_counts_source = 'mpileup'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def cs = fx + '/cram_store/cram_import/'
+                def group = { role, tag, donor, ids -> [[id: (donor ?: 'b73') + '.chr10_1-16000.' + tag, unit: (donor ?: 'b73') + '.chr10_1-16000', donor: donor,
+                                                         region: 'chr10_1-16000', interval: 'chr10:1-16000', role: role, taxon: donor ? 'mexicana' : ''],
+                                                        ids.collect { i -> file(cs + i + '.cram') }, ids.collect { i -> file(cs + i + '.cram.crai') }, ids, ids.collect { _i -> [2, 2] }] }
+                input[0] = channel.of(group.call('bc1_sample', 'bc1', 'Zx.9001_P1', ['BC1_A']), group.call('line', 'lines', 'Zx.9001_P1', ['LINE_1']),
+                                      group.call('b73_control', 'b73', '', ['B73_CTL']))
+                input[1] = channel.of([[id: 'chr10_1-16000'], 'chr10:1-16000'])
+                input[2] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[3] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                input[4] = channel.value([[], []])
+                input[5] = 'mpileup'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.versions.collect { v -> v instanceof List ? '' : file(v).name }.contains('Zx.9001_P1.chr10_1-16000.bc1.allele_counts.versions.yml') },
+                { assert snapshot(
+                    workflow.out.sites.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> v instanceof List ? "${v[0]} ${v[1]}".toString() : file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+}

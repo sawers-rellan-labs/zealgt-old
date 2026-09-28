@@ -1,0 +1,104 @@
+nextflow_workflow {
+
+    name "Test Subworkflow GENOTYPE_REPORTING"
+    script "../main.nf"
+    workflow "GENOTYPE_REPORTING"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "genotype_reporting"
+    tag "genotype_summary"
+    tag "chromosome_painting"
+    tag "region_bed"
+    tag "mask_read_starts"
+    tag "read_position_qc"
+    tag "stub"
+
+    test("Zx.9001_P1 x chr10:1-16000, with read-position QC - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                donor_set          = 'test_set'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def cs = fx + '/cram_store/cram_import/'
+                def seed = fx + '/store_seed/genotype/test/'
+                def unit = [id: 'Zx.9001_P1.chr10_1-16000', donor: 'Zx.9001_P1', region: 'chr10_1-16000', interval: 'chr10:1-16000']
+                def group = { role, tag, ids -> [unit + [id: unit.id + '.' + tag, unit: unit.id, role: role, taxon: 'mexicana'],
+                                                 ids.collect { i -> file(cs + i + '.cram') }, ids.collect { i -> file(cs + i + '.cram.crai') }, ids, ids.collect { _i -> [2, 2] }] }
+                input[0] = channel.of([unit, file(seed + 'genotypes/test_set/Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz', checkIfExists: true),
+                                       file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.segments.csv', checkIfExists: true),
+                                       file(seed + 'donor_alleles/test_set/Zx.9001_P1.chr10_1-16000.tsv.gz', checkIfExists: true),
+                                       file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.line_qc.tsv', checkIfExists: true)])
+                input[1] = channel.of(group.call('bc1_sample', 'bc1', ['BC1_A', 'BC1_B']), group.call('line', 'lines', ['LINE_1']))
+                input[2] = channel.of([unit, file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.tierA_sites.tsv', checkIfExists: true)])
+                input[3] = channel.of([[id: 'chr10_1-16000'], 'chr10:1-16000'])
+                input[4] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[5] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.read_position_qc.size() == 4 },
+                { assert snapshot(
+                    workflow.out.summary.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.single_locus.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.breakpoint_density.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.painting.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.read_position_qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+
+    test("Zx.9001_P1 x chr10:1-16000, no read-position QC - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                donor_set          = 'test_set'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                def seed = fx + '/store_seed/genotype/test/'
+                def unit = [id: 'Zx.9001_P1.chr10_1-16000', donor: 'Zx.9001_P1', region: 'chr10_1-16000', interval: 'chr10:1-16000']
+                input[0] = channel.of([unit, file(seed + 'genotypes/test_set/Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz', checkIfExists: true),
+                                       file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.segments.csv', checkIfExists: true),
+                                       file(seed + 'donor_alleles/test_set/Zx.9001_P1.chr10_1-16000.tsv.gz', checkIfExists: true),
+                                       file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.line_qc.tsv', checkIfExists: true)])
+                input[1] = channel.empty()
+                input[2] = channel.of([unit, file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.tierA_sites.tsv', checkIfExists: true)])
+                input[3] = channel.empty()
+                input[4] = channel.value([[id: 'lowcopy'], file(fx + '/lowcopy.bed', checkIfExists: true)])
+                input[5] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.read_position_qc.size() == 0 },
+                { assert snapshot(
+                    workflow.out.summary.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.painting.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+}

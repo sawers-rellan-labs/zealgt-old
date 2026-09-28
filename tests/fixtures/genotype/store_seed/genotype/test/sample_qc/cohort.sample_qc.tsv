@@ -1,0 +1,9 @@
+sample	role	donor	pass	reasons	notes	mean_coverage	pct_1x	panel_qc	panel_min_covered	panel_contigs_below_floor	kinship_own	own_z	closest_other_donor	kinship_closest_other	relatedness_reason	donor_content	donor_content_reason
+BC1_A	bc1_sample	Zx.9001_P1	true	.	.	10.000000	0.498906	not_run	.	.	.	.	.	.	.	.	.
+BC1_B	bc1_sample	Zx.9001_P1	true	.	.	10.000000	0.499625	not_run	.	.	.	.	.	.	.	.	.
+LINE_1	line	Zx.9001_P1	true	.	.	3.125000	0.497875	not_run	.	.	.	.	.	.	.	.	.
+LINE_2	line	Zx.9001_P1	true	.	.	3.125000	0.497125	not_run	.	.	.	.	.	.	.	.	.
+LINE_3	line	Zx.9001_P1	true	.	.	3.125000	0.498563	not_run	.	.	.	.	.	.	.	.	.
+LINE_4	line	Zx.9001_P1	true	.	.	3.125000	0.494625	not_run	.	.	.	.	.	.	.	.	.
+LINE_LOW	line	Zx.9001_P1	false	min_coverage	.	0.031250	0.026719	not_run	.	.	.	.	.	.	.	.	.
+B73_CTL	b73_control	.	true	.	.	5.000000	0.499594	not_run	.	.	.	.	.	.	.	.	.

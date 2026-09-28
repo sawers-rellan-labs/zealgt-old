@@ -1,0 +1,10 @@
+sample_id,role,donor,taxon,source,store_dir,mask_r1,mask_r2,include,mask_source
+BC1_A,bc1_sample,Zx.9001_P1,mexicana,bc1,cram_import,2,2,TRUE,fixture: BC1 2/2 (design Decision 6)
+BC1_B,bc1_sample,Zx.9001_P1,mexicana,bc1,cram_import,2,2,TRUE,fixture: BC1 2/2 (design Decision 6)
+LINE_1,line,Zx.9001_P1,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,fixture: batch-1 12/0 (design Decision 6)
+LINE_2,line,Zx.9001_P1,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,fixture: batch-1 12/0 (design Decision 6)
+LINE_3,line,Zx.9001_P1,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,fixture: batch-1 12/0 (design Decision 6)
+LINE_4,line,Zx.9001_P1,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,fixture: batch-1 12/0 (design Decision 6)
+LINE_LOW,line,Zx.9001_P1,mexicana,bc2s3_batch1,cram_import,12,0,TRUE,fixture: batch-1 12/0 (design Decision 6)
+B73_CTL,b73_control,,,b73_control,cram_import,0,0,TRUE,fixture: no artefact
+LINE_EXCL,line,Zx.9001_P1,mexicana,bc2s3_batch1,cram_import,12,0,FALSE,"fixture: excluded row, no files"

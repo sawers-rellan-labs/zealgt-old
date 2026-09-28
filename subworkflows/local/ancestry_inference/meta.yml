@@ -1,0 +1,68 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow of the genotype workflow; see the header comment of main.nf and the genotype design.
+# Versions: the modules publish their versions.yml to the `versions` topic (collated in workflows/genotype.nf);
+# `versions` here re-emits them.
+name: ancestry_inference
+description: "Stage 4 per donor x region: own tier-A markers, masked line counts, line coverage floor, RTIGER segments"
+keywords:
+  - zealgt
+  - genotype workflow
+  - ancestry_inference
+components:
+  - rtiger/markers
+  - region/bed
+  - mask/read/starts
+  - allele/counts
+  - line/marker/qc
+  - rtiger
+input:
+  - ch_groups:
+      type: file
+      description: |
+        channel: [ val(gmeta), [ crams ], [ crais ], val([ ids ]), val([ masks ]) ]  gmeta = id unit donor region interval role taxon  (line groups)
+  - ch_step4:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.sites.tsv.gz ]  (store)
+  - ch_regions:
+      type: list
+      description: |
+        channel: [ val(rmeta), val(region) ]  rmeta.id = region label (chr10_1-20000000)
+  - ch_lowcopy:
+      type: file
+      description: |
+        channel: value [ val(meta), lowcopy bed ]
+  - ch_ref:
+      type: file
+      description: |
+        channel: value [ val(meta), fasta, fai ]
+  - rigidity:
+      type: integer
+      description: |
+        value: RTIGER rigidity
+  - min_markers_factor:
+      type: float
+      description: |
+        value: covered-marker floor factor
+output:
+  - segments:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.segments.csv ]  (storeDir ancestry/)
+  - line_qc:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.line_qc.tsv ]  (storeDir ancestry/)
+  - markers:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.tierA_sites.tsv ]  (storeDir ancestry/)
+  - versions:
+      type: file
+      description: |
+        channel: versions.yml files (every module also publishes to the `versions` topic)
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

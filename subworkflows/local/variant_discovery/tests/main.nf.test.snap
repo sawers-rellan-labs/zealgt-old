@@ -1,0 +1,73 @@
+{
+    "Zx.9001_P1 x chr10:1-16000, mpileup counts - stub": {
+        "content": [
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.sites.tsv.gz"
+                ]
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.b73.allele_counts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.bc1.allele_counts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.bc1.mask_read_starts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.crisp.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.mask_read_starts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.pooled_likelihood_tiers.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.witness_pool.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.witness_veto.versions.yml",
+                "b73.chr10_1-16000.b73.mask_read_starts.versions.yml",
+                "chr10_1-16000.region_bed.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T08:15:25.644397",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "Zx.9001_P1 x chr10:1-16000, crisp counts - stub": {
+        "content": [
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.sites.tsv.gz"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.summary.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.vetoed.vcf.gz"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.b73.ad.tsv.gz"
+                ]
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.b73.allele_counts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.bc1.mask_read_starts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.crisp.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.mask_read_starts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.pooled_likelihood_tiers.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.witness_pool.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.witness_veto.versions.yml",
+                "b73.chr10_1-16000.b73.mask_read_starts.versions.yml",
+                "chr10_1-16000.region_bed.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T08:15:20.1131",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

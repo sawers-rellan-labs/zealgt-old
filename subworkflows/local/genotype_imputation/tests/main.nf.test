@@ -1,0 +1,46 @@
+nextflow_workflow {
+
+    name "Test Subworkflow GENOTYPE_IMPUTATION"
+    script "../main.nf"
+    workflow "GENOTYPE_IMPUTATION"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "genotype_imputation"
+    tag "rasterize"
+    tag "stub"
+
+    test("Zx.9001_P1 x chr10:1-16000 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                donor_set          = 'test_set'
+            }
+            workflow {
+                """
+                def seed = '${projectDir}/tests/fixtures/genotype/store_seed/genotype/test/'
+                input[0] = channel.of([[id: 'Zx.9001_P1.chr10_1-16000', donor: 'Zx.9001_P1', region: 'chr10_1-16000', interval: 'chr10:1-16000'],
+                                       file(seed + 'donor_alleles/test_set/Zx.9001_P1.chr10_1-16000.tsv.gz', checkIfExists: true),
+                                       file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.segments.csv', checkIfExists: true),
+                                       file(seed + 'ancestry/Zx.9001_P1.chr10_1-16000.line_qc.tsv', checkIfExists: true)])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/genotype/test/genotypes/test_set/Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz").exists() },
+                { assert snapshot(
+                    workflow.out.genotypes.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.matrix.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+}

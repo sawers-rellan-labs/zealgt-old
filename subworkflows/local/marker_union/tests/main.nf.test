@@ -1,0 +1,48 @@
+nextflow_workflow {
+
+    name "Test Subworkflow MARKER_UNION_STAGE"
+    script "../main.nf"
+    workflow "MARKER_UNION_STAGE"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "marker_union"
+    tag "stub"
+
+    test("test_set x chr10:1-16000, one run donor + one reference donor - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store              = "${outputDir}/store_stub"
+                genotype_store_key = 'test'
+                donor_set          = 'test_set'
+            }
+            workflow {
+                """
+                def fx = '${projectDir}/tests/fixtures/genotype'
+                input[0] = channel.of([[id: 'test_set.chr10_1-16000', donor_set: 'test_set', region: 'chr10_1-16000', interval: 'chr10:1-16000'],
+                                       [file(fx + '/store_seed/genotype/test/step4/Zx.9001_P1.chr10_1-16000.sites.tsv.gz', checkIfExists: true)],
+                                       [file(fx + '/reference/Zx.9002_P1.sites.tsv.gz', checkIfExists: true)]])
+                input[1] = ['Zx.9001_P1']
+                input[2] = ['Zx.9002_P1']
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/genotype/test/union/test_set.chr10_1-16000.tsv.gz").exists() },
+                { assert file("${outputDir}/store_stub/genotype/test/union/test_set.chr10_1-16000.union_sites.tsv").exists() },
+                { assert snapshot(
+                    workflow.out.union.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.sites.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.per_donor.collect { meta, f -> [meta.id, file(f).name] },
+                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                ).match() }
+            )
+        }
+    }
+}

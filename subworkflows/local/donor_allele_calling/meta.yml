@@ -1,0 +1,81 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow of the genotype workflow; see the header comment of main.nf and the genotype design.
+# Versions: the modules publish their versions.yml to the `versions` topic (collated in workflows/genotype.nf);
+# `versions` here re-emits them.
+name: donor_allele_calling
+description: "Stage 6: union-site counts, joint pooled likelihood, gap filling step 1 (BC1) and step 2 (lines), donor founder allele"
+keywords:
+  - zealgt
+  - genotype workflow
+  - donor_allele_calling
+components:
+  - region/bed
+  - mask/read/starts
+  - allele/counts
+  - pooled/likelihood/tiers
+  - gap/filling/bc1
+  - gap/filling/lines
+  - donor/founder
+input:
+  - ch_groups:
+      type: file
+      description: |
+        channel: [ val(gmeta), [ crams ], [ crais ], val([ ids ]), val([ masks ]) ]  gmeta = id unit donor region interval role taxon  (roles bc1_sample, line, b73_control)
+  - ch_union:
+      type: file
+      description: |
+        channel: [ val(setmeta), <set>.<label>.tsv.gz, <set>.<label>.union_sites.tsv ]  (store)
+  - ch_ancestry:
+      type: file
+      description: |
+        channel: [ val(unit), segments.csv, line_qc.tsv ]  (store)
+  - ch_priors:
+      type: file
+      description: |
+        channel: [ val(donor), <taxon>.prior.tsv | [] ]
+  - donor_taxa:
+      type: map
+      description: |
+        value: [ donor: taxon ]
+  - donors:
+      type: list
+      description: |
+        list: run donors
+  - ch_regions:
+      type: list
+      description: |
+        channel: [ val(rmeta), val(region) ]  rmeta.id = region label (chr10_1-20000000)
+  - ch_lowcopy:
+      type: file
+      description: |
+        channel: value [ val(meta), lowcopy bed ]
+  - ch_ref:
+      type: file
+      description: |
+        channel: value [ val(meta), fasta, fai ]
+output:
+  - donor_alleles:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.tsv.gz ]  (storeDir donor_alleles/<set>/)
+  - gap_bc1:
+      type: file
+      description: |
+        channel: [ val(setmeta), <set>.<label>.gap_bc1.tsv.gz ]  (storeDir gap_bc1/)
+  - gap_lines:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.gap_lines.tsv.gz ]  (storeDir gap_lines/<set>/)
+  - joint:
+      type: file
+      description: |
+        channel: [ val(setmeta), [ <donor>.<label>.sites.tsv.gz ] ]  (storeDir joint_step4/<set>/)
+  - versions:
+      type: file
+      description: |
+        channel: versions.yml files (every module also publishes to the `versions` topic)
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

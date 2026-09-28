@@ -1,0 +1,37 @@
+{
+    "Zx.9001_P1 x chr10:1-16000 - stub": {
+        "content": [
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.segments.csv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.line_qc.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.tierA_sites.tsv"
+                ]
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.line_marker_qc.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.allele_counts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.mask_read_starts.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.rtiger.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.rtiger_markers.versions.yml",
+                "chr10_1-16000.region_bed.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T08:16:30.224648",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
