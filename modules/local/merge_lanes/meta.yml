@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. No own environment.yml: it runs in the DEMUX env (conda "${moduleDir}/../demux/environment.yml",
+# envs/process_aliases.tsv MERGE_LANES -> demux), so no new hazel prefix is built.
+name: merge_lanes
+description: Join the per-lane DEMUX outputs of one library into one FASTQ pair per sample by plain concatenation of the gzip files (a multi-member gzip is valid gzip); nothing is recompressed.
+keywords:
+  - demultiplexing
+  - lanes
+  - concatenate
+  - fastq
+tools:
+  - coreutils:
+      description: GNU core utilities (cat), pinned in the DEMUX environment.yml and not reported as a version
+      homepage: https://www.gnu.org/software/coreutils/
+      documentation: https://www.gnu.org/software/coreutils/manual/
+      licence: ["GPL-3.0-or-later"]
+      identifier: ""
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing library information
+          e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+    - reads:
+        type: file
+        description: "Lane FASTQs of every sample of the library, <sample>.<library>.<lane>_R{1,2}.fastq.gz (DEMUX)"
+        pattern: "*_R{1,2}.fastq.gz"
+        ontologies: []
+    - barcodes:
+        type: list
+        description: "[ sample_id, barcode_r1, barcode_r2 ] per sample; only the sample ids are used"
+    - n_lanes:
+        type: integer
+        description: Number of lanes of the library; every sample must have exactly this many files per read
+output:
+  reads:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing library information
+            e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "demux/*_R{1,2}.fastq.gz":
+          type: file
+          description: "One read pair per sample, <sample>_R{1,2}.fastq.gz, lanes in lane-name order"
+          pattern: "*_R{1,2}.fastq.gz"
+          ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

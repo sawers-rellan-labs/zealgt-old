@@ -1,0 +1,37 @@
+nextflow_process {
+
+    name "Test Process MERGE_LANES"
+    script "../main.nf"
+    process "MERGE_LANES"
+
+    tag "modules"
+    tag "modules_local"
+    tag "merge_lanes"
+    tag "stub"
+
+    test("LIBX, 3 samples, 2 lanes - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ],
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true) ],
+                    [ ['LX_1', 'GCCATA', 'GCCATA'], ['LX_2', 'TCTGGT', 'TCTGGT'], ['LX_3', 'TGGCTT', 'TGGCTT'] ],
+                    2
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert process.out.reads[0][1].collect { f -> file(f).name }.sort() == ["LX_1_R1.fastq.gz", "LX_1_R2.fastq.gz", "LX_2_R1.fastq.gz", "LX_2_R2.fastq.gz", "LX_3_R1.fastq.gz", "LX_3_R2.fastq.gz"] }
+            )
+        }
+    }
+}

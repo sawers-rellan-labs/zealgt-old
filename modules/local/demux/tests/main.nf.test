@@ -9,7 +9,7 @@ nextflow_process {
     tag "demux"
     tag "stub"
 
-    test("LIBX, 3 samples, 6B2S+T symmetric - stub") {
+    test("LIBX lane L1 of 2, 3 samples, 6B2S+T symmetric - stub") {
 
         options "-stub"
 
@@ -20,12 +20,13 @@ nextflow_process {
             process {
                 """
                 input[0] = channel.of([
-                    [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric', n_samples:3, pu:'TESTFC01.1,TESTFC01.2' ],
-                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L2_1.fq.gz", checkIfExists: true) ],
-                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L2_2.fq.gz", checkIfExists: true) ],
+                    [ id:'LIBX.LIBX_TESTFC01_L1', library:'LIBX', source:'bc1', layout:'symmetric', n_samples:3, pu:'TESTFC01.1,TESTFC01.2', n_lanes:2 ],
+                    file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true),
                     [ ['LX_1', 'GCCATA', 'GCCATA'], ['LX_2', 'TCTGGT', 'TCTGGT'], ['LX_3', 'TGGCTT', 'TGGCTT'] ],
                     [ '6B2S+T', '6B2S+T' ],
-                    [ [], [] ]
+                    [ '', '' ],
+                    2
                 ])
                 input[1] = 0
                 """
@@ -37,8 +38,8 @@ nextflow_process {
                 { assert process.success },
                 { assert snapshot(process.out).match() },
                 { assert process.out.reads[0][1].size() == 6 },
-                { assert process.out.reads[0][1].collect { f -> file(f).name }.sort() == ["LX_1_R1.fastq.gz", "LX_1_R2.fastq.gz", "LX_2_R1.fastq.gz", "LX_2_R2.fastq.gz", "LX_3_R1.fastq.gz", "LX_3_R2.fastq.gz"] },
-                { assert file(process.out.json[0][1]).name == "LIBX.cutadapt.json" },
+                { assert process.out.reads[0][1].collect { f -> file(f).name }.sort() == ["LX_1", "LX_2", "LX_3"].collectMany { s -> ["${s}.LIBX.LIBX_TESTFC01_L1_R1.fastq.gz", "${s}.LIBX.LIBX_TESTFC01_L1_R2.fastq.gz"] }.collect { n -> n.toString() } },
+                { assert file(process.out.json[0][1]).name == "LIBX.LIBX_TESTFC01_L1.cutadapt.json" },
                 { assert process.out.versions_cutadapt.size() == 1 }
             )
         }
