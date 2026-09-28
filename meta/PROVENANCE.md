@@ -36,6 +36,39 @@ every sample has a raw location.
 - **Batch-1 processing history (not used by zealgt, kept for comparison):** Nirwan's pipeline (github.com/nirwan1265/BZea_genotyping):
   sabre demux → Trimmomatic PE (ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36) → `sara/BZea/filtered_S/`
   (plates 2–17) → bwa mem → Picard markdup → ANGSD. zealgt re-demultiplexes batch 1 from the tars (docs/PLAN_pipeline.md §3).
+  Exact commands (github.com/nirwan1265/Mapping, `src/demultiplex_sabre.csh`, `src/qc_trimmomatic.csh`): `sabre pe -f -r -b <plate>.txt
+  -u -w`; Trimmomatic 0.39 `PE -phred33 … ILLUMINACLIP:<custom adapters.fa>:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36`.
+  The custom `adapters.fa` is unreadable on hazel (permission denied); asked for on Slack 2026-09-28. sabre cut 8 bp from the 5′ end of
+  **both** reads (1000/1000 R1, 998/1000 R2, raw vs filtered, job 969161), so `filtered_S/` R1 still starts with the 12 random-primer
+  bases (below) and R2 is clean.
+
+## Library kits, sequencing and read structures (2026-09-28)
+Two different Twist kits; the read structure is a per-source parameter of DEMUX, never hard-coded.
+
+| source | library kit | chemistry | read structure | sequenced |
+|---|---|---|---|---|
+| BC2S3 batch 1 (CLY2023) | Twist **96-Plex** Library Prep Kit (made in-house by Hannah) | random priming with two primers: A = well barcode 8 nt + 12-nt randomer, B = 8-nt randomer + tail with the 6-bp i7 plate index (TruSeq LT 1–12) | R1 `8B12S+T`, R2 `8S+T`: demux on R1[0:8], then crop 20 bp from R1 and 8 bp from R2 | NC State Genomic Sciences Lab (project NVS188B), NovaSeq 6000, 2 × 151 |
+| BC1 pools 1A–4H | Twist **FlexPrep UHT** Library Prep Kit (part 109220, "UDI primers, TS") — inferred, see evidence | adapter ligation; same 6-bp inline barcode on both ends; UDI i5/i7 per pool | `6B2S+T` on both reads (6-bp barcode + 2 bp phasing / A-T ligation junction): 8 bp off each read | Novogene USA, contract H202SC26080522, batch X202SC26080522-Z01-F001, NovaSeq X Plus 25B, PE150, premade lanes |
+| BC2S3 batch 2 (V21–V24) | Twist FlexPrep UHT (as BC1; inferred) | as BC1 | `6B2S+T` on both reads | Novogene USA, order X202SC26093287-Z01-F001, NovaSeq X Plus, PE150 |
+
+Evidence:
+- **Kit documents:** Twist 96-Plex demultiplexing guide DOC-001283 Rev 1.0 (Fig. 2 p2; read structures p6; barcode list p15) and FlexPrep
+  UHT demux guide DOC-001509 (Fig. 3 p4; structure p7); notes and PDF in `agent/20260927_231439_twist_96plex_guide.md`. Neither gives adapter
+  sequences; the plate/UDI indexes are TruSeq-type, so Trimmomatic uses TruSeq3-PE-2.fa (a parameter) until Nirwan's `adapters.fa` is known.
+- **Batch 1 = 96-Plex:** Hannah's Slack messages (library prep sheet `BZea Library Prep Sheet Code.xlsx`, 2023-07-13; sent for sequencing
+  2023-05-23); the sample sheet's barcodes are Twist's 96-Plex list (A01 `CGTACGTA`); raw reads (plate 5 lane 1, job 969161) are 151 bp, 92.2 %
+  start with an exact plate-5 well barcode, R1 bases 9–20 and R2 bases 1–8 are primer-derived: aligned to B73 chr10 (job 969188, minimap2)
+  they are 5′-clipped in 70 % / 51 % of reads with mismatch falling from 25 % / 24 % to background at R1 base 21 / R2 base 9
+  (`agent/20260927_235700_rawtar_chr10_alignment_test.md`, `agent/20260928_120300_rawtar_structure_test.md`,
+  `agent/20260927_235500_randomer_test.md`).
+- **BC1 / batch 2 = FlexPrep UHT:** not written against BC1 anywhere; inferred from the Twist invoice (Aug 2026, FlexPrep UHT part 109220 with
+  UDI primers TS), the batch-2 QC memo ("FlexPrep/EF-style"), the 12 inline barcodes = FlexPrep's list, and the reads: after the 6-bp barcode
+  both mates start with a fixed `CT` (99.9 % of reads, BC1 CRAM S_2A_11), the documented 2-bp junction. zealbc1's demux removed only the
+  6-bp barcode, so its BC1 CRAMs carry those 2 bases. Per-pool UDI kit wells: shared-drive sheet "BC1 concentrations and adapter info" (tab
+  `adapters`, folder `Sequencing/ZeaL BC1s/`).
+- **Provider documents:** Slack `agent/20260927_230549_slack_sequencing_provenance.md`; Gmail `agent/20260927_230917_gmail_sequencing_provenance.md`;
+  Novogene release in `BZea/BC1_dna_raw/` (`Readme.html`, `02.Report_…zip`, `MD5.txt`; md5 check 243/243, job 651495) —
+  `agent/20260927_233737_novogene_download_doc.md`.
 
 ## Development import sheet (`meta/dev_import.csv`, 2026-09-24)
 The existing CRAMs zealgt's development entries start from (docs/PLAN_pipeline.md §0), read in place from `ZEAL/results/` (written by
