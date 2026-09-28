@@ -50,7 +50,7 @@ Hard limits: no deletion of any kind (no rm -r, no nextflow clean, no overwritin
 library the registry or §0's table lists as demuxed unless the plan's --force-demux path is exercised deliberately at Gate 1 on the
 subsample; environments come only from the repo (environment.yml + build.sh per module), built by bin/build_envs.sh into
 /share/maize/frodrig4/conda/zealgt/ by xfer jobs, never at task time and never on /rsstu; the old /share/maize/frodrig4/conda/env/*
-are being deleted by the user — use nothing from them (versions are in envs/legacy_zealbc1/); ZEAL/envs/zealgt_reads is not used; one library in flight (work/ peak ≈ 2 × library); nf-schema plugin fetched into NXF_PLUGINS_DIR on /share by an xfer job, head job
+are being deleted by the user — use nothing from them (versions are in envs/legacy_zealbc1/); one library in flight (work/ peak ≈ 2 × library); nf-schema plugin fetched into NXF_PLUGINS_DIR on /share by an xfer job, head job
 with NXF_OFFLINE=true; raw libraries are read-only; work/ and TMPDIR on /share/maize/frodrig4/nf_work/<run>,
 results and store on /rsstu; all compute through Slurm (short QOS for gates, compute/normal for Gate 2's library), nothing heavy on the
 login node; attribution lines on commits as the session's rules give them.

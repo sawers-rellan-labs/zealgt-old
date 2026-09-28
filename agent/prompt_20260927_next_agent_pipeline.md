@@ -75,8 +75,7 @@ Template (not optional; no hand-rolled layout)
     count). conf/hazel.config points each process with `withName` at its prefix (so no env is ever created at task time); a
     `.nextflow.log` without "Creating env" in the first real run confirms it. The Nextflow launcher is built the same way from
     envs/nextflow/environment.yml (nextflow 26.04.6, as zealbc1 ran).
-  - Not used: the old /share/maize/frodrig4/conda/env/* (being deleted by the user) and ZEAL/envs/zealgt_reads (built on /rsstu by
-    mistake; left for the user to remove).
+  - Not used: the old /share/maize/frodrig4/conda/env/* (being deleted by the user).
   - Containers: check once with a 1-minute short-QOS job whether `apptainer` or `singularity` exists on compute nodes (a .sif sits in
     ZEAL/envs/containers). Report it in the handover as the next step up; do not switch tonight.
 - Offline compute nodes: the template's plugins (nf-schema) must be fetched once into NXF_PLUGINS_DIR on /share through an `xfer`

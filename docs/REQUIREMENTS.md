@@ -30,7 +30,7 @@ chromosomes, with only `marker_union` and the PHG database as barriers.
 |---|---|---|
 | cutadapt | exact inline demux (`-e 0 --no-indels`) | `/share/maize/frodrig4/conda/env/assembly` |
 | minibwa, samtools | `-x sr`; MAPQ 20, `-F 0x904` | `.../conda/env/assembly`; PHG's samtools in `ZEAL/envs/phgv2-conda` |
-| Trimmomatic, FastQC | 0.39, 0.12.1; batch-1 trimming parameters (PLAN §3 row 1b) | `ZEAL/envs/zealgt_reads` (new, `envs/zealgt_reads.yml`, xfer job 968339) |
+| Trimmomatic, FastQC | 0.39, 0.12.1; batch-1 trimming parameters (PLAN §3 row 1b) | not in the zealbc1 envs; zealgt module envs (nf-core trimmomatic / fastqc) |
 | duplicate marking | `samtools markdup -d 2500` (decided, PLAN §4 #1) | `.../conda/env/assembly` |
 | Picard CollectWgsMetrics, MultiQC | picard 3.5.0, multiqc 1.25 | `.../conda/env/qc` |
 | bcftools / htslib | mpileup `-I -q20 -Q20 -a AD` | `.../conda/env/nilhmm` |
@@ -43,7 +43,7 @@ The table above is where the tools ran until now (zealbc1); those `/share/maize/
 user (2026-09-28) and their exact package lists are kept in `envs/legacy_zealbc1/`. zealgt: every module has its own pinned
 `environment.yml` (+ `build.sh` for non-conda tools: CRISP @ 1a9027e, nilHMM @ 248e67e), built by `bin/build_envs.sh` as an xfer job
 into `/share/maize/frodrig4/conda/zealgt/` (never `/rsstu`: too slow); `envs/manifest.tsv` lists what was built.
-`ZEAL/envs/zealgt_reads` (Trimmomatic + FastQC, xfer job 968339) was built on /rsstu by mistake and is not used.
+`ZEAL/envs/zealgt_reads` (Trimmomatic + FastQC, xfer job 968339) was built on /rsstu by mistake and removed 2026-09-28.
 
 ## 4. Compute (measured per unit)
 | stage | unit | cpus | memory | wall time | disk |
