@@ -45,7 +45,9 @@ non-empty CRAM in the store; then the FASTQs can go (§5, cleanup group A–C).
 - **Development starts from CRAMs.** Development entries take a sample sheet of existing CRAMs; `read_demultiplexing` is not part of them.
 - **Demux registry in the store.** A library is registered as done when its demux QC table and all its sample CRAMs are in the store.
   `read_demultiplexing` refuses a registered library unless it is named explicitly with `--force-demux <library>`.
-- **One pass per library** for any library demuxed from now on: one DEMUX task demultiplexes the library once, and **all** its
+- **One pass per library** for any library demuxed from now on: the library is demultiplexed once — one DEMUX task per library ×
+  lane on the delivered lane files (cutadapt takes one input file per read; streaming the lanes through a pipe failed, Gate 2 job
+  972171, 2026-09-28), then MERGE_LANES concatenates each sample's lane outputs (`cat` of gzip members) — and **all** its
   samples then go through TRIMMOMATIC → FASTQC → ALIGN_MARKDUP as per-sample processes that write the CRAMs to the store (user,
   2026-09-27: one process per tool so every module carries its own pinned environment; replaces the single DEMUX+ALIGN task). FASTQs
   pass through `work/` on /share and are removed after the library's CRAMs are stored (§5 rule 3). `--samples` never restricts which
@@ -126,7 +128,7 @@ read time (`mpileup -q20 -Q20`, CRISP `--mmq 20`), so a threshold change never n
 | BC1 pools | 32 (1A–4H), `BC1_dna_raw/` | plain FASTQs | inline, symmetric on R1 and R2 (`-g`/`-G`) | `meta/bc1_well_map.csv` |
 | BC2S3 batch 2 | 32 rows (V21A–V24H), `BC2S3_batch_2_dna_raw/` | plain FASTQs | inline, symmetric on R1 and R2 | `meta/bc2s3_batch2_well_map.csv` |
 | BC2S3 batch 1 (CLY2023) | 17 plate pools in `sara/DNA_Sequencing_raw/BZea/NVS188B_*_R{1,2}.tar` (1.5 TB, read-only) | members streamed out of the tars (`tar -xOf`), lanes concatenated; plate pool = 6-bp Illumina index in the header | **8-bp inline barcode on R1 only** (checked 2026-09-24: top-96 5′ 8-mers cover 91.9% of reads vs 6.6% at base 31) | `BZea_Sample_ID.xlsx` (1,632 wells: barcode, plate, plate index, running number, genotype) → a well map; joins to check: plate index → `BZea<n>` files, running number → `PN<plate>_SID<n>` |
-Same steps for every library, one DEMUX task per library then per-sample processes (§0 Task 2): cutadapt exact-match demux (`-e 0 --no-indels`; R1-only anchoring for batch 1)
+Same steps for every library, one DEMUX task per library × lane, MERGE_LANES per sample, then per-sample processes (§0 Task 2): cutadapt exact-match demux (`-e 0 --no-indels`; R1-only anchoring for batch 1)
 → Trimmomatic PE with batch 1's original parameters (`ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36`) →
 minibwa -x sr → read groups → `samtools fixmate -m` → `sort` → `markdup -d 2500` → CRAM; FASTQs in `work/` until the library's
 CRAMs are stored (peak ≈ 2 × the library: demuxed + trimmed FASTQs; one library in flight). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
@@ -134,7 +136,7 @@ sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comp
 
 | # | workflow | entry | modules | per | main output (store) |
 |---|---|---|---|---|---|
-| 1 | CRAM | `read_demultiplexing` | FETCH_LIBRARY (source adapter) → DEMUX (cutadapt exact inline) → DEMUX_QC | library | per-sample FASTQ (`work/`, until the library's CRAMs are stored), `demux_qc/<library>.tsv` |
+| 1 | CRAM | `read_demultiplexing` | FETCH_LIBRARY (source adapter) → DEMUX (cutadapt exact inline, one task per lane) → MERGE_LANES (per sample, `cat`) → DEMUX_QC (sums the lane reports) | library × lane → sample | per-sample FASTQ (`work/`, until the library's CRAMs are stored), `demux_qc/<library>.tsv` |
 | 1b | CRAM | (step of `read_demultiplexing`; subworkflow READ_TRIMMING — the FASTQ entry was removed 2026-09-28, its inputs no longer exist) | TRIMMOMATIC (batch-1 parameters) → FASTQC | sample | trimmed FASTQ (`work/`, as above), FastQC report |
 | 2 | CRAM | (step of `read_demultiplexing`; subworkflow READ_ALIGNMENT; existing CRAMs enter through `markdup_import`) | ALIGN_MARKDUP, one process with a minibwa + samtools env: ALIGN (minibwa -x sr) → READ_GROUPS → `fixmate -m` → `sort` → **MARK_DUPLICATES** (`samtools markdup -d 2500`) → CRAM (no MAPQ filter) → FASTQC (trimmed reads) → SAMTOOLS_STATS + markdup stats → COLLECT_WGS_METRICS (Picard; λ = `MEAN_COVERAGE`, missing = 1 − `PCT_1X`, as the zealhmm missing-data model) → MULTIQC; no mosdepth (decided, user, 2026-09-27: nothing downstream reads it) | sample | `cram/<sample>.cram` + QC + provenance |
 | 2b | genotype | `sample_quality_control` | MIN_COVERAGE (exclude < 0.05×, below) → QC_PANEL_COUNTS (`mpileup -I` at a blind QC panel, one task per sample) → COVERAGE_QC → RELATEDNESS_QC → DONOR_CONTENT_QC | sample / cohort | `sample_qc.tsv`: pass/fail + reason per sample; discovery and every caller read it |
@@ -348,8 +350,9 @@ Rules for v2:
 1. `workDir` **and** the task temp (`TMPDIR`, sort temp) on `/share/maize/frodrig4/nf_work/<run>` (GPFS scratch, not persistent), not on
    `/rsstu` (NFS: slower for demux/sort I/O, and persistent `work/` is how the 3.2 TB accumulated). Results published to `/rsstu`.
 2. CRAMs, per-pool demux QC and step-4 tables in a `storeDir` on `/rsstu` (`ZEAL/store/{cram,demux_qc,step4}`), never in `work/`.
-3. Demux FASTQs never outlive their library's alignment: DEMUX → TRIMMOMATIC → ALIGN_MARKDUP pass FASTQs through `work/` (§0,
-   Task 2, user 2026-09-27); **one library in flight** (`maxForks = 1` on DEMUX) keeps the peak ≈ 2 × the largest library
+3. Demux FASTQs never outlive their library's alignment: DEMUX (per lane) → MERGE_LANES → TRIMMOMATIC → ALIGN_MARKDUP pass FASTQs
+   through `work/` (§0, Task 2, user 2026-09-27); **one library in flight** (DEMUX `maxForks` = the library's lane count, 3 for BC1;
+   lane demux outputs + merged + trimmed FASTQs ≈ 2–3 × the library at peak; Gate 2 measures it) keeps the peak ≈ 2 × the largest library
    (≈ 0.7 TB for 362 GB raw), inside the 2 TB; the library's FASTQ task dirs are cleaned once its CRAMs are in the store (rule 4,
    with the user's consent).
 4. After each successful run: `nextflow clean -f -but <last>` (with the user's consent, `CLAUDE.md`) and a size **and file-count** report;
@@ -372,7 +375,10 @@ watched with the session kept open (`/loop`), acting only as the run card allows
 - **Gate 0 · `-stub-run`** (short QOS): every module's `stub:` touches its outputs, so the whole DAG runs in seconds and proves wiring,
   channel joins and filenames. Stub `work/` is cleaned afterwards (§5 rule 4, with the user's consent).
 - **Gate 1 · tiny real subset** (short QOS): real tools on toy inputs (~1M read pairs of one library, a few samples, one donor × a
-  small region).
+  small region). **The small run must go through the same code path as the full run** (lesson of 2026-09-28: `--subsample` wrote real
+  files while the full run streamed lanes through pipes, so the pipe failure first appeared at Gate 2): the subset option only limits
+  the amount of data, never switches the I/O code; run at least one small test with the full-run thread counts on Slurm (the local
+  test profile's 1 CPU hid a `-j > 1` failure), and cover every input layout the full run meets (e.g. several lanes).
 - **Gate 2 · one full unit**, the benchmark (cpu/ram/time/disk per module, recorded in `docs/REQUIREMENTS.md`). *Proposed, not
   decided:* CRAM workflow = one full library (e.g. BC1_1B) on compute/normal; genotype workflow = one donor × chr10 on short QOS. Nothing
   full-scale runs before this passes.
