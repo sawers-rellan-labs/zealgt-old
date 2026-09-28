@@ -36,6 +36,10 @@ Done by morning means, in this order:
 You are authorised (user, 2026-09-27) to write, run and debug the CRAM workflow without asking: commit, push, pull on hazel, submit
 short-QOS jobs and xfer env-build jobs, fix and rerun, all within the hard limits below. Stub work/ was already cleaned by the user.
 
+Permissions: the allow rules in .claude/settings.json match single plain commands only. Push as its own call,
+`git -C /Users/fvrodriguez/repos/zealgt push origin main`, never chained with `cd`, `&&`, pipes or other commands (a chained push
+is blocked); same for `git commit`, `ssh hazel '…'` and `sbatch`.
+
 Run unattended: after every submission use /loop to wake yourself every 20–30 minutes, or at the job's expected length, and check
 `squeue -u frodrig4`, `sacct -j <ids>`, the run's `.nextflow.log` and the failed task's `.command.err`; fix the module, commit, push,
 pull on hazel only after the run has stopped, rerun with `-resume <session-id>`. Never sleep-loop in a shell, never keep an ssh session
