@@ -11,3 +11,12 @@ build/
 work/
 results/
 __pycache__/
+# from the nf-core template (merged 2026-09-28)
+data/
+.DS_Store
+testing/
+testing*
+*.pyc
+null/
+.lineage/
+.nf-test/
