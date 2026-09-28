@@ -37,7 +37,9 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   `python "${projectDir}/bin/x.py"` — never rely on `+x` + PATH. zealgt's task scripts avoid `${projectDir}` in the script text
   (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`), and the resource helper is
   sourced by name, `source export_slurm_resources.sh` (`bin/`) — bash `source` searches the task PATH (Nextflow adds `bin/`) and
-  needs no exec bit. Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`).
+  needs no exec bit. **Cache consequence (tested 2026-09-28, `nextflow-cache` skill):** a non-executable or interpreter-called `bin/`
+  script is not part of any task hash, so editing it reruns nothing and keeps stale outputs — in the hazel checkout every `bin/` script
+  is non-executable. Output-affecting helper code goes in module templates (hashed by content). Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`).
 
 ## How commands run
 - Each hazel action is one **non-interactive, one-line** `ssh hazel '<cmd>'`, self-contained (`cd`, `conda activate`). No state
@@ -97,7 +99,10 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 
 ## Killing a run safely (never a name glob)
 With the slurm executor each process is its own Slurm job next to the head; `scancel <head>` alone orphans the children.
-1. **Graceful:** `scancel --signal=INT --batch <head>` — Nextflow cancels its own children.
+1. **Graceful:** `scancel --signal=INT --full <head>` — the signal reaches the nextflow process itself, which cancels its own
+   children and exits ("Execution complete -- Goodbye"). Not `--batch`: that signals only the wrapper shell of
+   `scripts/submit_head_job.sbatch`, which keeps waiting on nextflow while the head goes on submitting jobs (Gate 2, job 972212,
+   2026-09-28). Check afterwards that the head job is gone and the log ends with the shutdown lines.
 2. **Orphans:** cancel them by **exact job IDs** read from that run's `.nextflow.log` (`grep -oE "jobId: [0-9]+"`).
 3. **Never `scancel` by name (`nf-*`)** — zealbc1 agents run Nextflow on the same account.
 

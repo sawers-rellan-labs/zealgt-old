@@ -12,7 +12,7 @@ every sample has a raw location.
 ## Sources
 | file in `meta/sources/` | what | origin | how it was made |
 |---|---|---|---|
-| `bc1_well_map.csv` | BC1: pool, column, barcode, `Sample_Id` (`S_<pool>_<col>`), BC1 line, donor, taxon (384) | zealbc1 `meta/bc1_well_map.csv` | built in zealbc1 from the BC1 sequencing manifest of `bzea-bc1-reference` (`meta/samples.tsv`, `docs/BZea_BC1_384_sequencing_manifest.csv`; Rubén) and the 12 inline column barcodes; builder not tracked. **Primary source on Drive** (shared drive, `Sequencing/ZeaL BC1s/replate/`): Google Sheet `manual_replate` (https://docs.google.com/spreadsheets/d/1cnPzCN9HFIEaA-mITT013VSaYj1OKZe8EyNEKiVNfbc, modified 2026-07-31; 384 rows: BC1_line_id, F1_line_id, src_plate/src_well → dst_plate/row/col) and the liquid-handler worklist `bc1_replate.csv` (https://drive.google.com/file/d/1rngILJY1wlzxBey65ciqAI3Zy8EhTZHu, 2026-07-31; same transfers as `8_3_26_BC1_Replate.xlsx`, 2026-08-03). Pool = `<dst_plate><dst_row>`, column = dst column. Routing each line from its source well through the worklist reproduces `bc1_well_map.csv` for **384/384** wells (line id, donor = F1_line_id, taxon from the Zx/Zv/Zd/Zl/Zh prefix, barcode per column); the `dst_*` columns of `manual_replate` itself agree for only 56/384, because the worklist orders source wells as unpadded strings (`D10` before `D2`); the map follows the worklist, i.e. what the robot did (`agent/20260927_233403_compare_bc1_manifest.py`, 2026-09-27) |
+| `bc1_well_map.csv` | BC1: pool, column, barcode, `Sample_Id` (`S_<pool>_<col>`), BC1 line, donor, taxon (384) | zealbc1 `meta/bc1_well_map.csv` | built in zealbc1 from the BC1 sequencing manifest of `bzea-bc1-reference` (`meta/samples.tsv`, `docs/BZea_BC1_384_sequencing_manifest.csv`; Rubén) and the 12 inline column barcodes; builder not tracked. **Primary source on Drive** (shared drive, `Sequencing/ZeaL BC1s/replate/`): Google Sheet `manual_replate` (https://docs.google.com/spreadsheets/d/1cnPzCN9HFIEaA-mITT013VSaYj1OKZe8EyNEKiVNfbc, modified 2026-07-31; 384 rows: BC1_line_id, F1_line_id, src_plate/src_well → dst_plate/row/col) and the liquid-handler worklist `bc1_replate.csv` (https://drive.google.com/file/d/1rngILJY1wlzxBey65ciqAI3Zy8EhTZHu, 2026-07-31; same transfers as `8_3_26_BC1_Replate.xlsx`, 2026-08-03). Pool = `<dst_plate><dst_row>`, column = dst column. Routing each line from its source well through the worklist reproduces `bc1_well_map.csv` for **384/384** wells (line id, donor = F1_line_id, taxon from the Zx/Zv/Zd/Zl/Zh prefix, barcode per column); the `dst_*` columns of `manual_replate` itself agree for only 56/384, because the worklist orders source wells as unpadded strings (`D10` before `D2`); the map follows the worklist, i.e. what the robot did (`agent/20260927_233403_compare_bc1_manifest.py`, 2026-09-27). **Confirmed by Hannah** (Slack DM, 2026-09-28): "It was `bc1_replate.csv` / `8_3_26_BC1_Replate.xlsx`, not what's in manual replate" (https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616377418009); `manual_replate` was an earlier iteration made under the robot's constraints, and she has deleted it from Drive (https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616874843469), so its link above no longer resolves. `bc1_well_map.csv` stands as is |
 | `bc1_libraries.csv` | BC1 pool → raw directory name (1A = `BC1_1Ar`, a re-delivery) | zealbc1 `meta/` | raw data `BZea/BC1_dna_raw/01.RawData/` (Novogene; 4B re-demultiplexed by the center, 2026-09-03) |
 | `inline_barcodes.tsv` | the 12 BC1 / batch-2 inline column barcodes (6 bp, same on R1 and R2) | zealbc1 `meta/` | Hannah's Google Sheet (sent in Slack 2026-09-21, https://docs.google.com/spreadsheets/d/1aAjkTqVYN4uBqzG-b8sgR2BF6YtXA5WQ9vGTsNj7Fy8/edit?gid=0) downloaded as `zealbc1/meta/ZeaLV2.xlsx`, sheet `REF-inline`; the 12 sequences are Twist FlexPrep UHT's inline barcodes (Twist demux guide DOC-001509, read structure `6B2S+T` on both reads; `agent/20260927_231439_twist_96plex_guide.md`). The same workbook holds the batch-2 manifest but no BC1 pool map (checked 2026-09-28) |
 | `bc2s3_batch2_well_map.csv` | batch 2: row, column, barcode, `Sample_Id` (`P<plot>`), label, nil_id (+ source), check flag, class, taxon, plot, pedigree, donor, plate, cell (384) | zealbc1 `meta/` (decisions 2026-09-21) | Hannah's Google Sheet → `zealbc1/meta/ZeaLV2.xlsx` (sheet ZeaL-V2_manifest) → `bc2s3_batch2_manifest.csv`, restricted on 2026-09-23 to the 4 sequenced plates BZeaV2_1–4 (plate BZeaV2_5 was never and will never be sequenced); nil_id from the zealhmm register, 3 pedigrees missing from it given nil_ids derived by the register's rule |
@@ -81,6 +81,25 @@ columns), so the import step is MARK_DUPLICATES + read groups, not realignment. 
 ~3% of a normal line (~6.5M; idxstats job 949252); PN6_SID484 also fails the zealtiger coverage QC, PN8_SID736 passes it. Development
 uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B73 control read groups not checked.
 
+## Identifiers: one physical key, biology in the registry (decided, user 2026-09-28)
+- **The key everywhere is the well-level `sample_id`** of `meta/samples.csv`: BC1 `S_<pool>_<column>`, batch 2 `P<plot>`, batch 1
+  `PN<plate>_SID<n>`. It names every file (FASTQ checkpoint, CRAM, QC), the CRAM read group (`ID` and `SM` = `sample_id`, `LB` = library,
+  `PU` = flowcell.lane list) and every internal table. It never changes: it is where the DNA physically was.
+- **Biology lives only in the registry** `meta/samples.csv` (built by `meta/build_samples.py` from `meta/sources/`, tracked in git):
+  `sample_id` → line / `pedigree`, short `nil_id` (zealhmm register), `donor`, `taxon`, `role`, source, batch. A relabelled well, a
+  register update or a pedigree fix is a registry commit; no CRAM is renamed or rewritten. Line or nil ids are never written into CRAM
+  headers (they would go stale).
+- **Traceability:** each CRAM's provenance record (`<sample_id>.provenance.json`) holds a snapshot of its registry row (at least donor,
+  line/pedigree, nil_id, taxon, role) and `code_version` (the repo commit, which also pins the registry version). A later registry change
+  is visible by comparing the snapshot with the current row.
+- **Translate at the edge:** the genotype workflow joins on `sample_id` internally and writes the short `nil_id` (or line id where no
+  nil_id exists, e.g. BC1 samples) only into its final outputs — genotype tables, VCF sample names, paintings, reports — by one join on
+  the current registry at the end, recording the registry commit it used.
+- **Read groups:** one read group per sample (lanes of a library are one pool; `PU` lists the lanes; duplicate marking reads
+  flowcell/lane/tile from the read names). Per-lane read groups only if lane QC ever shows a lane effect.
+- Status (2026-09-28): the CRAM workflow already follows the key and read-group rules; the provenance snapshot has `donor` but not yet
+  the line/pedigree and nil_id (to add on branch `simplify`); the edge translation is a rule for the genotype workflow (branch `genotype`).
+
 ## Unresolved
 1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another
    sequencing run? Its raw data location is unknown.
@@ -90,6 +109,9 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
    not the BC1 source: no BC1 pool, line id or donor of `bc1_well_map.csv` appears in it (2026-09-28). BC1 is now traced to Drive
    (2026-09-27): `manual_replate` (https://docs.google.com/spreadsheets/d/1cnPzCN9HFIEaA-mITT013VSaYj1OKZe8EyNEKiVNfbc, 2026-07-31) routed
    through the worklist `bc1_replate.csv` (https://drive.google.com/file/d/1rngILJY1wlzxBey65ciqAI3Zy8EhTZHu) matches all 384 wells
-   (line, donor, taxon, barcode; 0 mismatches). Still open: (a) the sheet's own `dst_*` layout differs from the worklist for 328 wells, so
-   confirm that the worklist (not the sheet) is what was run on 2026-08-03; (b) Rubén's `BZea_BC1_384_sequencing_manifest` /
+   (line, donor, taxon, barcode; 0 mismatches). (a) Resolved 2026-09-28: the sheet's own `dst_*` layout differs from the worklist for 328
+   wells, and Hannah confirmed the worklist (`bc1_replate.csv` / `8_3_26_BC1_Replate.xlsx`) is what was run on 2026-08-03 and deleted
+   `manual_replate` (https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616377418009), so `bc1_well_map.csv`, the demux sample names and
+   the BC1 CRAMs' sample identities need no change; she also offered to make a BC1 barcode manifest (none exists; not requested yet).
+   Still open: (b) Rubén's `BZea_BC1_384_sequencing_manifest` /
    `BZea_BC1_sequencing_design_memo` were not found on Drive; (c) the `bc2s3_batch1_skim_nil_id.tsv` builder is still untracked.

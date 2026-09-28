@@ -131,7 +131,7 @@ read time (`mpileup -q20 -Q20`, CRISP `--mmq 20`), so a threshold change never n
 Same steps for every library, one DEMUX task per library × lane, MERGE_LANES per sample, then per-sample processes (§0 Task 2): cutadapt exact-match demux (`-e 0 --no-indels`; R1-only anchoring for batch 1)
 → Trimmomatic PE with batch 1's original parameters (`ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36`) →
 minibwa -x sr → read groups → `samtools fixmate -m` → `sort` → `markdup -d 2500` → CRAM; FASTQs in `work/` until the library's
-CRAMs are stored (peak ≈ 2 × the library: demuxed + trimmed FASTQs; one library in flight). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
+CRAMs are stored (peak ≈ 2–3 × the library: demuxed + trimmed FASTQs; several libraries in flight, §5 rule 3). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
 sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comparison.
 
 | # | workflow | entry | modules | per | main output (store) |
@@ -351,10 +351,13 @@ Rules for v2:
    `/rsstu` (NFS: slower for demux/sort I/O, and persistent `work/` is how the 3.2 TB accumulated). Results published to `/rsstu`.
 2. CRAMs, per-pool demux QC and step-4 tables in a `storeDir` on `/rsstu` (`ZEAL/store/{cram,demux_qc,step4}`), never in `work/`.
 3. Demux FASTQs never outlive their library's alignment: DEMUX (per lane) → MERGE_LANES → TRIMMOMATIC → ALIGN_MARKDUP pass FASTQs
-   through `work/` (§0, Task 2, user 2026-09-27); **one library in flight** (DEMUX `maxForks` = the library's lane count, 3 for BC1;
-   lane demux outputs + merged + trimmed FASTQs ≈ 2–3 × the library at peak; Gate 2 measures it) keeps the peak ≈ 2 × the largest library
-   (≈ 0.7 TB for 362 GB raw), inside the 2 TB; the library's FASTQ task dirs are cleaned once its CRAMs are in the store (rule 4,
-   with the user's consent).
+   through `work/` (§0, Task 2, user 2026-09-27). **Several libraries in flight** (user, 2026-09-29; replaces "one library in
+   flight", which rested on the wrong 2 TB scratch figure — the group has 20 TB, and the file count is the binding limit):
+   `--max_libraries N` libraries run concurrently (DEMUX `maxForks` = N × lanes). Each library holds ≈ 2–3 × its raw size in `work/`
+   at peak (lane demux outputs + merged + trimmed FASTQs; Gate 2 measures it) and ~900 files, so N is set from the Gate 2 numbers so
+   that the peak stays under ~5 TB of `/share` and the group stays under 90 % of its file quota (default N = 4: ≈ 1.5–4 TB). The
+   queue then sets the wall time, not a serial chain of libraries. A library's FASTQ task dirs are cleaned once its CRAMs are in the
+   store (rule 4, with the user's consent).
 4. After each successful run: `nextflow clean -f -but <last>` (with the user's consent, `CLAUDE.md`) and a size **and file-count** report;
    stub runs always cleaned.
 5. Existing `work/` (3.2 TB): before deleting, confirm every CRAM / table the project uses is published outside `work/`
