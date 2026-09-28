@@ -9,7 +9,7 @@ normal	MERGE_LANES	4	1 GB	2h	compute_partners
 normal	DEMUX_QC	1	2 GB	30m	compute_partners
 normal	TRIMMOMATIC	8	8 GB	4h	compute
 normal	FASTQC	2	4 GB	4h	compute
-normal	ALIGN_MARKDUP	8	24 GB	4h	compute
+normal	ALIGN_MARKDUP	8	32 GB	4h	compute
 normal	SAMTOOLS_STATS	2	8 GB	2h	compute_partners
 normal	PICARD_COLLECTWGSMETRICS	2	8 GB	4h	compute
 normal	PROVENANCE	1	2 GB	30m	compute_partners
@@ -21,7 +21,7 @@ short	MERGE_LANES	4	1 GB	1h	compute_partners
 short	DEMUX_QC	1	2 GB	30m	compute_partners
 short	TRIMMOMATIC	8	8 GB	1h	compute_partners
 short	FASTQC	2	4 GB	1h	compute_partners
-short	ALIGN_MARKDUP	8	24 GB	1h	compute_partners
+short	ALIGN_MARKDUP	8	32 GB	1h	compute_partners
 short	SAMTOOLS_STATS	2	8 GB	1h	compute_partners
 short	PICARD_COLLECTWGSMETRICS	2	8 GB	1h	compute_partners
 short	PROVENANCE	1	2 GB	30m	compute_partners
