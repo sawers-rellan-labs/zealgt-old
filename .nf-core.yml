@@ -11,6 +11,9 @@ nf_core_version: 4.1.0
 #   - No GitHub Actions CI (spec pipelines/requirements/ci_testing, MUST): the pipeline runs on a private offline cluster.
 #     scripts/run_checks.sh runs the same checks locally before every push (nf-core lint, schema lint, nf-test, stub runs;
 #     docs/CONTRIBUTING.md), so the github / ci template features are skipped and their files are not required.
+#   - Cache test as an operator script (spec pipelines/requirements/ci_testing, recommendations/testing: tests are nf-test):
+#     scripts/test_cache.sh resumes ONE Nextflow session across several runs (raised resources, an edited module, stage 2
+#     alone) and compares the task hashes; nf-test starts a new session for every run and cannot share one.
 lint:
   container_configs: false
   files_unchanged:

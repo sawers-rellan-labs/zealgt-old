@@ -16,8 +16,10 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 - `ZEAL` = `/rsstu/users/r/rrellan/BZea/ZEAL` (persistent). zealgt checkout on hazel: **`ZEAL/zealgt`** (next to zealbc1's
   `ZEAL/code` and `ZEAL/code-phg`; never edit those from here).
 - Nextflow `workDir`: `/share/maize/frodrig4/nf_work/<run>` (2 TB, **not persistent**), never under `/rsstu`.
-- Durable outputs: `storeDir` under `ZEAL/store/` (CRAMs, demux QC, step-4 tables, reference variants); published results under
-  `ZEAL/results/`.
+- Durable outputs: the store `ZEAL/store/` (CRAMs, demux QC, provenance, registry; later step-4 tables, reference variants),
+  written by `publishDir` (copy, never overwritten) and skipped when stored — no `storeDir`; published results under
+  `ZEAL/results/`. FASTQ checkpoint `/share/maize/frodrig4/fastq_checkpoint/<library>/` (hardlinks from `work/`; `--max_libraries`
+  counts its library dirs, PLAN §5 rule 3).
 - Old nilhmm `ZEAL/results/work` (demuxed per-sample FASTQs) is **gone**: PLAN §0 Task 1 ("align from existing FASTQs") is void;
   every library demuxes again from raw.
 

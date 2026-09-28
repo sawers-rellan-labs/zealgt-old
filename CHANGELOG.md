@@ -11,7 +11,14 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
 
 - FASTQ checkpoint: `read_demultiplexing` hardlinks each sample's trimmed pair plus a per-library `samplesheet.csv` to
   `params.fastq_checkpoint` and chains into stage 2; `read_alignment` reinstated as stage 2 alone, reading only the checkpoint
-  samplesheets; per-library `cleanup_status.tsv` report (nothing is removed by the pipeline).
+  samplesheets; per-library `cleanup_status.tsv` report (nothing is removed by the pipeline). The trim reports
+  (`.summary`, `_out.log`) are published with the trimmed pairs into the checkpoint instead of `<outdir>/trimmomatic/`.
+- `--max_libraries` (default 4) as a run guard: `read_demultiplexing` is refused when the requested libraries plus those already
+  holding a checkpoint dir are more than N (the error names them and their `cleanup_status.tsv`); the requested libraries then
+  run concurrently. DEMUX has no `maxForks`.
+- Cache test `scripts/test_cache.sh` (+ `scripts/test_cache.sbatch` for hazel, `tests/cache/`): one session resumed with raised
+  resources (every task cached), after an ALIGN_MARKDUP edit (stage 1 cached), and `read_alignment` alone; an operator script
+  because nf-test cannot share a session across runs.
 - Checks: `scripts/check_ext_args.py` (no `task.*` inside `ext.args*` closures), `scripts/check_resources.sh` +
   `tests/expected_resources.tsv` (resolved cpus / memory / time / queue per profile and process).
 - ALIGN_MARKDUP / MARKDUP_IMPORT memory parameters (`align_memory_gb`, `align_mem_reserve_gb`, `align_sort_mem_share`,
@@ -30,6 +37,8 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
 
 - `conf/normal.config`: TRIMMOMATIC's 12 h override never applied (lost to a combined selector); removed, 4 h × attempt measured
   sufficient.
+- PROVENANCE reran on every `-resume`: its hashed record carried `workflow.runName`; `run_name` is dropped from the record
+  (session id, run id and code version identify the run).
 
 ### `Dependencies`
 

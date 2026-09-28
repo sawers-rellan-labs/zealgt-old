@@ -69,8 +69,10 @@ Spec index: https://nf-co.re/docs/specifications/overview
   (`--quick` = lints only). `agent/bin` has nextflow + nf-test, `agent/.venv_nfcore` nf-core tools, `agent/stubbin` version shims.
 - Review gate: `coderabbit review --committed --base-commit <base> --agent` (log in `agent/`), before any hazel data run.
 - Deliberate deviations, recorded with reasons in `.nf-core.yml` and `docs/usage.md` "Deliberate deviations": no Docker/containers
-  (offline cluster), no GitHub CI (`scripts/run_checks.sh` instead), storeDir store, per-source read-structure params, prebuilt build-pinned per-module conda prefixes (`conf/env_prefixes.config`),
-  step-named local modules. Add new ones there, with a reason.
+  (offline cluster), no GitHub CI (`scripts/run_checks.sh` instead), store outside `--outdir` with skip-if-stored logic (no
+  storeDir), per-source read-structure params, prebuilt build-pinned per-module conda prefixes (`conf/env_prefixes.config`),
+  step-named local modules, the cache test as an operator script (`scripts/test_cache.sh`: nf-test cannot share a session
+  across runs), trim reports in the FASTQ checkpoint (one publishDir). Add new ones there, with a reason.
 - **Never edit an `environment.yml`/`build.sh` or rename a `modules/local` dir** without rebuilding the hazel envs (the prefix
   name is `<module>-<sha8>`; see `hazel-debug-loop`).
 - Script names are verb_object (`build_envs.sh`, `write_provenance.py`); nf-core module names stay tool/subtool.

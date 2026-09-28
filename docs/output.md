@@ -22,7 +22,8 @@ layout into its own store named `subsample_<N>`; a stub run into `store_stub*`.
 ### Provenance record (`<sample>.provenance.json`, schema `zealgt.provenance/1`)
 
 Run settings (`reference`, `code_version` = git commit of the checkout, `-dirty` if modified; `pipeline`, `entry`, `run_id`,
-`run_name`, `session_id`, `profile`, `mapq_filter`, `markdup`), the sample (`sample`, `library`, `source`, `role`, `donor`,
+`session_id`, `profile`, `mapq_filter`, `markdup`; no Nextflow run name: the record is a hashed task input, and a name that
+changes per launch would rerun PROVENANCE on every `-resume`), the sample (`sample`, `library`, `source`, `role`, `donor`,
 `store_dir`, `read_group`), its `origin` (demux: raw location and files, tar members, cutadapt args, read structure, layout,
 barcodes, subsample, the checkpoint FASTQs `fastq_checkpoint`, and the stage-1 run `stage1_run_id`, `stage1_session_id`,
 `stage1_code_version`, `stage1_tool_versions` (DEMUX and TRIMMOMATIC tool versions); import: input path, maker, input
@@ -39,7 +40,10 @@ only in the run fields.
 | `<lib>/samplesheet.csv` | the CRAM workflow, once every sample of the library is trimmed | one row per sample, everything stage 2 needs (columns in docs/usage.md; `assets/schema_checkpoint.json`); the input of `--entry read_alignment` |
 | `<lib>/cleanup_status.tsv` | every run with stage 2 (at its end) | per sample `sample`, `cram`, `cram_bytes`, `verified` (yes/no), `fastq_1`, `fastq_1_bytes`, `fastq_2`, `fastq_2_bytes`; last line `# checkpoint <dir>: removable (N files, X GB) — remove only with the user's consent` or `# checkpoint <dir>: keep: k of n CRAMs missing` (also in the log) |
 
-Nothing is removed by the pipeline. A `--subsample N` run uses a checkpoint named `subsample_<N>`; a stub run `checkpoint_stub*`.
+Nothing is removed by the pipeline. Every `<lib>/` directory counts against `--max_libraries` until it is removed (with the
+user's consent, once `cleanup_status.tsv` says removable; docs/usage.md "Store rules"). The trim reports live here, not in
+`--outdir` (one `publishDir` per process: docs/usage.md "Deliberate deviations"). A `--subsample N` run uses a checkpoint named
+`subsample_<N>`; a stub run `checkpoint_stub*`.
 
 ## Results directory (`--outdir`)
 

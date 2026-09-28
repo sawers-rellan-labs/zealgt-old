@@ -122,8 +122,9 @@ skill. The earlier table said `${task.cpus}` in the script reruns the task: true
    module carries its own pinned `environment.yml` in the repo (nf-core convention; a module whose script pipes tools together pins
    those few tools, e.g. minibwa + samtools); tools that are not conda packages (CRISP, nilHMM) get a pinned-commit
    `build.sh` in the same env; `scripts/build_envs.sh` builds them all once, as an xfer job (compute nodes are offline), into
-   `/share/maize/frodrig4/conda/zealgt/` (fast GPFS; not persistent, rebuilt from the repo by one command; never on `/rsstu`, user
-   2026-09-28), and never at task time. The zealbc1-era envs are replaced; their versions are kept in `envs/legacy_zealbc1/`.
+   `/share/maize/frodrig4/conda/zealgt/` (fast GPFS; never on `/rsstu`, user 2026-09-28), and never at task time. The built
+   environments **stay there**: they are never moved, rebuilt or deleted without the user (user rule; the repo can recreate them,
+   which is not a licence to do so). The zealbc1-era envs are replaced; their versions are kept in `envs/legacy_zealbc1/`.
 
 ## 3. Two workflows, stages and modules
 The pipeline is two workflows in this repository, named by their endpoints (user, 2026-09-27): the **CRAM workflow** (raw libraries → analysis-ready CRAMs) and the **genotype workflow** (CRAM store → genotype table), with the **store as the only contract** between them (decided 2026-09-24):
@@ -156,23 +157,31 @@ Same steps for every library, one DEMUX task per library × lane, MERGE_LANES pe
 → Trimmomatic PE with batch 1's original parameters (`ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36`) →
 minibwa -x sr → read groups → `samtools fixmate -m` → `sort` → `markdup -d 2500` → CRAM; demux FASTQs in `work/` only, trimmed
 pairs also in the FASTQ checkpoint until the library's CRAMs are stored and verified (`work/` peak ≈ 2–3 × the library: demuxed +
-trimmed FASTQs; several libraries in flight, §5 rules 3–4). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
+trimmed FASTQs; at most `--max_libraries` libraries per run, all concurrent, §5 rules 3–4). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
 sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comparison.
 
 **Two CRAM-workflow stages and the FASTQ checkpoint** (user, 2026-09-29; branch `simplify`, 2026-09-28). Stage 1 `read_demultiplexing`
 ends in a published checkpoint: each sample's trimmed pair is hardlinked (`publishDir mode: 'link'`, same GPFS as `work/`) to
-`/share/maize/frodrig4/fastq_checkpoint/<library>/` (`params.fastq_checkpoint`), and `<library>/samplesheet.csv` is written once every
-sample of the library is trimmed: the checkpoint paths plus everything stage 2 needs (sample, read group, source metadata, demux and
-trimming settings with crops already applied, stage-1 run and code version), validated by an nf-schema schema. By default the same run
-chains into stage 2 on TRIMMOMATIC's channel (not the published files: publishing is asynchronous), one command per library. Stage 2
-`read_alignment` can also run alone (`--libraries A,B`), reading only the checkpoint samplesheets, e.g. after a fix to ALIGN_MARKDUP
-or QC; it never demultiplexes. Both skip every sample whose CRAM is stored and verified (§2 principle 3). Guards as for the store:
-`--subsample N` needs a checkpoint dir named `subsample_<N>`, stub runs a `checkpoint_stub` path.
+`/share/maize/frodrig4/fastq_checkpoint/<library>/` (`params.fastq_checkpoint`), together with the trim reports (`<sample>.summary`,
+`<sample>_out.log`; decided 2026-09-28: they stay there, not in `<outdir>/trimmomatic/`, because a second `publishDir` whose path
+uses `meta` breaks `nextflow config -o json` and so nf-core lint; MultiQC in `<outdir>` keeps their numbers, and the cleanup counts
+only the FASTQs), and `<library>/samplesheet.csv` is written once every sample of the library is trimmed: the absolute checkpoint
+paths plus everything stage 2 needs — sample, library, source, role, donor, taxon, read group, read structure (crops already
+applied), layout, barcodes, demux args, trimming settings and adapters, raw location / files / tar members, subsample, stage-1 run
+id, session id, code version and tool versions (columns in `docs/usage.md`) — validated by nf-schema against
+`assets/schema_checkpoint.json` (FASTQs must exist). By default the same run chains into stage 2 on TRIMMOMATIC's channel (not the
+published files: publishing is asynchronous), one command per request. Stage 2 `read_alignment` can also run alone
+(`--libraries A,B`), reading only those samplesheets, e.g. after a fix to ALIGN_MARKDUP or QC; it never demultiplexes and adds no
+library to the checkpoint. Both skip every sample whose CRAM is stored and verified (§2 principle 3). Guards as for the store:
+`--subsample N` needs a checkpoint dir named `subsample_<N>` (and a `subsample_*` dir needs `--subsample`); stub runs need a path
+component `checkpoint_stub*` outside the production checkpoint; `read_demultiplexing` refuses a library whose samplesheet was written
+by another session (unless `-resume` of that session or `--force_demux`) and a request that would exceed `--max_libraries` (§5
+rule 3).
 
 | # | workflow | entry | modules | per | main output (store) |
 |---|---|---|---|---|---|
 | 1 | CRAM | `read_demultiplexing` (stage 1; chains into stage 2 by default) | FETCH_LIBRARY (source adapter) → DEMUX (cutadapt exact inline, one task per lane) → MERGE_LANES (per sample, `cat`) → DEMUX_QC (sums the lane reports; a stored table is used in its place) | library × lane → sample | demux FASTQs (`work/` only), `demux_qc/<library>.tsv` |
-| 1b | CRAM | (step of `read_demultiplexing`; subworkflow READ_TRIMMING — the old FASTQ entry was removed 2026-09-28, its inputs no longer exist) | TRIMMOMATIC (batch-1 parameters) → FASTQC → **checkpoint**: trimmed pairs hardlinked to `fastq_checkpoint/<library>/` + `samplesheet.csv` | sample | checkpoint FASTQs + samplesheet (on `/share`, until rule 4 of §5), FastQC report |
+| 1b | CRAM | (step of `read_demultiplexing`; subworkflow READ_TRIMMING — the old FASTQ entry was removed 2026-09-28, its inputs no longer exist) | TRIMMOMATIC (batch-1 parameters) → FASTQC → **checkpoint**: trimmed pairs hardlinked to `fastq_checkpoint/<library>/` + `samplesheet.csv` | sample | checkpoint FASTQs + trim reports + samplesheet (on `/share`, until rule 4 of §5), FastQC report |
 | 2 | CRAM | `read_alignment` (stage 2: chained after stage 1, or alone on the checkpoint samplesheets; subworkflow READ_ALIGNMENT; existing CRAMs enter through `markdup_import`) | ALIGN_MARKDUP, one process with a minibwa + samtools env: ALIGN (minibwa -x sr) → READ_GROUPS → `fixmate -m` → `sort` → **MARK_DUPLICATES** (`samtools markdup -d 2500`) → CRAM (no MAPQ filter) → SAMTOOLS_STATS + markdup stats → COLLECT_WGS_METRICS (Picard; λ = `MEAN_COVERAGE`, missing = 1 − `PCT_1X`, as the zealhmm missing-data model) → PROVENANCE → REGISTRY → MULTIQC; no mosdepth (decided, user, 2026-09-27: nothing downstream reads it); stored CRAMs skipped; the run reports per library whether its checkpoint is removable (`cleanup_status.tsv`, §5 rule 4) | sample | `cram/<sample>.cram` + QC + provenance |
 | 2b | genotype | `sample_quality_control` | MIN_COVERAGE (exclude < 0.05×, below) → QC_PANEL_COUNTS (`mpileup -I` at a blind QC panel, one task per sample) → COVERAGE_QC → RELATEDNESS_QC → DONOR_CONTENT_QC | sample / cohort | `sample_qc.tsv`: pass/fail + reason per sample; discovery and every caller read it |
 | 3 | genotype | `variant_discovery` | WITNESS_POOL → CRISP (BC1 samples + witness only) → BED_CLIP (`bcftools view -T`, §4 #9) → WITNESS_VETO → B73_CONTROL_COUNTS (`mpileup -I`) → POOLED_LIKELIHOOD_TIERS | donor × chr | `step4/<donor>.sites.tsv.gz` |
@@ -384,8 +393,8 @@ libraries at once, ≈ 1.3–1.5 TB if the 4 largest run together. Persistent pa
 Rules for v2:
 1. `workDir` **and** the task temp (`TMPDIR`, sort temp) on `/share/maize/frodrig4/nf_work/<run>` (GPFS scratch, not persistent), not on
    `/rsstu` (NFS: slower for demux/sort I/O, and persistent `work/` is how the 3.2 TB accumulated). Results published to `/rsstu`.
-2. CRAMs, per-library demux QC, provenance, registry and step-4 tables in the store on `/rsstu` (`ZEAL/store/{cram,demux_qc,step4,…}`),
-   never in `work/`: written by `publishDir` (`mode: 'copy'`, since `/rsstu` is another filesystem; `overwrite: false`;
+2. CRAMs, per-library demux QC, provenance, registry and (genotype workflow, not built yet) step-4 tables in the store on `/rsstu`
+   (`ZEAL/store/{cram,cram_import,demux_qc,registry,step4,…}`), never in `work/`: written by `publishDir` (`mode: 'copy'`, since `/rsstu` is another filesystem; `overwrite: false`;
    `failOnError: true`), and reused by explicit skip-if-stored logic in the workflow instead of `storeDir` (2026-09-28, §2 principle 3):
    CRAMs per sample (`read_alignment` and `markdup_import`), demux QC per library, provenance per sample, registry per library. A CRAM
    is stored only if CRAM + `.crai` exist and the CRAM ends with the CRAM 3 EOF container; a present but unverified CRAM is an error that
@@ -393,29 +402,42 @@ Rules for v2:
    can be written without rerunning it.
 3. Demux FASTQs never outlive their library's stage 1 in `work/`: DEMUX (per lane) → MERGE_LANES → TRIMMOMATIC pass FASTQs through
    `work/` (§0, Task 2, user 2026-09-27), and each sample's trimmed pair is **hardlinked into the FASTQ checkpoint**
-   `/share/maize/frodrig4/fastq_checkpoint/<library>/` (user, 2026-09-29; §3). **Checkpoint footprint ≈ N libraries in flight × ~1 ×
+   `/share/maize/frodrig4/fastq_checkpoint/<library>/` (user, 2026-09-29; §3). **Checkpoint footprint ≈ N libraries × ~1 ×
    raw** (trimmed pairs; Gate 1 estimate for full 1A: trimmed ≈ 200 GB vs demux FASTQs ≈ 237 GB, `docs/REQUIREMENTS.md` §4), and hardlinked, so while `work/` holds the same file it costs
    **no extra space and no extra inode**; once `work/` is cleaned the checkpoint alone holds those bytes (the space moves, it does not
    grow). Files: 2 per sample + `samplesheet.csv` + `cleanup_status.tsv` (≈ 26 per 12-sample library), negligible against the group
    quota. The checkpoint must stay on the same GPFS as `work/` (a hardlink cannot cross `/share` → `/rsstu`).
-   **Several libraries in flight** (user, 2026-09-29; replaces "one library in flight", which rested on the wrong 2 TB scratch figure
-   — the group has 20 TB, and the file count is the binding limit): `--max_libraries N` libraries run concurrently (DEMUX `maxForks` =
-   N × lanes). Each library holds ≈ 2–3 × its raw size in `work/` at peak (lane demux outputs + merged + trimmed FASTQs; Gate 2 measures
-   it) and ~900 files, so N is set from the Gate 2 numbers so that the peak stays under ~5 TB of `/share` and the group stays under 90 %
-   of its file quota (default N = 4: ≈ 1.5–4 TB). The queue then sets the wall time, not a serial chain of libraries. Since stage 2 reads
-   the checkpoint, not `work/`, a library's stage-1 task dirs can be cleaned once its checkpoint samplesheet exists (rule 4).
+   **At most N libraries hold FASTQs on `/share`** (user, 2026-09-29, replacing "one library in flight", which rested on the wrong
+   2 TB scratch figure — the group has 20 TB, and the file count is the binding limit; bound as a run guard, coordinator 2026-09-28).
+   Nothing is removed automatically: `work/` keeps every library of a run for the whole run (and after it, until cleaned with
+   consent), and the checkpoint keeps each library's trimmed pairs until the user removes them (rule 4). A concurrency limit alone
+   would therefore not bound the disk. So `--max_libraries N` (default 4) bounds what a run may hold: `read_demultiplexing` is
+   **refused** when |requested libraries ∪ libraries that already have a checkpoint dir under `--fastq_checkpoint`| > N (`subsample_*`
+   and `checkpoint_stub*` dirs are other checkpoint roots and not counted); the error names those libraries and their
+   `cleanup_status.tsv`, whose checkpoint may be removed only with the user's consent. The requested libraries then all run
+   concurrently: **no `maxForks`** on DEMUX or any other process (at most N × lanes DEMUX tasks), the queue sets the wall time.
+   `read_alignment` adds no library (it reads existing checkpoints). Each library holds ≈ 2–3 × its raw size in `work/` at peak (lane
+   demux outputs + merged + trimmed FASTQs; Gate 2 measures it) and ~900 files, so N is set from the Gate 2 numbers so that the peak
+   stays under ~5 TB of `/share` and the group stays under 90 % of its file quota (default N = 4: ≈ 1.5–4 TB). The guard sees only
+   checkpoint dirs, not the `work/` of earlier runs: those are cleaned after each run (rule 4). A chained run's stage 2 reads
+   TRIMMOMATIC's `work/` files, not the checkpoint, so a library's stage-1 task dirs can be cleaned (with consent) only **after the
+   run has ended** — then `read_alignment` reads the checkpoint, and a `-resume` of that session would redo stage 1. Cleaning them
+   frees no space while the checkpoint holds the hardlinked pairs (the space moves to the checkpoint), only the demux FASTQs.
 4. **Cleanup.** The pipeline never removes anything. A library's checkpoint FASTQs are removed **only after all its CRAMs are stored and
    verified** (rule 2), and **only with the user's consent** (`CLAUDE.md`): every run with stage 2 (chained or alone) reports it per
-   library in the log and in `<checkpoint>/<library>/cleanup_status.tsv` (per sample: CRAM, verified yes/no, FASTQ paths and sizes),
-   ending in "removable (N files, X GB) — remove only with the user's consent" or "keep: k of n CRAMs missing". After each successful
+   library in the log and in `<checkpoint>/<library>/cleanup_status.tsv` (tab-separated `sample cram cram_bytes verified fastq_1
+   fastq_1_bytes fastq_2 fastq_2_bytes`, one row per sample; verified = CRAM + `.crai` + CRAM 3 EOF), ending in `# checkpoint <dir>:
+   removable (N files, X GB) — remove only with the user's consent` (N counts the FASTQs) or `# checkpoint <dir>: keep: k of n CRAMs
+   missing`. Removing a checkpoint dir is also what lets `--max_libraries` admit new libraries (rule 3). After each successful
    run: `nextflow clean -f -but <last>` (with the user's consent) and a size **and file-count** report; stub runs always cleaned.
 5. Existing `work/` (3.2 TB): before deleting, confirm every CRAM / table the project uses is published outside `work/`
    (`results/cram`, `results/align_membench`, `results/bc2s3_batch2/cram`, the pilot dirs) — decision and check pending, nothing deleted.
    `results/work/` and `results/bc2s3_batch2/work/` hold the only copy of the demuxed reads of ~130 BC1 samples and ~185 batch-2 lines (§0,
    Task 1); `results/gate2/work/` (pool 1B, all 12 samples aligned in `results/align_membench`) can go now.
-6. **File budget:** conda environments move off `/share` to `/rsstu`, rebuilt from the pinned ymls (`docs/REQUIREMENTS.md`: `/share` is wiped;
-   `/share/maize/frodrig4/conda` held ~160 K files at the 09-24 audit), freeing group inodes; a run whose work directory would exceed ~50 K
-   files is split or cleaned between stages.
+6. **File budget:** the conda environments **stay on `/share`** in `/share/maize/frodrig4/conda/zealgt` (user rule: never moved,
+   rebuilt or deleted; `/rsstu` is too slow for them, §2 principle 6). They count against the group's file quota
+   (`/share/maize/frodrig4/conda` held ~160 K files at the 09-24 audit), so the file budget is kept by
+   the runs: a run whose work directory would exceed ~50 K files is split or cleaned between runs (with consent).
 
 ## 6. Supervision
 Per run: own launch dir and `workDir`; a post-run check (work size, failed tasks, published outputs); monitors, not sleep loops; long runs
@@ -444,11 +466,13 @@ Lessons turned into checks (2026-09-28):
   process; a new process or a resource change needs a row update); it caught the old precedence loss when fed the old intent. Part of
   `scripts/run_checks.sh` (full mode), with `scripts/check_ext_args.py` (§2 principle 4) in every mode.
 - **Test cache behaviour on the pinned Nextflow, do not assume it.** The hash test (job 972453) overturned the old §2 table and with it
-  the reason for the Slurm resource helper. A cache test (`scripts/test_cache.sh`, operator script: nf-test cannot share one session
-  across runs) proves in one launch dir: (a) a resume with raised cpus / memory / time keeps every task cached; (b) after an
+  the reason for the Slurm resource helper. A cache test (`scripts/test_cache.sh`, an operator script, not an nf-test: nf-test cannot
+  share one Nextflow session across runs — a deliberate deviation recorded in `.nf-core.yml` and `docs/usage.md`) proves in one launch dir: (a) a resume with raised cpus / memory / time keeps every task cached; (b) after an
   ALIGN_MARKDUP script edit, with a fresh store, stage 1 stays cached and only ALIGN_MARKDUP and its downstream rerun; (c)
   `read_alignment` alone runs only stage-2 tasks from the checkpoint. It prints each task's hash per run (`-dump-hashes json`); run
-  on the laptop and at Gate 1 scale on hazel before a gate that depends on reuse.
+  on the laptop and at Gate 1 scale on hazel before a gate that depends on reuse. First finding (2026-09-28): PROVENANCE reran on
+  every resume because its hashed record carried the Nextflow run name; the name was dropped from the record, and (a) is now
+  strict (laptop: PASSED, 24 of 24 cached).
 
 ## 7. Open decisions (summary)
 §4 #2, #3, #5–#7, #12, #14 (proposed test: in the QC set, trace each ALT read at the disputed sites to its source position in the

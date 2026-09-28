@@ -116,7 +116,7 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
   of the `work/` peak.
 - Resources are set only by directives (`conf/hazel.config`, `conf/normal.config`, `conf/short.config`) and read in the scripts as
   `task.cpus` / `task.memory` (nf-core standard, PLAN §2); `scripts/check_resources.sh` checks what each process actually gets.
-- The FASTQ checkpoint (PLAN §3, §5 rule 3) adds ≈ 1 × raw per library in flight on `/share`, hardlinked from `work/`, so no space or
+- The FASTQ checkpoint (PLAN §3, §5 rule 3) adds ≈ 1 × raw per library on `/share` (at most `--max_libraries` libraries: requested + already checkpointed), hardlinked from `work/`, so no space or
   inode beyond `work/` while the task dirs exist.
 
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for

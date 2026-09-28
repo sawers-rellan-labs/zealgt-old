@@ -115,16 +115,21 @@ timestamp.
   outdir is on `/rsstu`, so a stub run passes `--fastq_checkpoint /share/maize/frodrig4/nf_work/<run_id>/checkpoint_stub`.
 - A library in the registry (`assets/registry_seed.csv` or `<store>/registry/<lib>.registry.tsv`) is refused unless named with
   `--force_demux <lib>`.
-- `--libraries` may name any number of libraries; at most `--max_libraries` (default 4) are **in flight** at once, from DEMUX
-  through their last CRAM: a library enters DEMUX (in `--libraries` order) only when an earlier one has all its CRAMs.
+- `--max_libraries N` (default 4) bounds the libraries whose FASTQs a run leaves on `/share` (nothing is removed automatically:
+  `work/` keeps every library of the run, the checkpoint keeps each library until the user removes it). `read_demultiplexing` is
+  refused before any task when the requested libraries plus the libraries that already have a directory under
+  `--fastq_checkpoint` (not counting `subsample_*` / `checkpoint_stub*` dirs) are more than N; the error lists those libraries
+  with their `cleanup_status.tsv`. Remove a checkpoint only with the user's consent, once its report says removable. The
+  requested libraries then all run concurrently (no `maxForks`). `read_alignment` adds no library and is not bounded.
 
 ## Testing
 
 `-profile test` runs `read_demultiplexing` on the fixture library LIBX (tests/fixtures: 3 samples, 940 read pairs, a tiny
 reference with its minibwa index), with the store and the checkpoint under the outdir; `--entry read_alignment` with the same
 `--fastq_checkpoint` reruns stage 2 alone. `-profile test,stub -stub` checks the wiring without tools. nf-test runs the module,
-subworkflow and pipeline stub tests (the three entries and a two-library `--max_libraries 1` run); `scripts/run_checks.sh`
-runs everything before a push (docs/CONTRIBUTING.md).
+subworkflow and pipeline stub tests (the three entries, a `--max_libraries 1` request refused because another library holds a
+checkpoint, and a two-library `--max_libraries 2` run); `scripts/run_checks.sh` runs everything before a push
+(docs/CONTRIBUTING.md). The cache test `scripts/test_cache.sh` is a separate operator script (see the deviations below).
 
 ## Deliberate deviations from the nf-core specifications
 
@@ -140,3 +145,5 @@ runs everything before a push (docs/CONTRIBUTING.md).
 | Stage-2 samplesheet written by the pipeline | `<fastq_checkpoint>/<lib>/samplesheet.csv` is an output of stage 1 and the only input of `--entry read_alignment`, validated by `assets/schema_checkpoint.json` (not a user-supplied `--input`). |
 | `--subsample` / `--max_libraries` typed integer-or-string (P14) | Nextflow 26 hands CLI values over as strings; the schema accepts digit strings and the code converts. |
 | CRAM output only, no `--bam` (P12) | the genotype workflow reads CRAM. |
+| Cache test as an operator script, not an nf-test | `scripts/test_cache.sh` resumes one Nextflow session across several runs (raised resources, an edited module, stage 2 alone) and compares the task hashes; nf-test starts a new session for every run and cannot share one. |
+| Trim reports in the FASTQ checkpoint, not `<outdir>/trimmomatic/` | TRIMMOMATIC has one `publishDir` (the checkpoint, `mode: 'link'`); a second one whose path uses `meta` breaks `nextflow config -o json` and so nf-core lint. MultiQC (in `--outdir`) carries the trimming numbers. |
