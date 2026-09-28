@@ -23,7 +23,13 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
   `tests/expected_resources.tsv` (resolved cpus / memory / time / queue per profile and process).
 - ALIGN_MARKDUP / MARKDUP_IMPORT memory parameters (`align_memory_gb`, `align_mem_reserve_gb`, `align_sort_mem_share`,
   `import_mem_reserve_gb`) and an explicit `samtools sort -m` from `task.memory` (Gate 2 calibration: 48 GB first attempt,
-  28 GiB reserve, 0.75 share; hazel kills at 95 % of `--mem`); ALIGN_MARKDUP 10 h × attempt on `normal`.
+  28 GiB reserve, 0.75 share; hazel kills at 95 % of `--mem`).
+- Right-sized requests from Gate 2 (`conf/hazel.config`): per-sample times scale with the task's input size
+  (TRIMMOMATIC, FASTQC, ALIGN_MARKDUP, SAMTOOLS_STATS, PICARD_COLLECTWGSMETRICS: a + b × input GiB, floor 15 min, × attempt),
+  replacing the flat 4 h / 10 h on `normal`; smaller cpus / memory where Gate 2 used less (TRIMMOMATIC 6 cpus / 2 GB, Picard 1 cpu /
+  5 GB, FASTQC 3 GB, SAMTOOLS_STATS 1 GB, bookkeeping 1 GB / 10 min). `normal` routes each task by its own time request (≤ 1 h 45 →
+  compute_partners / short QOS, else compute / normal) and has queueSize 160; `scripts/check_resources.sh` adds a size probe
+  (sparse 100 M / 310 M pair inputs). Head job: documented `--qos=normal --partition=compute --time=3-00:00:00` for multi-library runs.
 - Head job: repository and commit printed first, timestamp on every Nextflow console line.
 - Provenance record: `registry` snapshot of the sample's `meta/samples.csv` row (`sample_id`, `source`, `role`, `library`,
   `plate`, `well`, `donor`, `taxon`, `nil_id`, `pedigree`, `is_check`) with the registry file and the commit it was read at

@@ -11,6 +11,9 @@
 # config that only swaps the executor to local with a large pool (64 cpus, 1 TB: nothing is capped by the laptop), turns
 # conda off, and puts work/, TMPDIR (+ its beforeScript), outdir, a store_stub* store and a checkpoint_stub* FASTQ checkpoint under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
 # retry) are compared with the table: every observed process needs a row, every row must be observed, values must match.
+# Then a size probe (conf/hazel.config scales the per-sample times with the input size and conf/normal.config routes each
+# task by its time; the fixtures only reach the 15 min floor): five stand-in processes on sparse 100 M / 310 M pair
+# inputs, rows <profile>_100M / <profile>_310M.
 # Also checked (`nextflow config -flat -profile hazel,normal`): hazel.config's beforeScript creates exactly env.TMPDIR.
 # Exit 1 on any mismatch. Stub runs evaluate the nf-core modules' `eval` versions, so the tools or version shims must be on
 # PATH (ZG_CHECK_PATH, as for scripts/run_checks.sh). Scratch: $ZG_RES_SCRATCH (default agent/check_resources/<time>).
@@ -75,6 +78,91 @@ EOF
             { n = split($c["process"], a, ":"); print p "\t" a[n] "\t" $c["cpus"] "\t" $c["memory"] "\t" $c["time"] "\t" $c["queue"] }' \
             "$D/trace_$entry.txt" >> "$SCRATCH/observed.tsv"
     done
+done
+
+# Size probe: the fixture and stub inputs are tiny, so the stub runs above only see hazel.config's 15 min time floor (and
+# normal.config's routing of it to short QOS). A probe script with the five size-scaled processes (same names and input
+# variable names as the modules: `reads`, `input`, `bam`) runs with
+# conf/hazel.config + conf/normal.config (or + conf/short.config) on sparse input files of a 100 M and a 310 M pair sample
+# (Gate 2 sizes: 136 B per raw pair, 107 B per trimmed pair, 41 B of CRAM per pair; sparse, so no disk is used). Rows are
+# keyed <profile>_<size> (normal_100M, normal_310M, short_100M, short_310M); plus <profile>_batch1: a DEMUX stand-in of source
+# bc2s3_batch1 (fixed 2 h, whatever its tar inputs weigh -> compute / normal on `normal`).
+P="$SCRATCH/probe"
+mkdir -p "$P/in"
+python3 - "$P/in" <<'PY'
+import os, sys
+for tag, pairs in (('100M', 100e6), ('310M', 310e6)):
+    for name, size in (('raw_1.fastq.gz', pairs * 136 / 2), ('raw_2.fastq.gz', pairs * 136 / 2),
+                       ('trim_1.fastq.gz', pairs * 107 / 2), ('trim_2.fastq.gz', pairs * 107 / 2),
+                       ('x.cram', pairs * 41), ('x.cram.crai', 0)):
+        with open(os.path.join(sys.argv[1], f'{tag}_{name}'), 'wb') as f:
+            f.truncate(int(size))
+PY
+cat > "$P/main.nf" <<'EOF'
+// scripts/check_resources.sh size probe: only the processes' names and input names matter (the time closure reads them)
+process DEMUX {
+    tag "${meta.tag}"
+    input:
+    val meta
+    script:
+    "true"
+}
+process TRIMMOMATIC {
+    tag "${meta}"
+    input:
+    tuple val(meta), path(reads)
+    script:
+    "true"
+}
+process FASTQC {
+    tag "${meta}"
+    input:
+    tuple val(meta), path(reads, stageAs: '?/*')
+    script:
+    "true"
+}
+process ALIGN_MARKDUP {
+    tag "${meta}"
+    input:
+    tuple val(meta), path(reads)
+    script:
+    "true"
+}
+process SAMTOOLS_STATS {
+    tag "${meta}"
+    input:
+    tuple val(meta), path(input), path(input_index)
+    script:
+    "true"
+}
+process PICARD_COLLECTWGSMETRICS {
+    tag "${meta}"
+    input:
+    tuple val(meta), path(bam), path(bai)
+    script:
+    "true"
+}
+workflow {
+    def d = params.probe_in
+    DEMUX(channel.of([tag: 'batch1', source: 'bc2s3_batch1']))
+    TRIMMOMATIC(channel.of('100M', '310M').map { s -> [s, [file("${d}/${s}_raw_1.fastq.gz"), file("${d}/${s}_raw_2.fastq.gz")]] })
+    FASTQC(channel.of('100M', '310M').map { s -> [s, [file("${d}/${s}_trim_1.fastq.gz"), file("${d}/${s}_trim_2.fastq.gz")]] })
+    ALIGN_MARKDUP(channel.of('100M', '310M').map { s -> [s, [file("${d}/${s}_trim_1.fastq.gz"), file("${d}/${s}_trim_2.fastq.gz")]] })
+    SAMTOOLS_STATS(channel.of('100M', '310M').map { s -> [s, file("${d}/${s}_x.cram"), file("${d}/${s}_x.cram.crai")] })
+    PICARD_COLLECTWGSMETRICS(channel.of('100M', '310M').map { s -> [s, file("${d}/${s}_x.cram"), file("${d}/${s}_x.cram.crai")] })
+}
+EOF
+for prof in normal short; do
+    D="$SCRATCH/$prof"
+    sed "s/^trace.fields .*/trace.fields     = 'process,tag,cpus,memory,time,queue'/" "$D/override.config" > "$D/probe_override.config"
+    echo "== hazel,$prof  size probe (100 M / 310 M pairs)"
+    ( cd "$D" && nextflow run "$P/main.nf" -c "$REPO/conf/hazel.config" -c "$REPO/conf/$prof.config" -c "$D/probe_override.config" \
+        -w "$D/work_probe" --run_id "check_resources_probe_$prof" --align_memory_gb 48 --probe_in "$P/in" \
+        -with-trace "$D/trace_probe.txt" > "$D/nextflow_probe.log" 2>&1 ) \
+        || { echo "check_resources: size probe failed (hazel,$prof), see $D/nextflow_probe.log" >&2; tail -20 "$D/nextflow_probe.log" >&2; exit 1; }
+    awk -F'\t' -v p="$prof" 'NR == 1 { for (i = 1; i <= NF; i++) c[$i] = i; next }
+        { n = split($c["process"], a, ":"); print p "_" $c["tag"] "\t" a[n] "\t" $c["cpus"] "\t" $c["memory"] "\t" $c["time"] "\t" $c["queue"] }' \
+        "$D/trace_probe.txt" >> "$SCRATCH/observed.tsv"
 done
 
 # hazel.config's beforeScript must create exactly env.TMPDIR (it runs before the env exports, so it spells the path out)

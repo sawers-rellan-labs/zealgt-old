@@ -114,15 +114,24 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
   ~311 M pairs. Rule on branch `simplify`: first attempt **48 GB** × attempt (`params.align_memory_gb`), sort threads = min(4, cpus),
   sort `-m` = max(768 MB, (task.memory − **28 GiB**) × 0.75 / threads) (`align_mem_reserve_gb` 28, `align_sort_mem_share` 0.75) → at
   48 GB: 3840 MB × 4 = 15 GiB sort, peak ≈ 26 + 15 = 41 of the 45.6 GiB cap; retries 96 GB, then 120 GB (resourceLimits).
-  **Time:** S_3A_8 (112 M pairs) took 2 h 57 at 48 GB → ~8 h for a ~311 M-pair sample: ALIGN_MARKDUP gets 10 h × attempt on `normal`.
+  **Time:** 21 min (18.8 M pairs) to 2 h 57 (S_3A_8, 112 M pairs) at 48 GB, linear in the trimmed input (0.215 h per GiB,
+  ~0.0995 GiB per M pairs; the attempts at 24 and 72 GB ran 14–19 % under the 48 GB fit, so memory barely moves it). Request (branch
+  `simplify`): 0.25 + 0.323 h per GiB × attempt → 3 h 28 for 100 M pairs, 10 h 13 for ~310 M (retry 20 h 26, under the 24 h limit).
   Memory test on branch `simplify`: see its handover.
   The zealbc1 ALIGN row above (14–22 GB peak) had another sort setting and does not carry over.
 - **MARKDUP_IMPORT memory:** the same bounded share with its own reserve, sort `-m` = (task.memory − 2 GiB) × 0.75 / threads
   (`import_mem_reserve_gb` 2; was half of the memory) → 7.5 GB of sort at the 12 GB first attempt.
-- **TRIMMOMATIC:** 25–31 k pairs/s on full samples (Gate 1's ~10 k pairs/s was start-up on tiny inputs), so the largest sample fits in
-  4 h × attempt; the 12 h `normal` override never applied (it lost to a combined selector, PLAN §6) and is removed. The "~7 h" estimate
+- **TRIMMOMATIC:** 25–31 k pairs/s on full samples (Gate 1's ~10 k pairs/s was start-up on tiny inputs): 10 min – 1 h 15, linear in
+  the raw pair (0.079 h per GiB, ~0.127 GiB per M pairs). Request (branch `simplify`): 0.1 + 0.105 h per GiB × attempt → 1 h 26 for
+  100 M pairs, 4 h 14 for ~310 M; the 12 h `normal` override never applied (it lost to a combined selector, PLAN §6) and is removed. The "~7 h" estimate
   in the Gate 1 table is superseded. `-trimlog` is no longer written (functional TRIMMOMATIC patch), which removes the trimlog share
   of the `work/` peak.
+- **Right-sized requests (branch `simplify`, from these 12 samples; main checkout `agent/20260928_145500_gate3_projection.md` §1b,
+  cross-check fit in `agent/handover_20260928_233000_rightsize_time.md`):** the right size plus a margin, never a maximum for every
+  task (long or large requests wait longer; backfill favours small jobs). Per-sample times = a + b × GiB of the task's own input
+  (a closure on the input paths; directives are not hashed), ≥ 1.25 × every Gate 2 time, floor 15 min, × attempt: TRIMMOMATIC
+  6 cpus / 2 GB, FASTQC 3 GB, SAMTOOLS_STATS 1 GB, PICARD_COLLECTWGSMETRICS 1 cpu / 5 GB, DEMUX 1 h, MERGE_LANES / MULTIQC 30 min,
+  bookkeeping tasks 10 min / 1 GB. On `normal` each task goes to short QOS when it asks ≤ 1 h 45, else to compute / normal.
 - Resources are set only by directives (`conf/hazel.config`, `conf/normal.config`, `conf/short.config`) and read in the scripts as
   `task.cpus` / `task.memory` (nf-core standard, PLAN §2); `scripts/check_resources.sh` checks what each process actually gets.
 - The FASTQ checkpoint (PLAN §3, §5 rule 3) adds ≈ 1 × raw per library on `/share` (at most `--max_libraries` libraries: requested + already checkpointed), hardlinked from `work/`, so no space or

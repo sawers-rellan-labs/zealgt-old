@@ -52,7 +52,9 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   pasted. Anything that must outlive the session (sbatch wrappers, pipeline code) is tracked in the repo and reaches hazel by git.
 - **Only trivial commands run over ssh directly**: `git pull`, `squeue`, `scancel <id>`, `cat`/`tail` logs, `seff`, `sacct`, `ls`, `du`.
 - **Everything that computes goes through Slurm**: `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h; `short` is
-  not allowed on the default `compute` partition). Full-library runs use compute/normal (`-profile hazel,normal`). Downloads and env
+  not allowed on the default `compute` partition). Full-library runs use `-profile hazel,normal`: each task
+  goes to short QOS when its (input-size-scaled) time request is <= 1 h 45, else to compute/normal (conf/normal.config); the head
+  job then needs `sbatch --qos=normal --partition=compute --time=3-00:00:00 scripts/submit_head_job.sbatch ...`. Downloads and env
   builds use `--partition=xfer`. Never run nextflow or any heavy process on the login node — even a stub run is a tiny job.
 - **Before any `rm`, `ls` the exact path** — `rm -f`/`rm -rf` on a wrong path fails silently. Removals still need user consent.
 

@@ -4,9 +4,12 @@
 #   sbatch scripts/submit_head_job.sbatch <run_id> <nextflow run args ...>
 #   e.g. sbatch scripts/submit_head_job.sbatch gate0_demux -profile hazel,stub -stub --entry read_demultiplexing --libraries 1A \
 #            --force_demux 1A --outdir /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/gate0_demux
-#   Longer runs (Gate 2): sbatch --qos=normal --partition=compute --time=24:00:00 scripts/submit_head_job.sbatch <run_id> ...
+#   Multi-library / production runs (-profile hazel,normal; a BC1 wave of 4 libraries is ~13 h compute + queue waits):
+#       sbatch --qos=normal --partition=compute --time=3-00:00:00 scripts/submit_head_job.sbatch <run_id> -profile hazel,normal ...
+#   (sbatch command-line options override the #SBATCH lines below; normal QOS allows up to 4 days). The head only submits and
+#   polls, and each task job's own QOS comes from conf/normal.config (short or normal per task), not from the head's.
 #
-# 1 cpu, 8 GB (zealbc1 heads peaked at 3.8 of 4 GB), short QOS, 2 h. Launch directory (.nextflow/, .nextflow.log, history)
+# Default (gates): 1 cpu, 8 GB (zealbc1 heads peaked at 3.8 of 4 GB; Gate 2 0.42 GB), short QOS, 2 h. Launch directory (.nextflow/, .nextflow.log, history)
 # = /share/maize/frodrig4/nf_work/<run_id>/launch; workDir and TMPDIR come from conf/hazel.config (same <run_id>). The launcher
 # is the prebuilt nextflow env (scripts/build_envs.sh --list); its bin/ goes on PATH (the bioconda wrapper needs its java) and
 # Slurm exports this environment to every task job (conda for the prefixes, NXF_OFFLINE: compute nodes are offline).
