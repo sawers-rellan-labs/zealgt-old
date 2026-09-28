@@ -127,14 +127,17 @@ and correct the numbers from `seff` / `sacct` after each gate — record them th
   measures one library this way, including the work/ peak and file count, before any other library is submitted.
 - Partition / QOS per label: `short` (compute_partners, ≤ 2 h) for everything in the genotype workflow and for stub / gate runs; `normal`
   (compute) only for the CRAM workflow's deep-library tasks; `xfer` (`--partition=xfer --mem=8G`) for downloads only. The Nextflow head
-  job itself is a small short-QOS job (1 cpu, 4 GB, 2 h for gates; longer on normal for Gate 2 of the CRAM workflow), never the login node.
-- Starting requests (measured in REQUIREMENTS §4, jobs cited there):
-  - DEMUX, one BC1 library (80–362 GB raw): 8 cpu, 16 GB, 53–72 min per 94–140 GB pool (935092, 945148) → normal, 4 h.
+  job itself is a small short-QOS job (1 cpu, 8 GB — zealbc1 heads peaked at 3.8 GB of 4 GB; 2 h for gates; longer on normal for
+  Gate 2 of the CRAM workflow), never the login node.
+- Starting requests (measured usage in REQUIREMENTS §4 "Measured usage" table, 2026-09-28):
+  - DEMUX, one BC1 library (80–362 GB raw): 6 cpu, 2 GB (measured 3.8–4.7 cores used, 0.6–0.7 GB peak), 53–72 min per pool → normal, 4 h;
+    I/O 1.2–1.8 TB per pool, so work/ on /share only.
   - TRIMMOMATIC per BC1 sample: 8 cpu, 8 GB, normal 2 h (measure at Gate 1; Java, -Xmx from the helper). FASTQC per sample: 2 cpu, 4 GB.
-  - ALIGN_MARKDUP per BC1 sample (5–25×): 8 cpu, 24 GB escalating to 48 / 72 GB on retry (sort at ~20× needed ≥ 48 GB in 935092 /
-    945148), 4 h on normal (12–13 min per 1× of depth).
-  - Batch-2 row library (BC2S3 lines, ~18 lines, 0.4–1.2×): DEMUX 8 cpu 16 GB, ALIGN_MARKDUP per line 8 cpu 32 GB, all short QOS.
-  - MARK_DUPLICATES-only pass on imported CRAMs: 2 cpu, 12 GB, 30 min short (array 963772: 6–16 min per BC1 sample).
+  - ALIGN_MARKDUP per BC1 sample (5–25×): 8 cpu, 24 GB escalating to 48 / 72 GB on retry (measured peak 14–22 GB, 6.8–7.1 cores,
+    1 h 46 – 2 h 01 for the deep pool samples; the ~20× samples OOMed below 48 GB), 4 h on normal.
+  - Batch-2 row library (BC2S3 lines, ~18 lines, 0.4–1.2×): DEMUX 4 cpu 2 GB (12–13 min), ALIGN_MARKDUP per line 8 cpu 28 GB
+    (measured peak up to 24.3 GB, 1–9 min), all short QOS.
+  - MARK_DUPLICATES-only pass on imported CRAMs: 4 cpu, 12 GB, 30 min short (array 963772: peak 1–11.4 GB, ≤ 16 min, 59 % cpu).
   - QC per sample (FastQC, samtools stats, CollectWgsMetrics): 2 cpu, 8 GB, 1 h short; MultiQC per library: 1 cpu, 4 GB.
   - Per-sample / per-line counts (QC panel, union sites): batched, one task per donor × chromosome over all its samples: 2 cpu, 8 GB,
     1 h short (finding #8: never one task per sample × chromosome).

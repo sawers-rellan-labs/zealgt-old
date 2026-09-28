@@ -59,6 +59,22 @@ into `/share/maize/frodrig4/conda/zealgt/` (never `/rsstu`: too slow); `envs/man
 | ancestry_inference | donor × chr10 (pileup of lines + RTIGER) | 4 | < 16 GB | ~1–2 min | small |
 | genotype_imputation | chromosome (PHG database, all founders) | 8 | JVM `-Xmx40g` *req.* | 14 min for 5 founders | DB 0.2–1.2 GB |
 | genotype_imputation | donor × chr10 (export, k-mer index, map, paths) | 8 | 40 GB heap *req.* (true need unmeasured) | ~5 min | k-mer index ~0.4 GB (delete after) |
+
+**Measured usage (2026-09-28, from `sacct` and the nilhmm `trace.txt` files; *req.* above = what was asked, this = what was used):**
+
+| task (zealbc1) | source | tasks | cpus alloc → used | peak RSS | wall | I/O per task |
+|---|---|---|---|---|---|---|
+| DEMUX, BC1 pool (cutadapt) | `ZEAL/results/pipeline_info/trace.txt` (pools 2H, 3B–3E) | 5 | 8 → 3.8–4.7 | 0.61–0.70 GB | 53 min – 1 h 12 | 1.2–1.8 TB read + written |
+| DEMUX, batch-2 row | `results/bc2s3_batch2/pipeline_info/trace.txt` | 32 | 8 → 2.1–2.8 | 0.56–0.59 GB | 12–13 min | — |
+| ALIGN, deep BC1 sample (minibwa + sort, whole genome) | same trace, samples S_2H_1, S_3B_11, S_3C_9, S_3D_8, S_3E_7 | 5 | 8 → 6.8–7.1 | 14.1–22.1 GB | 1 h 46 – 2 h 01 | 61–110 GB written (CRAM + sort temp) |
+| realign, BC2S3 line (0.4–1.2×) | sacct arrays 935093, 945149 | 84 | 8 → 4.9–5.7 (61–71 %) | 9.9–24.3 GB (median 19–21) | 1–9 min | 7–12 GB written |
+| markdup-only import, BC1 CRAM | sacct array 963772 | 94 | 4 → 2.4 (59 %) | 1.0–11.4 GB (median 3.9) | ≤ 16 min | ~16 GB written |
+| Nextflow head job | sacct 908026, 935092, 945148 | 3 | 1 | **3.8 GB of 4 GB requested** | 58 min – 3 h 55 | — |
+
+Implications: DEMUX needs ~1 GB, not 16 GB, and uses ~4–5 cores of 8; deep ALIGN peaked at 22 GB (24 GB first attempt is right, the
+48 / 72 GB retries cover the ~20× samples that OOMed); the head job sits at its 4 GB limit — request 8 GB. Not measured anywhere yet:
+Trimmomatic, FastQC, Picard CollectWgsMetrics (never ran in zealbc1), variant_discovery memory beyond CRISP.
+
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for
 BC1 alignment of deep libraries; downloads on `--partition=xfer --mem=8G`. Genome-wide ≈ chr10 × 14 for the per-chromosome stages;
 demultiplexing and alignment are already genome-wide.
