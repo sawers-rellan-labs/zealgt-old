@@ -88,4 +88,69 @@ nextflow_process {
             )
         }
     }
+
+    // gap_prior_scope same_taxon (review fix b): the reference donor Zx.0570_P2 stays in the prior when its taxon (from
+    // --reference_donor_taxa, merged into donor_taxa by the workflow) equals the run donor's, and leaves it without one.
+
+    test("same_taxon - reference donor with the run donor's taxon is a prior donor") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                gap_prior_scope = 'same_taxon'
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'solo.chrA_1-5000', donor_set:'solo', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    [ file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true) ]
+                ])
+                input[1] = [ 'Zx.0001_P1' ]
+                input[2] = [ 'Zx.0001_P1': 'mexicana', 'Zx.0570_P2': 'mexicana' ]
+                """
+            }
+        }
+
+        then {
+            def summary = path(process.out.summary[0][1]).readLines().collect { it.split('\t') }
+            def col = { name -> summary[1][summary[0].findIndexOf { it == name }] }
+            assertAll(
+                { assert process.success },
+                { assert col('prior_donors') == 'Zx.0570_P2' },
+                { assert col('prior_donors_other_taxon') == '.' }
+            )
+        }
+    }
+
+    test("same_taxon - reference donor without a taxon leaves the prior") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                gap_prior_scope = 'same_taxon'
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'solo.chrA_1-5000', donor_set:'solo', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    [ file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true) ]
+                ])
+                input[1] = [ 'Zx.0001_P1' ]
+                input[2] = [ 'Zx.0001_P1': 'mexicana' ]
+                """
+            }
+        }
+
+        then {
+            def summary = path(process.out.summary[0][1]).readLines().collect { it.split('\t') }
+            def col = { name -> summary[1][summary[0].findIndexOf { it == name }] }
+            assertAll(
+                { assert process.success },
+                { assert col('prior_donors') == '.' },
+                { assert col('prior_donors_other_taxon') == 'Zx.0570_P2' }
+            )
+        }
+    }
 }

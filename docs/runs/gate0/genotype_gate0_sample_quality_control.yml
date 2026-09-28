@@ -33,6 +33,7 @@ lowcopy_bed: /rsstu/users/r/rrellan/BZea/ZEAL/results/pilot_1B_chr10/union/union
 qc_panel: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/tests/fixtures/genotype/panel.tsv
 mappability_priors: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/tests/fixtures/genotype/priors
 reference_donor_tables: "Zx.0570_P2=/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0570_chr10/step4/Zx.0570_P2.sites.tsv.gz"
+reference_donor_taxa: "Zx.0570_P2=mexicana"
 
 # store: ONE stub store for all seven entries (not the per-entry <outdir>/store_stub of conf/stub.config), so they chain.
 # The run guard accepts a stub run only inside a directory named store_stub*. Fresh key: the settings guard hashes the

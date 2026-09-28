@@ -723,6 +723,11 @@
                     "pattern": "^[A-Za-z0-9_.-]+=\\S+?(,[A-Za-z0-9_.-]+=\\S+?)*$",
                     "description": "5/6: read-only step-4 tables of donors not called in this run, <donor>=<path>,... (union and prior only; Gate 1: zealbc1 Zx.0570_P2)."
                 },
+                "reference_donor_taxa": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+=[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+=[A-Za-z0-9_.-]+)*$",
+                    "description": "6: taxon of each reference donor, <donor>=<taxon>,... (names of reference_donor_tables); required for every reference donor with gap_prior_scope same_taxon (Gate 1: Zx.0570_P2=mexicana)."
+                },
                 "eps_prior_alpha": {
                     "type": [
                         "number",

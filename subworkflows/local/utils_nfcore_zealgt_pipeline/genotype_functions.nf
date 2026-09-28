@@ -41,7 +41,8 @@ def zgStageParamNames() {
         ancestry_inference    : reads + ['lowcopy_bed', 'rigidity', 'min_markers_factor', 'rtiger_drop_invariant_sites'],
         marker_union          : ['reference_donor_tables'],
         donor_allele_calling  : reads + ['b73_controls', 'lowcopy_bed', 'gap_alt_posterior', 'gap_prior_w', 'gap_prior_scope',
-                                         'gap_prior_source', 'gap_prior_fixed', 'reference_donor_tables', 'eps_prior_alpha',
+                                         'gap_prior_source', 'gap_prior_fixed', 'reference_donor_tables', 'reference_donor_taxa',
+                                         'eps_prior_alpha',
                                          'eps_prior_beta', 'b73_lines_alt_p', 'b73_lines_min_alt', 'lambda_sites', 'c_grid_max',
                                          'c_grid_step', 'ks_floor', 'mappability_priors', 'mappability_prior_mode'] + tiers,
         genotype_imputation   : ['imputation_method', 'phg_inbreeding', 'phg_prob_same_gamete'],
@@ -171,6 +172,19 @@ def zgReferenceDonorTables() {
     return zgNamedPaths('reference_donor_tables').collect { d, p -> [d, file(p)] }
 }
 
+// --reference_donor_taxa -> [donor: taxon] (the reference donors are not in the sheet, so they have no taxon otherwise)
+def zgReferenceDonorTaxa() {
+    return zgNamedPaths('reference_donor_taxa').collectEntries { d, t -> [(d): t] }
+}
+
+// GAP_FILLING_BC1 donor_taxa: the run donors' sheet taxa plus the reference donors' (gap_prior_scope same_taxon keeps a
+// prior donor only when its taxon equals the called donor's); logged so the run shows which taxa the prior used
+def zgPriorDonorTaxa(Map run_taxa, Map reference_taxa) {
+    def taxa = run_taxa + reference_taxa
+    log.info("zealgt genotype: gap-prior donor taxa ${taxa.collect { d, t -> "${d}=${t ?: '(none)'}" }.join(',')} (gap_prior_scope ${params.gap_prior_scope})")
+    return taxa
+}
+
 // --annotation_panels -> [[name, file], ...]
 def zgAnnotationPanels() {
     return zgNamedPaths('annotation_panels').collect { n, p -> [n, file(p)] }
@@ -277,7 +291,7 @@ def zgGenotypeGuards() {
     def entry = params.entry
     // `--b73_controls ''` or a bare `--donors` reaches the pipeline as true (boolean or string), not as an empty or missing value
     def valueless = ['genotype_store_key', 'input_store_key', 'donors', 'donor_set', 'regions', 'b73_controls', 'qc_panel',
-                     'annotation_panels', 'reference_donor_tables', 'mappability_priors'].findAll { p -> params[p] != null && params[p].toString() == 'true' }
+                     'annotation_panels', 'reference_donor_tables', 'reference_donor_taxa', 'mappability_priors'].findAll { p -> params[p] != null && params[p].toString() == 'true' }
     if (valueless) {
         error("${valueless.collect { p -> "--${p}" }.join(', ')} given without a value (an empty value on the command line becomes 'true'); set it in the run card, or null there to leave it unset")
     }
@@ -311,6 +325,17 @@ def zgGenotypeGuards() {
         }
         if (!file(p).isFile()) {
             error("--reference_donor_tables ${d}=${p} does not exist")
+        }
+    }
+    def ref_donors = zgNamedPaths('reference_donor_tables').collect { d, _p -> d }
+    def ref_taxa = zgReferenceDonorTaxa()
+    (ref_taxa.keySet() - ref_donors).each { d ->
+        error("--reference_donor_taxa names ${d}, which is not a donor of --reference_donor_tables")
+    }
+    if (params.entry == 'donor_allele_calling' && params.gap_prior_scope == 'same_taxon' && params.gap_prior_source == 'other_donors') {
+        def untaxed = ref_donors.findAll { d -> !ref_taxa[d] }
+        if (untaxed) {
+            error("--gap_prior_scope same_taxon: reference donor(s) ${untaxed.join(', ')} have no taxon and would leave the prior; set --reference_donor_taxa ${untaxed.collect { d -> "${d}=<taxon>" }.join(',')}")
         }
     }
     zgNamedPaths('annotation_panels').findAll { _n, p -> !file(p).isFile() }.each { n, p -> error("--annotation_panels ${n}=${p} does not exist") }

@@ -250,6 +250,50 @@ nextflow_pipeline {
 
     // ---------------------------------------------------------------------------------------------------- refusals (initialisation)
 
+    // gap_prior_scope same_taxon with the reference donor Zx.9002_P1 (review fix b): its taxon from --reference_donor_taxa
+    // reaches GAP_FILLING_BC1's donor_taxa next to the run donor's sheet taxon (logged by zgPriorDonorTaxa)
+    test("-profile test_genotype, --entry donor_allele_calling, same_taxon with a reference donor taxon - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'donor_allele_calling'
+                gap_prior_scope = 'same_taxon'
+                reference_donor_taxa = 'Zx.9002_P1=mexicana'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'donor_allele_calling')
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert path("${outputDir}/../meta/nextflow.log").text.contains('zealgt genotype: gap-prior donor taxa Zx.9001_P1=mexicana,Zx.9002_P1=mexicana (gap_prior_scope same_taxon)') },
+                { assert new groovy.json.JsonSlurper().parseText(path("$outputDir/store_stub/genotype/test/settings/donor_allele_calling.json").text)
+                             .params.reference_donor_taxa == 'Zx.9002_P1=mexicana' }
+            )
+        }
+    }
+
+    test("genotype refusal: same_taxon with a reference donor that has no taxon") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'donor_allele_calling'
+                gap_prior_scope = 'same_taxon'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'donor_allele_calling')
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert (workflow.stdout + workflow.stderr).any { l -> l.contains('reference donor(s) Zx.9002_P1 have no taxon') } },
+                { assert workflow.trace.tasks().size() == 0 }
+            )
+        }
+    }
+
     test("genotype refusal: CRAM entry under --workflow genotype") {
         options "-stub"
         when {

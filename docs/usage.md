@@ -114,6 +114,9 @@ message names the entry to run first. `--workflow genotype` without `--entry` is
   - optionally `--qc_panel` (the blind panel does not exist yet) and `--annotation_panels name=path,...`;
   - `--reference_donor_tables donor=path,...`: read-only step-4 tables of donors not called in the run. They supply gaps
     and the prior's k / m in a single-donor run;
+  - `--reference_donor_taxa donor=taxon,...`: the taxon of each reference donor (they are not in the sample sheet). With
+    `--gap_prior_scope same_taxon` a reference donor stays in the step-1 prior only when its taxon equals the called
+    donor's, so the run is refused when a reference donor has no taxon;
   - `--mappability_priors`: a directory of `<taxon>.prior.tsv` (columns `c weight`).
 
 ### Store rules (genotype)

@@ -45,6 +45,9 @@ annotation_panels: "TIL18=/rsstu/users/r/rrellan/BZea/ZEAL/results/crisp_bench/T
 # supplies the gaps of Zx.0540_P3 and the k / m of the step-1 prior. Bias noted in the .md (m counts its REF only where its
 # own table has the site).
 reference_donor_tables: "Zx.0570_P2=/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0570_chr10/step4/Zx.0570_P2.sites.tsv.gz"
+# the reference donor is not in the sheet, so its taxon is given here (Zx.0570_P2 is mexicana, as Zx.0540_P3); with
+# gap_prior_scope same_taxon it stays in the step-1 prior (without it, same_taxon is refused at initialisation)
+reference_donor_taxa: "Zx.0570_P2=mexicana"
 # [STOP-GAP, CIRCULAR: design §10 item 4, review #11] no calibrated mappability prior exists (PLAN:148-191, calibration not
 # run). This directory must hold mexicana.prior.tsv (columns c weight, 31 bins 0..1.5), derived ONCE by an agent script from
 # ZEAL/results/zealgt_checks/perline_hypotheses_20260926/qc_depth_TIL18.tsv with the step-2 script's c_prior() (nominal

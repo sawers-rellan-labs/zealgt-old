@@ -20,7 +20,7 @@ include { GENOTYPE_IMPUTATION    } from '../subworkflows/local/genotype_imputati
 include { GENOTYPE_REPORTING     } from '../subworkflows/local/genotype_reporting'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { zgDonors; zgRegions; zgStorePath; zgFlag; zgMappabilityPrior; zgReferenceDonorTables; zgAnnotationPanels } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
-include { zgRoleGroup; zgQcKeep; zgDropSamples; zgLineQcFailures; zgExclusionTable                               } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
+include { zgRoleGroup; zgQcKeep; zgDropSamples; zgLineQcFailures; zgExclusionTable; zgReferenceDonorTaxa; zgPriorDonorTaxa } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
 
 workflow GENOTYPE {
 
@@ -104,7 +104,7 @@ workflow GENOTYPE {
             channel.fromList(sets).map { s -> [s, zgStorePath('union', '', s.region), zgStorePath('union_sites', '', s.region)] },
             ch_units.map { u -> [u, zgStorePath('segments', u.donor, u.region), zgStorePath('line_qc', u.donor, u.region)] },
             ch_taxa.map { d, t -> [d, flat ? [] : zgMappabilityPrior(t)] },
-            ch_taxa.toList().map { l -> l.collectEntries() },
+            ch_taxa.toList().map { l -> zgPriorDonorTaxa(l.collectEntries(), zgReferenceDonorTaxa()) },
             donors, ch_regions, ch_lowcopy, ch_ref,
         )
         ch_versions = DONOR_ALLELE_CALLING.out.versions
