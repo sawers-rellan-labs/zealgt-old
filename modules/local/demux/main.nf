@@ -18,7 +18,9 @@
 // --subsample N (Gate 1): N is read pairs per LIBRARY; each of the library's n_lanes lanes (input n_lanes) contributes its first
 // ceil(N / n_lanes) pairs (head on the decompressed lane, written to the task dir), so the library total is N rounded up to a
 // multiple of the lane count.
-// Threads come from bin/export_slurm_resources.sh (hash hygiene, PLAN §2 rule 4); flags (-e 0 --no-indels ...) from ext.args.
+// Threads: cutadapt -j task.cpus (standard nf-core; not hashed on Nextflow >= 26.04.6); flags (-e 0 --no-indels ...) from ext.args.
+// After cutadapt only the task-dir copies made above are removed (the staged raw files live in raw_r1/ and raw_r2/ and are
+// never touched).
 // Reads without a barcode match are discarded (ext.args --discard-untrimmed); their count is in the JSON report.
 // meta.id = <library>.<lane> (READ_DEMULTIPLEXING). Output names: demux/<sample>.<meta.id>_R{1,2}.fastq.gz (the lane keeps the files of one sample apart in MERGE_LANES).
 // Tool versions: one `versions` topic tuple per tool (cutadapt, pigz, tar); coreutils (head) is pinned in environment.yml
@@ -73,8 +75,6 @@ process DEMUX {
     def read_r2  = member_r2 ? "tar -xOf ${r2} '${member_r2}'" : "cat ${r2}"
     def samples  = barcodes.collect { entry -> entry[0] }.join(' ')
     """
-    source export_slurm_resources.sh
-
     printf '>%s\\n%s\\n' ${fa_r1} > barcodes_r1.fa
     if [ -n "${fa_r2}" ]; then
         printf '>%s\\n%s\\n' ${fa_r2} > barcodes_r2.fa
@@ -98,7 +98,7 @@ process DEMUX {
 
     mkdir demux
     cutadapt \\
-        -j "\$ZG_CPUS" \\
+        -j ${task.cpus} \\
         ${args} \\
         ${patterns} \\
         ${cuts} \\
@@ -108,7 +108,6 @@ process DEMUX {
         "\$in1" "\$in2" \\
         > ${prefix}.cutadapt.log
 
-    # only the task-dir copies made above (the staged raw files live in raw_r1/ and raw_r2/ and are never touched)
     rm -f ${lane}_R1.fastq ${lane}_R2.fastq ${lane}_R1.fastq.gz ${lane}_R2.fastq.gz
 
     for s in ${samples}; do

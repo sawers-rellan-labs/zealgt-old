@@ -62,8 +62,13 @@ sbatch /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch <r
 ```
 
 Profiles: `hazel,stub` (Gate 0, `-stub`), `hazel,short` (gates, 1 h cap), `hazel,normal` (Gate 2 and later; heavy tasks on
-compute/normal), `hazel,local` (one allocation, explicit resources). The conda prefixes are prebuilt by
+compute/normal), `hazel,local` (one allocation, per-task cap in `conf/local.config`). The conda prefixes are prebuilt by
 `scripts/build_envs.sbatch` (an xfer job) and listed in `conf/env_prefixes.config`; no env is ever built at task time.
+Resources are Nextflow directives (`conf/base.config` labels, per-process values in `conf/hazel.config` / `conf/normal.config`)
+that the scripts read as `task.cpus` / `task.memory`; a resource change does not rerun cached tasks (Nextflow 26.04.6 does
+not hash those values). `scripts/check_resources.sh` checks what each process resolves to (`tests/expected_resources.tsv`).
+The head job's log starts with the checkout (`ZG_REPO`, default `ZEAL/zealgt`) and its commit; every Nextflow line carries a
+timestamp.
 
 ### Store rules
 
@@ -91,7 +96,6 @@ subworkflow and pipeline stub tests; `scripts/run_checks.sh` runs everything bef
 | Conda only, no containers; no `-profile docker` (M6) | hazel compute nodes are offline and run no container engine for this project; every module has a pinned `environment.yml` and a prebuilt prefix. The stale template container configs were removed (.nf-core.yml). |
 | Build-pinned conda packages (M10) | linux-64 is the only target, and the hazel prefix is keyed by the sha of `environment.yml`; the pins are what was built and smoke-tested. |
 | No GitHub Actions CI (P2) | private offline cluster; `scripts/run_checks.sh` runs the same checks locally before every push. |
-| Resources read from Slurm at run time (M7, P16) | `${task.cpus}` / `${task.memory}` in a script change the task hash on every retry with more memory. Scripts `source export_slurm_resources.sh` (bin/, found on the task PATH by name, so no checkout path enters the hash); `conf/local.config` and `conf/test.config` give an explicit override. The four patched nf-core modules change resources only (plus the staged Trimmomatic adapters). |
 | storeDir store, nothing published by default (P15) | CRAMs, demux QC, registry and provenance live in the store and are never recomputed; nf-core QC modules (with `eval` versions, which storeDir forbids) publish into the store instead. |
 | Step-named local modules (M11) | `demux`, `demux_qc`, `align_markdup`, `markdup_import`, `provenance`, `registry` name pipeline steps; renaming a module directory renames its hazel conda prefix (rebuild). Each meta.yml names the tools it wraps. |
 | One versions.yml per storeDir module (M3) | storeDir does not allow `eval` outputs; the yml lists every tool of the pipe. DEMUX (not storeDir'd) emits one topic tuple per tool. |

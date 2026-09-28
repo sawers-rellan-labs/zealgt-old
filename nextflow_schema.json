@@ -209,6 +209,63 @@
                 }
             }
         },
+        "align_resource_options": {
+            "title": "Memory tuning options",
+            "type": "object",
+            "fa_icon": "fas fa-memory",
+            "description": "ALIGN_MARKDUP / MARKDUP_IMPORT memory tuning (Gate 2 values).",
+            "properties": {
+                "align_memory_gb": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^\\d+$",
+                    "default": 24,
+                    "minimum": 1,
+                    "description": "ALIGN_MARKDUP first-attempt memory in GB (conf/hazel.config; multiplied by the attempt number).",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                },
+                "align_mem_reserve_gb": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^\\d+$",
+                    "default": 16,
+                    "minimum": 0,
+                    "description": "GB of an ALIGN_MARKDUP task kept out of samtools sort -m (minibwa index and mapping, fixmate, markdup).",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                },
+                "align_sort_mem_share": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+                    "default": 0.75,
+                    "minimum": 0.05,
+                    "maximum": 1,
+                    "description": "Share of (task memory - reserve) given to samtools sort (-m x threads), in ALIGN_MARKDUP and MARKDUP_IMPORT; -m is at least 768 MB.",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                },
+                "import_mem_reserve_gb": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^\\d+$",
+                    "default": 2,
+                    "minimum": 0,
+                    "description": "GB of a MARKDUP_IMPORT task kept out of samtools sort -m (view, addreplacerg, collate, fixmate, markdup).",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                }
+            }
+        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -324,6 +381,9 @@
         },
         {
             "$ref": "#/$defs/zealgt_run_options"
+        },
+        {
+            "$ref": "#/$defs/align_resource_options"
         },
         {
             "$ref": "#/$defs/generic_options"

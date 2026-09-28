@@ -9,9 +9,18 @@
 //                            sample remains in the header.
 // The inputs keep their zealbc1 MAPQ 20 / -F 0x904 filter (the provenance record says so); reads whose mate was filtered are
 // marked as single-end by markdup. storeDir <store>/cram_import (conf/modules.config), separate from new CRAMs (<store>/cram).
-// Threads / memory from bin/export_slurm_resources.sh; sort memory = half of ZG_MEM_MB split over up to 4 threads, >= 768 MB
-// each (Gate 1, job 969706: (ZG_MEM_MB - 2 GB) for sort left too little for collate / fixmate / markdup and was OOM-killed
-// at 12 GB). A stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so it is retried. storeDir forbids `eval` outputs, so the versions go into one versions.yml (samtools, gawk).
+// Threads / memory from task.cpus / task.memory (standard nf-core; not hashed on Nextflow >= 26.04.6). samtools sort gets
+// threads = min(task.cpus, 4) and the bounded share rule of ALIGN_MARKDUP with its own reserve:
+//   sort_mem_mb = max(768, floor((task.memory in MB - reserve_mb) x share / threads))
+// reserve_mb = params.import_mem_reserve_gb (2 GB: no minibwa index here; view / gawk / addreplacerg / collate / fixmate /
+// markdup stream with small buffers) and share = params.align_sort_mem_share (0.75, the same samtools sort, which fills its
+// -m x threads budget and overshoots it by ~5-10 %: Gate 2 (gate2_3A), main checkout agent/20260929_032000_align_rss.tsv +
+// agent/handover_*_gate2.md). At the 12 GB first attempt: 7.5 GB for sort (was 6 GB, half of memory), >= 3.7 GB for the
+// rest. Gate 1, job 969706: (memory - 2 GB) = 10 GB for sort (no share) was OOM-killed at 12 GB. Both params are referenced
+// here, so they enter the task hash by value (deliberate re-tunes only). A stage killed by a signal (OOM) makes the task exit with that
+// status (zg_pipe_fail: the signal status, 137 preferred over the SIGPIPE 141 it causes upstream, else the first non-zero
+// status; errorStrategy retries 130-145 with more memory), so it is retried. storeDir forbids `eval` outputs, so the versions
+// go into one versions.yml (samtools, gawk).
 // ext.args = markdup flags (-d 2500), ext.args2 = fixmate, ext.args3 = sort.
 process MARKDUP_IMPORT {
     tag "${meta.id}"
@@ -41,16 +50,16 @@ process MARKDUP_IMPORT {
     if (!rg || !rg.startsWith('@RG\\tID:')) {
         error("MARKDUP_IMPORT ${prefix}: read_group must be an escaped @RG line ('@RG\\\\tID:...'), got '${rg}'")
     }
+    def memory_mb   = task.memory ? task.memory.toMega() : 0
+    def threads     = Math.min(task.cpus as int, 4)
+    def reserve_mb  = (params.import_mem_reserve_gb.toString().toBigDecimal() * 1024).longValue()
+    def share       = params.align_sort_mem_share.toString().toBigDecimal()
+    def sort_mem_mb = Math.max(768L, ((memory_mb - reserve_mb) * share).longValue().intdiv(threads))
     """
-    source export_slurm_resources.sh
+    threads=${threads}
+    sort_mem_mb=${sort_mem_mb}
+    echo "markdup_import cpus=${task.cpus} memory_mb=${memory_mb} reserve_mb=${reserve_mb} sort_share=${share} threads=${threads} sort_mem_mb=${sort_mem_mb}" >&2
 
-    threads=\$(( ZG_CPUS < 4 ? ZG_CPUS : 4 ))
-    sort_mem_mb=\$(( ZG_MEM_MB / 2 / threads ))
-    [ "\$sort_mem_mb" -ge 768 ] || sort_mem_mb=768
-
-    # exit with the pipe's signal status (137 = OOM kill preferred over the SIGPIPE 141 it causes upstream; errorStrategy
-    # retries 130-145 with more memory), else
-    # with its first non-zero status; without this, pipefail + set -e report the last stage's error (markdup: exit 1)
     zg_pipe_fail() {
         local s sig=0 first=0
         for s in "\$@"; do

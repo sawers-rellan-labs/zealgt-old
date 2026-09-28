@@ -23,14 +23,17 @@ process PICARD_COLLECTWGSMETRICS {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def avail_mem = 3072
     def interval = intervallist ? "--INTERVALS ${intervallist}" : ''
-    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/export_slurm_resources.sh at run
-    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
-    // -Xmx = ZG_MEM_MB minus the helper's fixed 2048 MB headroom (was task.memory * 0.8).
+    if (!task.memory) {
+        log.info('[Picard CollectWgsMetrics] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this.')
+    }
+    else {
+        avail_mem = (task.memory.mega * 0.8).intValue()
+    }
     """
-    source export_slurm_resources.sh
     picard \\
-        -Xmx\${ZG_JAVA_MEM_MB}M \\
+        -Xmx${avail_mem}M \\
         CollectWgsMetrics \\
         ${args} \\
         --INPUT ${bam} \\

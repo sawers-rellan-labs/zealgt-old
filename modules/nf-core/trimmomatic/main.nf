@@ -30,19 +30,14 @@ process TRIMMOMATIC {
         "${prefix}.SE.paired.trim.fastq.gz" // HACK to avoid unpaired and paired in the trimmed_reads output
         : "${prefix}.paired.trim_1.fastq.gz ${prefix}.unpaired.trim_1.fastq.gz ${prefix}.paired.trim_2.fastq.gz ${prefix}.unpaired.trim_2.fastq.gz"
     def qual_trim = task.ext.args2 ?: ''
-    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/export_slurm_resources.sh at run
-    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
-    // The bioconda wrapper otherwise starts the JVM with its default -Xmx1g.
     // zealgt patch: the adapter FASTA is an input (staged, so no absolute path in ext.args or the script).
     // zealgt patch (user, 2026-09-28): no per-read -trimlog. It is ~160 B per read pair, uncompressed (~282 GB of work/ for a
     // 1A-size library, Gate 1), and nothing downstream reads it; MultiQC parses the stdout/stderr log (*_out.log) and the
     // -summary file, both kept. The trim_log output stays declared, as optional, so the module interface is unchanged.
     """
-    source export_slurm_resources.sh
     trimmomatic \\
-        -Xmx\${ZG_JAVA_MEM_MB}m \\
         $trimmed \\
-        -threads \${ZG_CPUS} \\
+        -threads $task.cpus \\
         -summary ${prefix}.summary \\
         $reads \\
         $output \\

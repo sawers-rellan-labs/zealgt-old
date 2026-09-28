@@ -38,8 +38,8 @@ lint:
         - params.import_sheet
         - params.registry_seed
         - params.trim_adapters
-    # zealgt: resources are set per process in conf/hazel.config and read from Slurm at run time
-    # (bin/export_slurm_resources.sh, PLAN §2 rule 4), not as process.cpus / memory / time defaults.
+    # zealgt: resources are set per label (conf/base.config, closures x task.attempt) and per process (conf/hazel.config,
+    # checked by scripts/check_resources.sh), not as plain process.cpus / memory / time defaults.
     - process.cpus
     - process.memory
     - process.time

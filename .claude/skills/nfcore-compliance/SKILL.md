@@ -38,8 +38,9 @@ Spec index: https://nf-co.re/docs/specifications/overview
 ## Installed nf-core modules — https://nf-co.re/docs/specifications/pipelines/requirements/use_the_template
 - Never hand-edit `modules/nf-core/**`. Change them only via `nf-core modules patch <tool>` (diff recorded in modules.json, so
   `nf-core modules update` carries it). Move an old `.diff` aside first — the tool refuses to overwrite non-interactively.
-- Keep patches minimal and commented: resource-only patches (hash hygiene), or small functional ones with the reason in a comment
-  above the changed line (it lands in the `.diff`). Rerun the module's own nf-test after patching; update its snapshot.
+- Keep patches minimal, functional and commented, with the reason in a comment above the changed line (it lands in the
+  `.diff`). No resource-only patches: upstream's `${task.cpus}` / `task.memory` in the script are not hashed on Nextflow
+  >= 26.04.6 (`nextflow-cache` skill). Rerun the module's own nf-test after patching; update its snapshot.
 
 ## Samplesheets and params — https://nf-co.re/docs/specifications/pipelines/requirements/parameters
 - `--input` is a CSV validated by nf-schema: `"schema": "assets/schema_input.json"` on the param, parsed in
@@ -68,8 +69,7 @@ Spec index: https://nf-co.re/docs/specifications/overview
   (`--quick` = lints only). `agent/bin` has nextflow + nf-test, `agent/.venv_nfcore` nf-core tools, `agent/stubbin` version shims.
 - Review gate: `coderabbit review --committed --base-commit <base> --agent` (log in `agent/`), before any hazel data run.
 - Deliberate deviations, recorded with reasons in `.nf-core.yml` and `docs/usage.md` "Deliberate deviations": no Docker/containers
-  (offline cluster), no GitHub CI (`scripts/run_checks.sh` instead), resources read from Slurm (`bin/export_slurm_resources.sh`),
-  storeDir store, per-source read-structure params, prebuilt build-pinned per-module conda prefixes (`conf/env_prefixes.config`),
+  (offline cluster), no GitHub CI (`scripts/run_checks.sh` instead), storeDir store, per-source read-structure params, prebuilt build-pinned per-module conda prefixes (`conf/env_prefixes.config`),
   step-named local modules. Add new ones there, with a reason.
 - **Never edit an `environment.yml`/`build.sh` or rename a `modules/local` dir** without rebuilding the hazel envs (the prefix
   name is `<module>-<sha8>`; see `hazel-debug-loop`).

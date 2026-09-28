@@ -4,10 +4,22 @@
 //   -> CRAM against B73 v5, no MAPQ filter, all records kept -> .crai; markdup statistics next to the CRAM.
 // storeDir <store>/cram (conf/modules.config): a stored CRAM is never recomputed, whatever changed in this module (PLAN §2 rule 3).
 // storeDir does not allow `eval` outputs, so the tool versions go into one versions.yml (one line per tool).
-// Threads / memory from bin/export_slurm_resources.sh at run time (hash hygiene): minibwa gets all ZG_CPUS; sort gets up to 4
-// threads and (ZG_MEM_MB - 12 GB reserved for the minibwa index and the pipe) split across them, at least 768 MB per thread.
-// A pipe stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so the 24 / 48 / 72 GB retry
-// escalation of conf/hazel.config actually fires (Gate 1: an OOM-killed sort otherwise surfaced as markdup's exit 1).
+// Threads / memory from task.cpus / task.memory, the standard nf-core way (Nextflow >= 26.04.6 does not hash the resource
+// values interpolated into the script, nextflow-cache skill). minibwa gets all task.cpus; samtools sort gets
+// sort_threads = min(task.cpus, 4) threads and an explicit per-thread -m, a bounded share of what is left of task.memory:
+//   sort_mem_mb = max(768, floor((task.memory in MB - reserve_mb) x share / sort_threads))
+// reserve_mb = params.align_mem_reserve_gb (16 GB: minibwa, flat at ~9-10.5 GB after the index load, plus headroom;
+// fixmate / markdup < 5 MB) and share = params.align_sort_mem_share (0.75: samtools sort grows to its full -m x threads
+// budget for any sample > ~20 M pairs and overshoots it by ~5-10 %). Gate 2 (gate2_3A; main checkout
+// agent/20260929_032000_align_rss.tsv + agent/handover_*_gate2.md): the old (memory - 12 GiB) / 4 rule made every attempt
+// (24 / 48 / 72 GB) OOM; with this rule 24 GB peaks at ~18-19 GB. Both params are referenced here, so they enter the task
+// hash by value: change them only with a deliberate re-tune. The chosen values are logged to stderr. The first-attempt
+// memory is params.align_memory_gb (conf/hazel.config).
+// A pipe stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so the memory-escalation retry
+// of conf/hazel.config actually fires (Gate 1: an OOM-killed sort otherwise surfaced as markdup's exit 1). zg_pipe_fail
+// exits with the pipe's signal status (137 = OOM kill preferred over the SIGPIPE 141 it causes upstream; errorStrategy
+// retries 130-145 with more memory), else with its first non-zero status; without it, pipefail + set -e report the last
+// stage's error (markdup: exit 1).
 // Sort and markdup temporaries go to TMPDIR (/share, conf/hazel.config) and are removed by samtools.
 // ext.args = minibwa map flags (-x sr), ext.args2 = markdup flags (-d 2500), ext.args3 = fixmate, ext.args4 = sort.
 process ALIGN_MARKDUP {
@@ -38,19 +50,16 @@ process ALIGN_MARKDUP {
         error("ALIGN_MARKDUP ${prefix}: read_group must be an escaped @RG line ('@RG\\\\tID:...'), got '${read_group}'")
     }
     def (r1, r2) = reads
+    def memory_mb    = task.memory ? task.memory.toMega() : 0
+    def sort_threads = Math.min(task.cpus as int, 4)
+    def reserve_mb   = (params.align_mem_reserve_gb.toString().toBigDecimal() * 1024).longValue()
+    def share        = params.align_sort_mem_share.toString().toBigDecimal()
+    def sort_mem_mb  = Math.max(768L, ((memory_mb - reserve_mb) * share).longValue().intdiv(sort_threads))
     """
-    source export_slurm_resources.sh
-
-    sort_threads=\$(( ZG_CPUS < 4 ? ZG_CPUS : 4 ))
-    sort_mem_mb=\$(( (ZG_MEM_MB - 12288) / sort_threads ))
-    [ "\$sort_mem_mb" -ge 768 ] || sort_mem_mb=768
     tmp="\${TMPDIR:-.}/${prefix}.align_markdup.\$\$"
     mkdir -p "\$tmp"
-    echo "align_markdup sort_threads=\$sort_threads sort_mem_mb=\$sort_mem_mb tmp=\$tmp" >&2
+    echo "align_markdup cpus=${task.cpus} memory_mb=${memory_mb} reserve_mb=${reserve_mb} sort_share=${share} sort_threads=${sort_threads} sort_mem_mb=${sort_mem_mb} tmp=\$tmp" >&2
 
-    # exit with the pipe's signal status (137 = OOM kill preferred over the SIGPIPE 141 it causes upstream; errorStrategy
-    # retries 130-145 with more memory), else
-    # with its first non-zero status; without this, pipefail + set -e report the last stage's error (markdup: exit 1)
     zg_pipe_fail() {
         local s sig=0 first=0
         for s in "\$@"; do
@@ -67,13 +76,13 @@ process ALIGN_MARKDUP {
     }
 
     minibwa map \\
-        -t "\$ZG_CPUS" \\
+        -t ${task.cpus} \\
         ${args} \\
         -R '${read_group}' \\
         ${fasta} \\
         ${r1} ${r2} \\
     | samtools fixmate -@ 2 -m -u ${args3} - - \\
-    | samtools sort -@ "\$sort_threads" -m "\${sort_mem_mb}M" -u -T "\$tmp/sort" ${args4} - \\
+    | samtools sort -@ ${sort_threads} -m ${sort_mem_mb}M -u -T "\$tmp/sort" ${args4} - \\
     | samtools markdup \\
         -@ 2 \\
         ${args2} \\
@@ -84,7 +93,7 @@ process ALIGN_MARKDUP {
         - ${prefix}.cram \\
     || zg_pipe_fail "\${PIPESTATUS[@]}"
 
-    samtools index -@ "\$ZG_CPUS" ${prefix}.cram
+    samtools index -@ ${task.cpus} ${prefix}.cram
     rmdir "\$tmp" 2>/dev/null || true
 
     cat <<-END_VERSIONS > ${prefix}.align_markdup.versions.yml

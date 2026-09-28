@@ -35,11 +35,10 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   spurious mode-only "modified" scripts). Set once after cloning.
 - **Invoke scripts through their interpreter with an explicit path** — `Rscript "${projectDir}/bin/x.R"`, `bash "${projectDir}/bin/x.sh"`,
   `python "${projectDir}/bin/x.py"` — never rely on `+x` + PATH. zealgt's task scripts avoid `${projectDir}` in the script text
-  (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`), and the resource helper is
-  sourced by name, `source export_slurm_resources.sh` (`bin/`) — bash `source` searches the task PATH (Nextflow adds `bin/`) and
-  needs no exec bit. **Cache consequence (tested 2026-09-28, `nextflow-cache` skill):** a non-executable or interpreter-called `bin/`
+  (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`); resources come from
+  `${task.cpus}` / `task.memory` in the script (not hashed on 26.04.6), and `bin/` is empty. **Cache consequence (tested 2026-09-28, `nextflow-cache` skill):** a non-executable or interpreter-called `bin/`
   script is not part of any task hash, so editing it reruns nothing and keeps stale outputs — in the hazel checkout every `bin/` script
-  is non-executable. Output-affecting helper code goes in module templates (hashed by content). Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`).
+  is non-executable. Output-affecting helper code goes in module templates (hashed by content). Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`, `check_resources.sh`).
 
 ## How commands run
 - Each hazel action is one **non-interactive, one-line** `ssh hazel '<cmd>'`, self-contained (`cd`, `conda activate`). No state
@@ -92,8 +91,12 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 - **Propagate a killed stage's exit code** from pipes (OOM 137/140), or memory-escalation retries never fire. E.g. an OOM-killed
   `samtools sort` surfaced as markdup's exit 1 until `|| zg_pipe_fail "${PIPESTATUS[@]}"` was added.
 - Tools can reject valid-but-filtered input: Picard needs `VALIDATION_STRINGENCY SILENT` on MAPQ-filtered imported CRAMs.
-- Cache: resource-only changes keep the task hash (scripts read Slurm values, not `task.*`); `ext.args` changes rerun the task.
-  Check with `-dump-hashes json` and `-resume <id>`.
+- Cache: resource-only changes keep the task hash (directives and `${task.cpus}` / `task.memory` in a script are not hashed on
+  26.04.6); `ext.args` changes, or `task.*` inside an `ext.args` closure, rerun the task. Check with `-dump-hashes json` and
+  `-resume <id>`.
+- **Check the resolved resources, not the config text:** a later `withName` block can lose to an earlier combined selector
+  (Gate 2: TRIMMOMATIC's 12 h never applied). `scripts/check_resources.sh` compares a stub run's trace with
+  `tests/expected_resources.tsv`.
 - Record measured resources (trace, `sacct`/`seff`) in `docs/REQUIREMENTS.md` and extrapolate `work/` size and file count before
   scaling up.
 
