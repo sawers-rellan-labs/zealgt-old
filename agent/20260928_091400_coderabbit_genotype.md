@@ -57,3 +57,10 @@ card: pass-A key gate1_zx0540_nomask_r2, mappability_priors set); 3 files: **0 f
 | round | base | head | findings | action |
 |---|---|---|---|---|
 | 4 | 163bcb7 | be5dbd3 | 0 | none |
+
+## Round 5 (Gate 1 fix loop): base d9dbd92, head a620fbe
+`coderabbit review --committed --base-commit d9dbd92 --agent` (2026-09-28, Gate 1 agent): commit a620fbe (docs/REQUIREMENTS.md §4, Gate 1 measured resources, additive); 1 file: **0 findings**. Clean at **a620fbe**.
+
+| round | base | head | findings | action |
+|---|---|---|---|---|
+| 5 | d9dbd92 | a620fbe | 0 | none |
