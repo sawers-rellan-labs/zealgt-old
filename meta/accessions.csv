@@ -1,0 +1,228 @@
+accession,location,collection_date,old_accession_id_1,old_accession_id_2,teo_plot,race,taxa_code,species,elevation,latitude,longitude,longitude_resolved,country,state,county,correction_ids
+Zd.0010,San_Miguel_Cuzalapa,1978,CIM10003,CIM10003,733,Zea-diploperennis,Zdip,Zea diploperennis,2250,19.533055555555556,-104.216944444444,-104.216944444444,México,Jalisco,Cuautitlán_de_García_Barragán,
+Zd.0020,Las_Joyas_Las_Playas,2003,JSG-RMM-LCL-551,JSG_RMM_LCL_551,732,Zea-diploperennis,Zdip,Zea diploperennis,1870,19.59111111111111,104.27805555555555,-104.27805555555555,México,Jalisco,Cuautitlán_de_García_Barragán,C0008
+Zd.0030,SA_Milpillas_Tateposco_Arroyo_La_Mesa,2010,JLVTKV-719,JLVTKV_719,792,Zea-diploperennis-Na,Zdip,Zea diploperennis,1392,22.856944444444444,-105.106944444444,-105.106944444444,México,Nayarit,Huajicori,
+Zd.0040,SA_Milpillas_La_Embocada_Arroyo_San_Andrés,2010,JLVTKV-720,JLVTKV_720,793,Zea-diploperennis-Na,Zdip,Zea diploperennis,1393,22.87,105.10499999999999,-105.10499999999999,México,Nayarit,Huajicori,C0009
+Zh.0010,km_1.5-2.5_S.A._Huista-Jacaltenango,1976,CIM9479,CIM9479,704,Huehuetenango,Hueh,Zea mays ssp. huehuetenangensis,1300,15.666944444444443,91.75,-91.75,Guatemala,Huehuetenango,Jacaltenango,C0010
+Zh.0020,El_Tablón_San_José_del_Tablón,2004,H1,H1,705,Huehuetenango,Hueh,Zea mays ssp. huehuetenangensis,1225,15.673055555555555,91.79194444444444,-91.79194444444444,Guatemala,Huehuetenango,San_Antonio_Huista,C0011
+Zh.0030,Monajil-Buxup,2004,H2,H2,706,Huehuetenango,Hueh,Zea mays ssp. huehuetenangensis,1025,15.691944444444445,91.81805555555555,-91.81805555555555,Guatemala,Huehuetenango,Santa_Ana_Huista,C0012
+Zl.0010,Las_Majadas_Rancho_de_Los_López,2004,G1,G1,711,Guatemala,Zlux,Zea luxurians,878,14.246944444444443,89.875,-89.875,Guatemala,Jutiapa,Jutiapa,C0013
+Zl.0020,Km_162_Agua_Blanca_Ipala_Agua_Blanca,2004,G3,G3,712,Guatemala,Zlux,Zea luxurians,895,14.526111111111112,89.66194444444444,-89.66194444444444,Guatemala,Jutiapa,Agua_Blanca,C0014
+Zl.0030,Aldea_Damian,2004,G7,G7,714,Guatemala,Zlux,Zea luxurians,1037,14.530000000000001,89.825,-89.825,Guatemala,Jalapa,San_Manuel_Chaparrón,C0015
+Zl.0040,Finca_Carlos_Orellana_Pinto,2004,G6,G6,713,Guatemala,Zlux,Zea luxurians,982,14.538055555555555,89.89,-89.89,Guatemala,Jalapa,Monjas,C0016
+Zl.0050,Arroyo_Tambor,2007,FAC-P87,FAC_P_87,702,Oaxaca,Zlux,Zea luxurians,80,17.935,-96.4680555555556,-96.4680555555556,México,Oaxaca,San_Felipe_Usila,
+Zm.0010,,,LANDB314,CIMMYTMA 004660,,RGWHDT,Maiz,Zea mays ssp. mays,274,-29.333,-54.167,-54.167,,,,
+Zm.0020,,,LANDB282,CIMMYTMA 002674,,AVMORO,Maiz,Zea mays ssp. mays,339,-23.917,-51.867,-51.867,,,,
+Zm.0030,,,LANDB090,CIMMYTMA 026714,,PERLIT,Maiz,Zea mays ssp. mays,175,-23.78,-61.48,-61.48,,,,
+Zm.0040,,,LANDB089,CIMMYTMA 024483,,PISING,Maiz,Zea mays ssp. mays,3488,-23.534,-65.765,-65.765,,,,
+Zm.0050,,,LANDB065,CIMMYTMA 008025,,,Maiz,Zea mays ssp. mays,2973,-23.2,-65.35,-65.35,,,,
+Zm.0060,,,LANDB331,CIMMYTMA 005057,,CATETO,Maiz,Zea mays ssp. mays,594,-23.183,-45.883,-45.883,,,,
+Zm.0070,,,LANDB066,CIMMYTMA 014287,,CUBAAM,Maiz,Zea mays ssp. mays,559,-22.538,-64.405,-64.405,,,,
+Zm.0080,,,LANDB094,CIMMYTMA 014311,,APERLA,Maiz,Zea mays ssp. mays,920,-21.55,-64.127,-64.127,,,,
+Zm.0090,,,LANDB318,CIMMYTMA 004781,,PADENT,Maiz,Zea mays ssp. mays,373,-21.533,-51.483,-51.483,,,,
+Zm.0100,,,LANDB081,CIMMYTMA 024848,,KELLU,Maiz,Zea mays ssp. mays,3937,-20.816,-66.216,-66.216,,,,
+Zm.0110,,,LANDB093,CIMMYTMA 014996,,MOROCH,Maiz,Zea mays ssp. mays,3100,-20.783,-64.767,-64.767,,,,
+Zm.0120,,,LANDB082,CIMMYTMA 014383,,CUBAAM,Maiz,Zea mays ssp. mays,755,-20.68,-63.292,-63.292,,,,
+Zm.0130,,,LANDB064,CIMMYTMA 011854,,POJOSO,Maiz,Zea mays ssp. mays,120,-18.965,-57.828,-57.828,,,,
+Zm.0140,,,LANDB062,CIMMYTMA 011857,,,Maiz,Zea mays ssp. mays,613,-18.346,-59.591,-59.591,,,,
+Zm.0150,,,LANDB063,CIMMYTMA 015009,,AYZUMA,Maiz,Zea mays ssp. mays,2520,-18.183,-65.083,-65.083,,,,
+Zm.0160,,,LANDB058,CIMMYTMA 016874,,,Maiz,Zea mays ssp. mays,516,-17.898,-63.308,-63.308,,,,
+Zm.0170,,,LANDB061,CIMMYTMA 024949,,,Maiz,Zea mays ssp. mays,3206,-17.451,-70.051,-70.051,,,,
+Zm.0180,,,LANDB099,CIMMYTMA 018676,,,Maiz,Zea mays ssp. mays,3929,-16.5,-68.15,-68.15,,,,
+Zm.0190,,,LANDB104,CIMMYTMA 017281,,,Maiz,Zea mays ssp. mays,149,-14.39,-65.195,-65.195,,,,
+Zm.0200,,,LANDB107,CIMMYTMA 018242,,PISCCO,Maiz,Zea mays ssp. mays,3326,-13.42,-72.209,-72.209,,,,
+Zm.0210,,,LANDB332,CIMMYTMA 005084,,PADENT,Maiz,Zea mays ssp. mays,201,-12.651,-39.109,-39.109,,,,
+Zm.0220,,,LANDB069,CIMMYTMA 012291,,,Maiz,Zea mays ssp. mays,3263,-12.635,-74.865,-74.865,,,,
+Zm.0230,,,LANDB070,CIMMYTMA 009022,,PIRICI,Maiz,Zea mays ssp. mays,751,-12.624,-73.095,-73.095,,,,
+Zm.0240,,,LANDB074,CIMMYTMA 009025,,ENANO,Maiz,Zea mays ssp. mays,234,-12,-70.25,-70.25,,,,
+Zm.0250,,,LANDB285,CIMMYTMA 002899,,TUXPEN,Maiz,Zea mays ssp. mays,9,-10.283,-36.6,-36.6,,,,
+Zm.0260,,,LANDB101,CIMMYTMA 012085,,,Maiz,Zea mays ssp. mays,3524,-9.385,-77.24,-77.24,,,,
+Zm.0270,,,LANDB080,CIMMYTMA 008993,,COLORA,Maiz,Zea mays ssp. mays,14,-8.597,-78.732,-78.732,,,,
+Zm.0280,,,LANDB059,CIMMYTMA 018202,,,Maiz,Zea mays ssp. mays,3412,-8.563,-77.773,-77.773,,,,
+Zm.0290,,,LANDB060,CIMMYTMA 014578,,,Maiz,Zea mays ssp. mays,580,-8.445,-76.472,-76.472,,,,
+Zm.0300,,,LANDB105,CIMMYTMA 012342,,SHAJAT,Maiz,Zea mays ssp. mays,3217,-7.804,-78.042,-78.042,,,,
+Zm.0310,,,LANDB106,CIMMYTMA 026062,,,Maiz,Zea mays ssp. mays,269,-7.174,-76.693,-76.693,,,,
+Zm.0320,,,LANDB071,CIMMYTMA 024894,,,Maiz,Zea mays ssp. mays,2391,-6.55,-78.65,-78.65,,,,
+Zm.0330,,,LANDB247,CIMMYTMA 012388,,,Maiz,Zea mays ssp. mays,1978,-5.33,-79.431,-79.431,,,,
+Zm.0340,,,LANDB088,CIMMYTMA 026035,,,Maiz,Zea mays ssp. mays,49,-4.873,-80.711,-80.711,,,,
+Zm.0350,,,LANDB087,CIMMYTMA 012440,,,Maiz,Zea mays ssp. mays,2641,-4.636,-79.71,-79.71,,,,
+Zm.0360,,,LANDB286,CIMMYTMA 002978,,CATETO,Maiz,Zea mays ssp. mays,43,-3.812,-38.694,-38.694,,,,
+Zm.0370,,,LANDB092,CIMMYTMA 010248,,,Maiz,Zea mays ssp. mays,2,-2.761,-79.747,-79.747,,,,
+Zm.0380,,,LANDB084,CIMMYTMA 017379,,,Maiz,Zea mays ssp. mays,36,-1.066,-80.44,-80.44,,,,
+Zm.0390,,,LANDB083,CIMMYTMA 021797,,MISHCA,Maiz,Zea mays ssp. mays,2890,-0.148,-78.458,-78.458,,,,
+Zm.0400,,,LANDB139,CIMMYTMA 003176,,COMUN,Maiz,Zea mays ssp. mays,1535,4.517,-75.633,-75.633,,,,
+Zm.0410,,,LANDB078,CIMMYTMA 019738,,,Maiz,Zea mays ssp. mays,840,5.32,-74.92,-74.92,,,,
+Zm.0420,,,LANDB142,CIMMYTMA 003190,,COSTEN,Maiz,Zea mays ssp. mays,30,8.317,-75.15,-75.15,,,,
+Zm.0430,,,LANDB141,CIMMYTMA 003202,,PUYA,Maiz,Zea mays ssp. mays,27,10,-74,-74,,,,
+Zm.0440,,,LANDB290,CIMMYTMA 003877,,CANILL,Maiz,Zea mays ssp. mays,71,12.03,-61.749,-61.749,,,,
+Zm.0450,,,LANDB279,CIMMYTMA 002458,,CANILL,Maiz,Zea mays ssp. mays,63,12.2,-61.63,-61.63,,,,
+Zm.0460,,,LANDB166,CIMMYTMA 002500,,SALVAD,Maiz,Zea mays ssp. mays,233,14.86,-92.08,-92.08,,,,
+Zm.0470,,,LANDB143,CIMMYTMA 000743,,TEPECI,Maiz,Zea mays ssp. mays,35,15.421,-92.9,-92.9,,,,
+Zm.0480,,,LANDB138,CIMMYTMA 000266,,ZAPCHI,Maiz,Zea mays ssp. mays,79,16.58,-94.602,-94.602,,,,
+Zm.0490,,,LANDB012,CIMMYTMA 025041,,OLOTIL,Maiz,Zea mays ssp. mays,547,16.7,-93.717,-93.717,,,,
+Zm.0500,,,LANDB209,CIMMYTMA 000250,,BOLITA,Maiz,Zea mays ssp. mays,1526,16.826,-96.676,-96.676,,,,
+Zm.0510,,,LANDB049,CIMMYTMA 020218,,BOLITA,Maiz,Zea mays ssp. mays,2164,16.9,-96.267,-96.267,,,,
+Zm.0520,,,LANDB018,CIMMYTMA 017793,,,Maiz,Zea mays ssp. mays,97,17.083,-89.133,-89.133,,,,
+Zm.0530,,,LANDB011,CIMMYTMA 006081,,CONICO,Maiz,Zea mays ssp. mays,2338,17.191,-97.867,-97.867,,,,
+Zm.0540,,,LANDB017,CIMMYTMA 013920,,,Maiz,Zea mays ssp. mays,2083,17.45,-97.217,-97.217,,,,
+Zm.0550,,,LANDB274,CIMMYTMA 001334,,STCROI,Maiz,Zea mays ssp. mays,31,17.718,-64.707,-64.707,,,,
+Zm.0560,,,LANDB299,CIMMYTMA 003975,,CHANDE,Maiz,Zea mays ssp. mays,31,17.718,-64.707,-64.707,,,,
+Zm.0570,,,LANDB273,CIMMYTMA 001326,,CHANDE,Maiz,Zea mays ssp. mays,160,18.059,-66.399,-66.399,,,,
+Zm.0580,,,LANDB002,CIMMYTMA 005460,,TUXPEN,Maiz,Zea mays ssp. mays,245,18.35,-100.65,-100.65,,,,
+Zm.0590,,,LANDB271,CIMMYTMA 001312,,CANILL,Maiz,Zea mays ssp. mays,167,18.559,-74.264,-74.264,,,,
+Zm.0600,,,LANDB052,CIMMYTMA 000686,,TUXPEN,Maiz,Zea mays ssp. mays,30,18.59,-95.437,-95.437,,,,
+Zm.0610,,,LANDB001,CIMMYTMA 010234,,CACAHUACINTLE,Maiz,Zea mays ssp. mays,2600,19,-97.383,-97.383,,,,
+Zm.0620,,,LANDB159,CIMMYTMA 019359,,CONICO,Maiz,Zea mays ssp. mays,1956,19.03,-100.03,-100.03,,,,
+Zm.0630,,,LANDB296,CIMMYTMA 003941,,CHANDE,Maiz,Zea mays ssp. mays,65,19.197,-70.021,-70.021,,,,
+Zm.0640,,,LANDB146,CIMMYTMA 005618,,MUSHIT,Maiz,Zea mays ssp. mays,2293,19.28,-101.63,-101.63,,,,
+Zm.0650,,,LANDB165,CIMMYTMA 016446,,PALOME,Maiz,Zea mays ssp. mays,2514,19.28,-97.33,-97.33,,,,
+Zm.0660,,,LANDB053,CIMMYTMA 007584,,CONICO,Maiz,Zea mays ssp. mays,2261,19.283,-98.433,-98.433,,,,
+Zm.0670,,,LANDB031,CIMMYTMA 005613,,MUSHIT,Maiz,Zea mays ssp. mays,2280,19.499,-101.583,-101.583,,,,
+Zm.0680,,,LANDB163,CIMMYTMA 005626,,ARROAM,Maiz,Zea mays ssp. mays,3017,19.51,-97.2,-97.2,,,,
+Zm.0690,,,LANDB145,CIMMYTMA 005616,,MUSHIT,Maiz,Zea mays ssp. mays,2188,19.52,-101.73,-101.73,,,,
+Zm.0700,,,LANDB147,CIMMYTMA 009187,,CHALQU,Maiz,Zea mays ssp. mays,2229,19.52,-101.22,-101.22,,,,
+Zm.0710,,,LANDB161,CIMMYTMA 001531,,PALOME,Maiz,Zea mays ssp. mays,2451,19.54,-97.25,-97.25,,,,
+Zm.0720,,,LANDB152,CIMMYTMA 005599,,MUSHIT,Maiz,Zea mays ssp. mays,2416,19.57,-102.27,-102.27,,,,
+Zm.0730,,,LANDB150,CIMMYTMA 005331,,TUXPEN,Maiz,Zea mays ssp. mays,1298,19.63,-102.5,-102.5,,,,
+Zm.0740,,,LANDB154,CIMMYTMA 001467,,CONICO,Maiz,Zea mays ssp. mays,2180,19.65,-100.59,-100.59,,,,
+Zm.0750,,,LANDB148,CIMMYTMA 001456,,CHALQU,Maiz,Zea mays ssp. mays,2430,19.67,-101.92,-101.92,,,,
+Zm.0760,,,LANDB039,CIMMYTMA 001398,,CHALQUENO,Maiz,Zea mays ssp. mays,2256,19.683,-99.133,-99.133,,,,
+Zm.0770,,,LANDB045,CIMMYTMA 008102,,PALOME,Maiz,Zea mays ssp. mays,2220,19.71,-97.24,-97.24,,,,
+Zm.0780,,,LANDB033,CIMMYTMA 018374,,,Maiz,Zea mays ssp. mays,2418,19.97,-99.52,-99.52,,,,
+Zm.0790,,,LANDB029,CIMMYTMA 025151,,,Maiz,Zea mays ssp. mays,2674,20.176,-100.139,-100.139,,,,
+Zm.0800,,,LANDB278,CIMMYTMA 002445,,FTCUBA,Maiz,Zea mays ssp. mays,20,20.677,-75.729,-75.729,,,,
+Zm.0810,,,LANDB009,CIMMYTMA 001535,,CONNOR,Maiz,Zea mays ssp. mays,2039,20.7,-99.8,-99.8,,,,
+Zm.0820,,,LANDB041,CIMMYTMA 000554,,CELAYA,Maiz,Zea mays ssp. mays,2064,21.017,-101.25,-101.25,,,,
+Zm.0830,,,LANDB026,CIMMYTMA 003266,,TEPECI,Maiz,Zea mays ssp. mays,88,21.1,-97.75,-97.75,,,,
+Zm.0840,,,LANDB010,CIMMYTMA 007026,,TUXPEN,Maiz,Zea mays ssp. mays,8,21.2,-105.167,-105.167,,,,
+Zm.0850,,,LANDB042,CIMMYTMA 000547,,TUXPEN,Maiz,Zea mays ssp. mays,562,21.445,-99.632,-99.632,,,,
+Zm.0860,,,LANDB028,CIMMYTMA 025845,,TUXPEN,Maiz,Zea mays ssp. mays,42,21.517,-98.383,-98.383,,,,
+Zm.0870,,,LANDB020,CIMMYTMA 007076,,BOFO,Maiz,Zea mays ssp. mays,177,21.717,-104.883,-104.883,,,,
+Zm.0880,,,LANDB022,CIMMYTMA 023971,,BOFO,Maiz,Zea mays ssp. mays,648,22.274,-104.47,-104.47,,,,
+Zm.0890,,,LANDB276,CIMMYTMA 002438,,FTCUBA,Maiz,Zea mays ssp. mays,79,22.417,-83.733,-83.733,,,,
+Zm.0900,,,LANDB007,CIMMYTMA 019483,,CONNOR,Maiz,Zea mays ssp. mays,2019,22.903,-103.478,-103.478,,,,
+Zm.0910,,,LANDB047,CIMMYTMA 014017,,,Maiz,Zea mays ssp. mays,2043,23.133,-101.117,-101.117,,,,
+Zm.0920,,,LANDB038,CIMMYTMA 000861,,CHAPAL,Maiz,Zea mays ssp. mays,46,24.824,-107.46,-107.46,,,,
+Zm.0930,,,LANDB015,CIMMYTMA 021113,,CELAYA,Maiz,Zea mays ssp. mays,2141,28.533,-106.633,-106.633,,,,
+Zm.0940,,,LANDB023,CIMMYTMA 021154,,CONNOR,Maiz,Zea mays ssp. mays,2046,28.55,-107.5,-107.5,,,,
+Zm.0950,,,LANDB215,CIMMYTMA 006802,,TUXPEN,Maiz,Zea mays ssp. mays,1425,28.612,-105.979,-105.979,,,,
+Zm.0960,,,LANDB227,CIMMYTMA 021092,,CELAYA,Maiz,Zea mays ssp. mays,1953,28.933,-107.567,-107.567,,,,
+Zm.0970,,,LANDB036,CIMMYTMA 007294,,TABPER,Maiz,Zea mays ssp. mays,454,28.975,-109.395,-109.395,,,,
+Zm.0980,,,LANDB210,CIMMYTMA 021086,,PERLA,Maiz,Zea mays ssp. mays,1861,29.26,-107.423,-107.423,,,,
+Zm.0990,,,LANDB016,CIMMYTMA 007344,,ONAVEN,Maiz,Zea mays ssp. mays,390,29.435,-110.367,-110.367,,,,
+Zm.1000,,,LANDB006,CIMMYTMA 000645,,CELAYA,Maiz,Zea mays ssp. mays,798,29.567,-104.563,-104.563,,,,
+Zm.1010,,,LANDB035,CIMMYTMA 007937,,GORDO,Maiz,Zea mays ssp. mays,2141,29.65,-108.25,-108.25,,,,
+Zv.0010,San_Cristobal_Honduras_,2003,JSG-RMM-LCL-483,JSG_RMM_LCL_483,735,Balsas,Bals,Zea mays ssp. parviglumis,1272,16.323888888888888,97.03305555555555,-97.03305555555555,México,Oaxaca,San_Jerónimo_Coatlán,C0017
+Zv.0020,,,LANTEO107,CIMMYTMA 13567,,,Bals,Zea mays ssp. parviglumis,1094,16.327006,-97.041712,-97.041712,,,,
+Zv.0030,Crucero_Lagunitas_Los_Saucitos_Tecoanapa,2003,JSG-RMM-LCL-487,JSG_RMM_LCL_487,707,Balsas,Bals,Zea mays ssp. parviglumis,590,16.981944444444444,99.28305555555555,-99.28305555555555,México,Guerrero,Tecoanapa,C0018
+Zv.0040,Tierra_Colorada,2005,JSG-RMM-LCL-568,JSG_RMM_LCL_568,708,Balsas,Bals,Zea mays ssp. parviglumis,300,17.171944444444446,-99.5438888888889,-99.5438888888889,México,Guerrero,Juan_R._Escudero,
+Zv.0050,El_Rincón_de_la_Vía,2007,JLNCM-654,JLNCM_654,729,Balsas,Bals,Zea mays ssp. parviglumis,740,17.286944444444448,99.48305555555555,-99.48305555555555,México,Guerrero,Chilpancingo_de_los_Bravo,C0019
+Zv.0060,El_Salado_Amate_Amarillo,2007,JLNCM-657,JLNCM_657,730,Balsas,Bals,Zea mays ssp. parviglumis,1150,17.396944444444443,99.43694444444445,-99.43694444444445,México,Guerrero,Mochitlán,C0020
+Zv.0070,Vista_Hermosa_Colotlipa_Barranca_La_Cañada,2007,JLNCM-649,JLNCM_649,728,Balsas,Bals,Zea mays ssp. parviglumis,1020,17.453888888888887,99.21000000000001,-99.21000000000001,México,Guerrero,Quechultenango,C0021
+Zv.0080,Vista_Hermosa_La_Lobera_,2007,JLNCM-646,JLNCM_646,749,Balsas,Bals,Zea mays ssp. parviglumis,1580,17.76,98.77388888888889,-98.77388888888889,México,Guerrero,Olinalá,C0022
+Zv.0090,,,LANTEO119,CIMMYTMA 13580,,,Bals,Zea mays ssp. parviglumis,1087,18.222818,-99.207832,-99.207832,,,,
+Zv.0100,Plan_de_los_Timbres_ca_Paso_Morelos,2007,JLNCM-643,JLNCM_643,740,Balsas,Bals,Zea mays ssp. parviglumis,1183,18.253055555555555,99.23388888888888,-99.23388888888888,México,Guerrero,Huitzuco_de_los_Figueroa,C0023
+Zv.0110,Crucero_Amates_Grandes_K100_Carr_52,2003,JSG-RMM-LCL-511,JSG_RMM_LCL_511,720,Balsas,Bals,Zea mays ssp. parviglumis,1110,18.388055555555557,100.12805555555555,-100.12805555555555,México,Guerrero,General_Canuto_A._Neri,C0024
+Zv.0120,Zacatlancillo_K80_Carr_51_cerro_El_Chivo,2007,JLHNM-661,JLHNM_661,750,Balsas,Bals,Zea mays ssp. parviglumis,1746,18.416944444444447,99.96805555555555,-99.96805555555555,México,Guerrero,Teloloapan,C0025
+Zv.0130,,,LANTEO218,CIMMYTMA 29783,,,Bals,Zea mays ssp. parviglumis,1877,18.48,-99.78,-99.78,,,,
+Zv.0140,K2_Llano_de_la_Merced_Ixcapaneca,2007,JLHNM-664,JLHNM_664,727,Balsas,Bals,Zea mays ssp. parviglumis,1524,18.5,99.9088888888889,-99.9088888888889,México,Guerrero,Pedro_Ascencio_Alquisiras,C0026
+Zv.0150,Ixcateopan_salida_a_Taxco,2003,JSG-RMM-LCL-495,JSG_RMM_LCL_495,754,Balsas,Bals,Zea mays ssp. parviglumis,1890,18.505,99.78388888888888,-99.78388888888888,México,Guerrero,Ixcateopan_de_Cuauhtémoc,C0027
+Zv.0160,Las_Parotas-San_Francisco_de_Asís,2007,JSG-LCL-672,JSG_LCL_672,715,Balsas,Bals,Zea mays ssp. parviglumis,834,18.610000000000003,100.27194444444444,-100.27194444444444,México,México,Tlatlaya,C0028
+Zv.0170,,,LANTEO201,CIMMYTMA 29766,,,Bals,Zea mays ssp. parviglumis,315,18.633387,-100.906644,-100.906644,,,,
+Zv.0180,,,LANTEO202,CIMMYTMA 29767,,,Bals,Zea mays ssp. parviglumis,315,18.633387,-100.906644,-100.906644,,,,
+Zv.0190,Huixtitla,2007,JSG-LCL-674,JSG_LCL_674,718,Balsas,Bals,Zea mays ssp. parviglumis,1008,18.641111111111112,100.35694444444444,-100.35694444444444,México,México,Amatepec,C0029
+Zv.0200,Cerro_Nananchi_(ca._Atotonilco),2008,DMA-2008-1,DMA_2008_1,746,Balsas,Bals,Zea mays ssp. parviglumis,1400,18.671944444444446,98.83111111111111,-98.83111111111111,México,Morelos,Jonacatepec,C0030
+Zv.0210,Quenchendio_(km_151.5_Zitácuaro-Huetamo),2002,JSGYRMM-458,JSG_Y_RMM_458,723,Balsas,Bals,Zea mays ssp. parviglumis,635,18.805,-100.946111111111,-100.946111111111,México,Michoacán,Huetamo,
+Zv.0220,El_Potrero_(km_145.5_Carr._51_Zitácuaro-Huetamo),2002,JSGYRMM-457,JSG_Y_RMM_457,724,Balsas,Bals,Zea mays ssp. parviglumis,654,18.82,100.91611111111112,-100.91611111111112,México,Michoacán,Huetamo,C0031
+Zv.0230,El_Salitre-Plaza_de_Gallos_(Km_118-119_Toluca-Altamirano),2003,JSG-RMM-LCL-523,JSG_RMM_LCL_523,721,Balsas,Bals,Zea mays ssp. parviglumis,958,18.841944444444444,100.23805555555556,-100.23805555555556,México,México,Tejupilco,C0032
+Zv.0240,Km_106_Toluca-Altamirano_(desde_crucero_Las_Mesas),2003,JSG-RMM-LCL-524,JSG_RMM_LCL_524,743,Balsas,Bals,Zea mays ssp. parviglumis,1422,18.898888888888887,100.18111111111112,-100.18111111111112,México,México,Tejupilco,C0033
+Zv.0250,Ruinas_de_Malinalco,2003,JSG-RMM-LCL-473,JSG_RMM_LCL_473,759,Balsas,Bals,Zea mays ssp. parviglumis,1901,18.953055555555554,99.50305555555556,-99.50305555555556,México,México,Malinalco,C0034
+Zv.0260,Puerto_de_la_Cruz,2003,JSG-RMM-LCL-517,JSG_RMM_LCL_517,726,Balsas,Bals,Zea mays ssp. parviglumis,870,18.963055555555556,101.05805555555555,-101.05805555555555,México,Michoacán,Carácuaro,C0035
+Zv.0270,Amatlán_de_Quetzalcóatl_La_Puerta,2003,JSG-RMM-LCL-474,JSG_RMM_LCL_474,742,Balsas,Bals,Zea mays ssp. parviglumis,1654,18.974999999999998,99.03,-99.03,México,Morelos,Tepoztlán,C0036
+Zv.0280,K80_C_MICH_9_Huetamo_Villa_Madero,2003,JSG-RMM-LCL-514,JSG_RMM_LCL_514,739,Balsas,Bals,Zea mays ssp. parviglumis,832,19.063055555555557,101.28305555555555,-101.28305555555555,México,Michoacán,Nocupétaro,C0037
+Zv.0290,Ojo_de_Agua_de_Chupio-Chupio,2007,JACV-T-082,JACV_T_082,722,Balsas,Bals,Zea mays ssp. parviglumis,1219,19.14611111111111,101.43,-101.43,México,Michoacán,Tacámbaro,C0038
+Zv.0300,K8_Zuluapan_Tingambato_El_Quinto,2003,JSG-RMM-LCL-534,JSG_RMM_LCL_534,738,Balsas,Bals,Zea mays ssp. parviglumis,1178,19.148055555555555,100.35499999999999,-100.35499999999999,México,México,Otzoloapan,C0039
+Zv.0310,Santo_Tomás_de_los_Plátanos,2007,JSG-LCL-676,JSG_LCL_676,736,Balsas,Bals,Zea mays ssp. parviglumis,1345,19.17888888888889,100.255,-100.255,México,México,Santo_Tomás,C0040
+Zv.0320,,,LANTEO122,CIMMYTMA 13584,,,Bals,Zea mays ssp. parviglumis,1353,19.183626,-100.260289,-100.260289,,,,
+Zv.0330,,,LANTEO171,CIMMYTMA 29727,,,Bals,Zea mays ssp. parviglumis,1276,19.26353,-100.457906,-100.457906,,,,
+Zv.0340,El_Saucito,1984,JSGYLOS-142,JSG_Y_LOS_142,731,Balsas,Bals,Zea mays ssp. parviglumis,1460,19.293055555555558,103.08111111111111,-103.08111111111111,México,Jalisco,Jilotlán_de_los_Dolores,C0041
+Zv.0350,,,LANTEO123,CIMMYTMA 13585,,,Bals,Zea mays ssp. parviglumis,1313,19.31,-100.44,-100.44,,,,
+Zv.0360,,,LANTEO183,CIMMYTMA 29740,,,Bals,Zea mays ssp. parviglumis,1145,19.335007,-101.918353,-101.918353,,,,
+Zv.0370,Col_Emiliano_Zapata_La_Perimera,2003,JSG-RMM-558,JSG_RMM_558,719,Balsas,Bals,Zea mays ssp. parviglumis,1170,19.343888888888888,101.94388888888889,-101.94388888888889,México,Michoacán,Taretan,C0042
+Zv.0380,,,LANTEO124,CIMMYTMA 13586,,,Bals,Zea mays ssp. parviglumis,1570,19.414584,-100.835048,-100.835048,,,,
+Zv.0390,3_km_N_de_Tafetan,2007,JACV-T-049,JACV_T_049,737,Balsas,Bals,Zea mays ssp. parviglumis,684,19.443055555555556,100.90194444444445,-100.90194444444445,México,Michoacán,Tzitzio,C0043
+Zv.0400,,,LANTEO008,CIMMYTMA 8763,,,Bals,Zea mays ssp. parviglumis,1896,19.5,-101.87,-101.87,,,,
+Zv.0410,La_Lima,2003,RMM-11,RMM_11,745,Balsas,Bals,Zea mays ssp. parviglumis,1450,19.528055555555554,104.06388888888888,-104.06388888888888,México,Jalisco,Tolimán,C0044
+Zv.0420,Queretanillo_(km_24_Temascal-Huetamo),2003,JSG-RMM-LCL-539,JSG_RMM_LCL_539,744,Balsas,Bals,Zea mays ssp. parviglumis,1342,19.551111111111112,100.91805555555555,-100.91805555555555,México,Michoacán,Tzitzio,C0045
+Zv.0430,Los_Cimientos,2003,JSG-RMM-LCL-546,JSG_RMM_LCL_546,709,Balsas,Bals,Zea mays ssp. parviglumis,552,19.703888888888887,-104.818888888889,-104.818888888889,México,Jalisco,Villa_Purificación,
+Zv.0440,La_Cofradía_(2km_al_E),2003,JSG-RMM-LCL-548,JSG_RMM_LCL_548,710,Balsas,Bals,Zea mays ssp. parviglumis,635,19.771944444444443,-104.843055555556,-104.843055555556,México,Jalisco,Villa_Purificación,
+Zv.0450,,,LANTEO228,CIMMYTMA 29793,,,Bals,Zea mays ssp. parviglumis,1160,19.96,-104.05,-104.05,,,,
+Zv.0460,,,LANTEO213,CIMMYTMA 29778,,,Bals,Zea mays ssp. parviglumis,1620,20.549388,-102.611356,-102.611356,,,,
+Zv.0470,Quexpan-Las_Raíces,2002,JSG-467,JSG_467,753,Balsas,Bals,Zea mays ssp. parviglumis,1139,20.611111111111114,104.22611111111111,-104.22611111111111,México,Jalisco,Ameca,C0046
+Zv.0480,K8_Gauchinango_La_Ciénega,2009,JSG-LCL-704,JSG_LCL_704,752,Balsas,Bals,Zea mays ssp. parviglumis,1442,20.62611111111111,104.41805555555555,-104.41805555555555,México,Jalisco,Guachinango,C0047
+Zv.0490,Camino_Carboneras-El_Tablillo,2008,JSG-LCL-JRP-702,JSG_LCL_JRP_702,751,Balsas,Bals,Zea mays ssp. parviglumis,1153,20.78611111111111,104.54305555555555,-104.54305555555555,México,Jalisco,Guachinango,C0048
+Zv.0500,,,LANTEO224,CIMMYTMA 29789,,,Bals,Zea mays ssp. parviglumis,935,20.85,-104.42,-104.42,,,,
+Zv.0510,,,LANTEO174,CIMMYTMA 29730,,,Mesa,Zea mays ssp. parviglumis,2053,19.689659,-100.549056,-100.549056,,,,
+Zv.0520,,,LANTEO208,CIMMYTMA 29773,,,Mesa,Zea mays ssp. parviglumis,1682,19.952655,-102.437102,-102.437102,,,,
+Zv.0530,,,LANTEO223,CIMMYTMA 29788,,,Mesa,Zea mays ssp. parviglumis,1900,20.084954,-101.514718,-101.514718,,,,
+Zv.0540,,,LANTEO207,CIMMYTMA 29772,,,Mesa,Zea mays ssp. parviglumis,1705,20.09871,-101.936172,-101.936172,,,,
+Zv.0550,,,LANTEO205,CIMMYTMA 29770,,,Mesa,Zea mays ssp. parviglumis,1817,20.13,-102.09,-102.09,,,,
+Zv.0560,,,LANTEO203,CIMMYTMA 29768,,,Mesa,Zea mays ssp. parviglumis,1859,20.2,-102.04,-102.04,,,,
+Zx.0010,San_Francisco_Independencia,2007,JSG-JMHC-629,JSG_JMHC_629,766,Chalco,Chal,Zea mays ssp. mexicana,2670,19.073888888888888,97.43111111111112,-97.43111111111112,México,Puebla,Tlachichuca,C0049
+Zx.0020,San_Matías_Cuijingo,2007,JSG-JMHC-634,JSG_JMHC_634,785,Chalco,Chal,Zea mays ssp. mexicana,2485,19.078888888888887,98.845,-98.845,México,México,Juchitepec,C0050
+Zx.0030,San_Antonio_Zoyatzingo,2003,JSG-RMM-LCL-476,JSG_RMM_LCL_476,783,Chalco,Chal,Zea mays ssp. mexicana,2480,19.081944444444446,98.7761111111111,-98.7761111111111,México,México,Amecameca,C0051
+Zx.0040,San_Nicolás_de_Los_Ranchos_Cañada_Grande,2002,JSG-437,JSG_437,764,Chalco,Chal,Zea mays ssp. mexicana,2475,19.08611111111111,98.4888888888889,-98.4888888888889,México,Puebla,San_Nicolás_de_los_Ranchos,C0052
+Zx.0050,,,LANTEO103,CIMMYTMA 13561,,,Chal,Zea mays ssp. mexicana,2484,19.13,-98.77,-98.77,,,,
+Zx.0060,,,LANTEO145,CIMMYTMA 29070,,,Chal,Zea mays ssp. mexicana,2411,19.14516,-98.857792,-98.857792,,,,
+Zx.0070,,,LANTEO150,CIMMYTMA 29075,,,Chal,Zea mays ssp. mexicana,2713,19.15,-99.62,-99.62,,,,
+Zx.0080,San_Antonio_Tlaltecahuacan,2007,JSG-JMHC-637,JSG_JMHC_637,770,Chalco,Chal,Zea mays ssp. mexicana,2470,19.154999999999998,98.775,-98.775,México,México,Tlalmanalco,C0053
+Zx.0090,Tenancingo_(km_11_Puebla_Tlaxcala),2007,JSG-JMHC-631,JSG_JMHC_631,774,Chalco,Chal,Zea mays ssp. mexicana,2311,19.16,98.18611111111112,-98.18611111111112,México,Tlaxcala,Tenancingo,C0054
+Zx.0100,San_Nicolás_Buenos_Aires,2007,JSG-JMHC-626,JSG_JMHC_626,765,Chalco,Chal,Zea mays ssp. mexicana,2388,19.171111111111113,97.55694444444444,-97.55694444444444,México,Puebla,San_Nicolás_Buenos_Aires,C0055
+Zx.0110,,,LANTEO146,CIMMYTMA 29071,,,Chal,Zea mays ssp. mexicana,2257,19.21455,-98.910877,-98.910877,,,,
+Zx.0120,,,LANTEO108,CIMMYTMA 13568,,,Chal,Zea mays ssp. mexicana,2247,19.25,-98.88,-98.88,,,,
+Zx.0130,El_Pedregal,2007,JSG-JMHC-614,JSG_JMHC_614,769,Chalco,Chal,Zea mays ssp. mexicana,2592,19.258055555555554,99.46694444444445,-99.46694444444445,México,México,Ocoyoacac,C0056
+Zx.0140,Xochimilco,1968,CIM11362,CIM11362,781,Chalco,Chal,Zea mays ssp. mexicana,2200,19.275,99.1,-99.1,México,Distrito_Federal,Xochimilco,C0057
+Zx.0150,Los_Reyes_la_Paz,1992,CIM11400,CIM11400,782,Chalco,Chal,Zea mays ssp. mexicana,2200,19.35,98.98,-98.98,México,México,La_Paz,C0058
+Zx.0160,Opopeo,2002,JSGYRMM-463,JSG_Y_RMM_463,772,Chalco,Chal,Zea mays ssp. mexicana,2225,19.421944444444446,101.61,-101.61,México,Michoacán,Salvador_Escalante,C0059
+Zx.0170,,,LANTEO138,CIMMYTMA 29062,,,Chal,Zea mays ssp. mexicana,2428,19.490626,-98.831625,-98.831625,,,,
+Zx.0180,,,LANTEO137,CIMMYTMA 29061,,,Chal,Zea mays ssp. mexicana,2247,19.494158,-98.902444,-98.902444,,,,
+Zx.0190,San_Martín_Netzahualcoyotl_(Boyeros),2007,JSG-JMHC-639,JSG_JMHC_639,771,Chalco,Chal,Zea mays ssp. mexicana,2254,19.495,-98.9211111111111,-98.9211111111111,México,México,Texcoco,
+Zx.0200,,,LANTEO029,CIMMYTMA 8787,,,Bals,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0210,,,LANTEO030,CIMMYTMA 8788,,,Bals,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0220,La_Purificación,2007,CIM27215,CIM27215,768,Chalco,Chal,Zea mays ssp. mexicana,2280,19.529999999999998,98.84305555555555,-98.84305555555555,México,México,Texcoco,C0060
+Zx.0230,,,LANTEO037,CIMMYTMA 8795,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0240,,,LANTEO042,CIMMYTMA 8800,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0250,,,LANTEO045,CIMMYTMA 8803,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0260,,,LANTEO046,CIMMYTMA 8804,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0270,,,LANTEO051,CIMMYTMA 8809,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0280,,,LANTEO054,CIMMYTMA 8812,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0290,,,LANTEO058,CIMMYTMA 8816,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0300,,,LANTEO060,CIMMYTMA 8818,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0310,,,LANTEO064,CIMMYTMA 8822,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0320,,,LANTEO069,CIMMYTMA 8827,,,Chal,Zea mays ssp. mexicana,2276,19.53,-98.85,-98.85,,,,
+Zx.0330,,,LANTEO136,CIMMYTMA 29060,,,Chal,Zea mays ssp. mexicana,2267,19.550838,-98.863149,-98.863149,,,,
+Zx.0340,Lázaro_Cárdenas,2004,JSG-LCL-559,JSG_LCL_559,773,Chalco,Chal,Zea mays ssp. mexicana,2410,19.68111111111111,101.73611111111111,-101.73611111111111,México,Michoacán,Erongarícuaro,C0061
+Zx.0350,K152_Cd_Hidalgo_Morelia_San_Lucas_y_El_Porvenir,2003,JSG-RMM-LCL-536,JSG_RMM_LCL_536,760,Mesa-Central,Mesa,Zea mays ssp. mexicana,2102,19.68611111111111,100.63305555555554,-100.63305555555554,México,Michoacán,Hidalgo,C0062
+Zx.0360,San_Agustín_del_Maíz,2002,JSGYRMM-450,JSG_Y_RMM_450,757,Mesa-Central,Mesa,Zea mays ssp. mexicana,1855,19.891111111111112,101.17888888888889,-101.17888888888889,México,Michoacán,Copándaro,C0063
+Zx.0370,Villa_Jiménez-La_Estancia,2007,JACV-T-018,JACV_T_018,780,Mesa-Central,Mesa,Zea mays ssp. mexicana,2012,19.926944444444445,101.71694444444445,-101.71694444444445,México,Michoacán,Jiménez,C0064
+Zx.0380,San_Cristobal_K0.5_a_Chucándiro,2004,JSG-LCL-565,JSG_LCL_565,761,Mesa-Central,Mesa,Zea mays ssp. mexicana,1848,19.95611111111111,101.31694444444445,-101.31694444444445,México,Michoacán,Chucándiro,C0065
+Zx.0390,Batuecas_K1_a_Cuitzeo_Carr_MICH_28,2002,JSGYRMM-444,JSG_Y_RMM_444,777,Mesa-Central,Mesa,Zea mays ssp. mexicana,2186,20.035,101.46888888888888,-101.46888888888888,México,Michoacán,Puruándiro,C0066
+Zx.0400,Changuitiro_1km_a_Purépero,2002,JSGYRMM-438,JSG_Y_RMM_438,775,Mesa-Central,Mesa,Zea mays ssp. mexicana,1910,20.075,102.06,-102.06,México,Michoacán,Churintzio,C0067
+Zx.0410,Km_334.5_Carr._15D_Autopista_Morelia-Guadalajara,2004,JSG-LCL-566,JSG_LCL_566,779,Mesa-Central,Mesa,Zea mays ssp. mexicana,2055,20.076944444444443,101.97611111111111,-101.97611111111111,México,Michoacán,Churintzio,C0068
+Zx.0420,,,LANTEO112,CIMMYTMA 13573,,,Mesa,Zea mays ssp. mexicana,1705,20.09871,-101.936172,-101.936172,,,,
+Zx.0430,Penjamillo_de_Degollado_(Carr._MICH_27),2002,JSGYRMM-440,JSG_Y_RMM_440,776,Mesa-Central,Mesa,Zea mays ssp. mexicana,1775,20.103055555555557,101.94694444444445,-101.94694444444445,México,Michoacán,Penjamillo,C0069
+Zx.0440,5_7_km_SW_Cojumatlán,1984,JSGYLOS-75,JSG_Y_LOS_75,790,Mesa-Central,Mesa,Zea mays ssp. mexicana,1700,20.11388888888889,102.89611111111111,-102.89611111111111,México,Michoacán,Cojumatlán_de_Régules,C0070
+Zx.0450,El_Salteador_K9.5_a_El_Timbinal,2005,JSG-LCL-JGRF-586,JSG_LCL_JGRF_586,762,Mesa-Central,Mesa,Zea mays ssp. mexicana,2023,20.14,101.07305555555556,-101.07305555555556,México,Guanajuato,Yuriria,C0071
+Zx.0460,,,LANTEO014,CIMMYTMA 8771,,,Mesa,Zea mays ssp. mexicana,1855,20.15,-102.07,-102.07,,,,
+Zx.0470,El_Salitre,2002,JSG-427,JSG_427,763,Mesa-Central,Mesa,Zea mays ssp. mexicana,1574,20.153055555555554,102.36388888888888,-102.36388888888888,México,Michoacán,Ixtlán,C0072
+Zx.0480,Cerro_Churintzio,2002,JSG-426,JSG_426,778,Mesa-Central,Mesa,Zea mays ssp. mexicana,1940,20.15694444444444,102.06,-102.06,México,Michoacán,Churintzio,C0073
+Zx.0490,Uriangato_(salida_a_Yuriria_Carr._43),2002,JSGYRMM-447,JSG_Y_RMM_447,756,Mesa-Central,Mesa,Zea mays ssp. mexicana,1880,20.16888888888889,101.15611111111112,-101.15611111111112,México,Guanajuato,Uriangato,C0074
+Zx.0500,Km_2_Poncitlán-Ahuatlán,2007,JSG-LCL-689,JSG_LCL_689,786,Mesa-Central,Mesa,Zea mays ssp. mexicana,1550,20.403055555555554,102.9038888888889,-102.9038888888889,México,Jalisco,Zapotlán_del_Rey,C0075
+Zx.0510,San_Jerónimo_(Cerro_Grande),2002,JSG-465,JSG_465,758,Mesa-Central,Mesa,Zea mays ssp. mexicana,1597,20.421111111111113,102.34694444444445,-102.34694444444445,México,Jalisco,Ayotlán,C0076
+Zx.0520,Ciudad_Manuel_Doblado,1969,CIM11365,CIM11365,755,Mesa-Central,Mesa,Zea mays ssp. mexicana,1710,20.72694444444444,101.94888888888889,-101.94888888888889,México,Guanajuato,Manuel_Doblado,C0077
+Zx.0530,,,LANTEO111,CIMMYTMA 13571,,,Dura,Zea mays ssp. mexicana,1864,24.01526,-104.490531,-104.490531,,,,
+Zx.0540,Calabacillas-Potrero_Michoacanes-Tuitán,2009,JSG-SRV-EAM-708,JSG_SRV_EAM_708,789,Durango,Dura,Zea mays ssp. mexicana,1860,24.023888888888887,104.3,-104.3,México,Durango,Nombre_de_Dios,C0078
+Zx.0550,Potrero_El_Tepalcate_al_N_de_San_José_de_Tuitán,2009,JSG-SRV-EAM-705,JSG_SRV_EAM_705,788,Durango,Dura,Zea mays ssp. mexicana,1870,24.041944444444447,104.28,-104.28,México,Durango,Nombre_de_Dios,C0079
+Zx.0560,Francisco_Villa_Nuevo_3K_E,2002,JSGYRMM-429,JSG_Y_RMM_429,787,Durango,Dura,Zea mays ssp. mexicana,1875,24.084999999999997,104.48611111111111,-104.48611111111111,México,Durango,Durango,C0080
+Zx.0570,Tarahumares,2007,JSG-SRV-606,JSG_SRV_606,795,Nobogame,Nobo,Zea mays ssp. mexicana,1951,26.223055555555554,106.93194444444445,-106.93194444444445,México,Chihuahua,Guadalupe_y_Calvo,C0081
+Zx.0580,Arroyo_Tejamanil_ca_La_Rinconada,2007,JSG-SRV-604,JSG_SRV_604,794,Nobogame,Nobo,Zea mays ssp. mexicana,1920,26.228055555555553,106.96194444444444,-106.96194444444444,México,Chihuahua,Guadalupe_y_Calvo,C0082
