@@ -10,15 +10,40 @@ zealgt has two workflows, chosen by `--workflow`, that meet only at the **store*
 - `--workflow cram` (default): raw sequencing libraries -> analysis-ready CRAMs + QC + provenance + the demux registry.
 - `--workflow genotype`: CRAM store -> ancestry and imputed genotypes (skeleton; not implemented yet).
 
-The CRAM workflow has two entries (`--entry`):
+The CRAM workflow runs in two stages with a **FASTQ checkpoint** between them, and has three entries (`--entry`):
 
-| entry | input | steps | store output |
+| entry | input | steps | output |
 |---|---|---|---|
-| `read_demultiplexing` (default) | `--libraries <lib>` rows of `--input` (meta/samples.csv) | DEMUX (cutadapt, exact inline barcodes) -> DEMUX_QC -> READ_TRIMMING (Trimmomatic, FastQC) -> READ_ALIGNMENT (minibwa, samtools markdup -> CRAM) -> SAMTOOLS_STATS + Picard CollectWgsMetrics -> PROVENANCE -> REGISTRY | `demux_qc/`, `cram/`, `registry/` |
-| `markdup_import` | `--import_sheet` (meta/dev_import.csv) | MARKDUP_IMPORT (read groups + samtools markdup, no realignment) -> SAMTOOLS_STATS + Picard -> PROVENANCE | `cram_import/` |
+| `read_demultiplexing` (default) | `--libraries <lib>[,...]` rows of `--input` (meta/samples.csv) | stage 1: DEMUX (cutadapt, exact inline barcodes, per lane) -> MERGE_LANES -> DEMUX_QC -> READ_TRIMMING (Trimmomatic -> FASTQ checkpoint, FastQC); then stage 2 in the same run | checkpoint `<lib>/`; store `demux_qc/`, `cram/`, `registry/` |
+| `read_alignment` | `--libraries <lib>[,...]`: `<fastq_checkpoint>/<lib>/samplesheet.csv` only | stage 2: READ_ALIGNMENT (minibwa, samtools markdup -> CRAM) -> SAMTOOLS_STATS + Picard CollectWgsMetrics -> PROVENANCE -> REGISTRY | store `cram/`, `registry/` |
+| `markdup_import` | `--import_sheet` (meta/dev_import.csv) | MARKDUP_IMPORT (read groups + samtools markdup, no realignment) -> SAMTOOLS_STATS + Picard -> PROVENANCE | store `cram_import/` |
 
-Trimming and alignment are internal steps of `read_demultiplexing`; there is no FASTQ entry (the pre-demultiplexed FASTQs it
-would read no longer exist). Both entries end at the CRAM stop point and write one MultiQC report per library (per import set).
+One `read_demultiplexing` command per request runs both stages; stage 2 takes the trimmed reads straight from TRIMMOMATIC
+(not from the published files). After a fix to stage 2, `--entry read_alignment` reruns stage 2 alone from the checkpoint,
+without demultiplexing again (nextflow-cache skill: the task cache does not carry across entries, the checkpoint does). All
+entries end at the CRAM stop point and write one MultiQC report per library (per import set).
+
+### FASTQ checkpoint (`--fastq_checkpoint`, default `/share/maize/frodrig4/fastq_checkpoint`)
+
+- TRIMMOMATIC's `publishDir` **hardlinks** each sample's trimmed pair to `<fastq_checkpoint>/<lib>/<sample>.paired.trim_{1,2}.fastq.gz`
+  (same inode as the `work/` file: no extra space or inode while `work/` holds it). The checkpoint must be on the filesystem of
+  `work/` (`/share` on hazel); a failed link fails the run.
+- Once every sample of the library is trimmed, the run writes `<lib>/samplesheet.csv` (assets/schema_checkpoint.json), one row per
+  sample with everything stage 2 needs: `sample`, `library`, `fastq_1`, `fastq_2`, `source`, `role`, `donor`, `taxon`,
+  `read_group`, `read_structure` (crops already applied), `layout`, `barcode_r1`, `barcode_r2`, `demux_args`,
+  `trim_illuminaclip`, `trim_args`, `trim_adapters`, `raw_location`, `raw_files_r1`, `raw_files_r2`, `tar_members_r1`,
+  `tar_members_r2` (`;`-joined lists), `subsample`, `stage1_run_id`, `stage1_session_id`, `stage1_code_version`,
+  `stage1_tool_versions` (`tool=version;...` of DEMUX and TRIMMOMATIC). Both stage-2 entries build meta, read group and the
+  provenance record from these columns with the same function, so the records differ only in the run fields.
+- `read_alignment` validates the sheet with nf-schema (the FASTQs must exist). It does not demultiplex, so no registry guard
+  applies; it needs `<store>/demux_qc/<lib>.tsv` for the registry entry (without it the library is aligned, not registered,
+  with a warning).
+- `read_demultiplexing` refuses a library whose checkpoint samplesheet was written by another session: use `--entry
+  read_alignment`, or `-resume <that session>`, or `--force_demux <lib>` (demultiplexes again and replaces the checkpoint).
+- **Cleanup report** (nothing is ever removed): after every run with stage 2, per library, `<lib>/cleanup_status.tsv` lists per
+  sample the CRAM, `cram_bytes`, `verified` (yes/no, the store check below) and both FASTQs with their sizes, and ends with (also
+  in the log) `# checkpoint <dir>: removable (N files, X GB) — remove only with the user's consent` or `# checkpoint <dir>: keep:
+  k of n CRAMs missing`. Removing the checkpoint frees space only once `work/` no longer holds the same files (hardlinks).
 
 ## Sample sheets
 
@@ -72,22 +97,34 @@ timestamp.
 
 ### Store rules
 
-- `--store` (default `ZEAL/store`) is the permanent storeDir root. A stored output is never recomputed, whatever changed.
-- `--subsample N` (Gate 1) needs a store directory named `subsample_<N>`, e.g. `--store ZEAL/store/subsample_1000000`, so a
-  subset never lands where the real CRAMs go. A store named `subsample_*` without `--subsample` is refused too.
+- `--store` (default `ZEAL/store`) is the permanent store root. Outputs are copied in by `publishDir` (`overwrite: false`: a
+  stored file is never replaced) and the workflow skips work whose stored output exists, whatever changed (no `storeDir`):
+  a sample whose CRAM is stored is not aligned (or imported) again, a library with a stored demux QC table gets no DEMUX_QC and
+  one with a registry entry no REGISTRY, stored QC files and provenance records are not made again (missing ones are).
+- A CRAM counts as stored only if the CRAM and its `.crai` exist and the CRAM ends with the CRAM 3 EOF container. A sample with
+  an unverified CRAM (e.g. a copy cut short by a killed head job), or with files left over without its CRAM, stops the run
+  before any task, naming the files to check and remove by hand.
+- `--subsample N` (Gate 1) needs a store **and** a checkpoint directory named `subsample_<N>`, e.g. `--store
+  ZEAL/store/subsample_1000000 --fastq_checkpoint /share/maize/frodrig4/fastq_checkpoint/subsample_1000000`, so a subset never
+  lands where the real CRAMs or FASTQs go; a `subsample_*` directory without `--subsample` is refused too, and
+  `read_alignment` refuses a checkpoint written with another `--subsample`.
   N is read pairs per library: DEMUX runs once per library x lane, and each of the library's lanes gives its first
   ceil(N / lanes) pairs (the total is N rounded up to a multiple of the lane count).
-- Stub runs need a store inside a directory named `store_stub*` and outside `ZEAL/store`; `-profile stub` sets
-  `<outdir>/store_stub`.
+- Stub runs need a store inside a directory named `store_stub*` outside `ZEAL/store` and a checkpoint inside `checkpoint_stub*`
+  outside `/share/maize/frodrig4/fastq_checkpoint`; `-profile stub` sets `<outdir>/store_stub` and `<outdir>/checkpoint_stub`. On hazel the
+  outdir is on `/rsstu`, so a stub run passes `--fastq_checkpoint /share/maize/frodrig4/nf_work/<run_id>/checkpoint_stub`.
 - A library in the registry (`assets/registry_seed.csv` or `<store>/registry/<lib>.registry.tsv`) is refused unless named with
-  `--force_demux <lib>`; at most `--max_libraries` (default 1) libraries per run.
-- Samples whose CRAM is already in `<store>/cram` are not trimmed or aligned again; their missing QC and provenance are made.
+  `--force_demux <lib>`.
+- `--libraries` may name any number of libraries; at most `--max_libraries` (default 4) are **in flight** at once, from DEMUX
+  through their last CRAM: a library enters DEMUX (in `--libraries` order) only when an earlier one has all its CRAMs.
 
 ## Testing
 
 `-profile test` runs `read_demultiplexing` on the fixture library LIBX (tests/fixtures: 3 samples, 940 read pairs, a tiny
-reference with its minibwa index). `-profile test,stub -stub` checks the wiring without tools. nf-test runs the module,
-subworkflow and pipeline stub tests; `scripts/run_checks.sh` runs everything before a push (docs/CONTRIBUTING.md).
+reference with its minibwa index), with the store and the checkpoint under the outdir; `--entry read_alignment` with the same
+`--fastq_checkpoint` reruns stage 2 alone. `-profile test,stub -stub` checks the wiring without tools. nf-test runs the module,
+subworkflow and pipeline stub tests (the three entries and a two-library `--max_libraries 1` run); `scripts/run_checks.sh`
+runs everything before a push (docs/CONTRIBUTING.md).
 
 ## Deliberate deviations from the nf-core specifications
 
@@ -96,9 +133,10 @@ subworkflow and pipeline stub tests; `scripts/run_checks.sh` runs everything bef
 | Conda only, no containers; no `-profile docker` (M6) | hazel compute nodes are offline and run no container engine for this project; every module has a pinned `environment.yml` and a prebuilt prefix. The stale template container configs were removed (.nf-core.yml). |
 | Build-pinned conda packages (M10) | linux-64 is the only target, and the hazel prefix is keyed by the sha of `environment.yml`; the pins are what was built and smoke-tested. |
 | No GitHub Actions CI (P2) | private offline cluster; `scripts/run_checks.sh` runs the same checks locally before every push. |
-| storeDir store, nothing published by default (P15) | CRAMs, demux QC, registry and provenance live in the store and are never recomputed; nf-core QC modules (with `eval` versions, which storeDir forbids) publish into the store instead. |
+| Store outside `--outdir`, reused by skip-if-stored logic (P15) | CRAMs, demux QC, registry and provenance are published into the permanent store (`--store`, never overwritten) and the workflow skips work whose stored output exists; only reports go to `--outdir`. The FASTQ checkpoint (`--fastq_checkpoint`) is a second published location, hardlinked on the `work/` filesystem. |
 | Step-named local modules (M11) | `demux`, `demux_qc`, `align_markdup`, `markdup_import`, `provenance`, `registry` name pipeline steps; renaming a module directory renames its hazel conda prefix (rebuild). Each meta.yml names the tools it wraps. |
-| One versions.yml per storeDir module (M3) | storeDir does not allow `eval` outputs; the yml lists every tool of the pipe. DEMUX (not storeDir'd) emits one topic tuple per tool. |
+| One versions.yml per store module (M3) | ALIGN_MARKDUP, MARKDUP_IMPORT, DEMUX_QC, PROVENANCE and REGISTRY write a versions.yml that is published next to their output, so a skipped (already stored) output still has its versions, e.g. PROVENANCE of a stored CRAM; the yml lists every tool of the pipe. DEMUX emits one topic tuple per tool. |
 | Per-source read structures as two params (P17) | chosen by `barcode_layout`; both values are recorded in every provenance record. |
+| Stage-2 samplesheet written by the pipeline | `<fastq_checkpoint>/<lib>/samplesheet.csv` is an output of stage 1 and the only input of `--entry read_alignment`, validated by `assets/schema_checkpoint.json` (not a user-supplied `--input`). |
 | `--subsample` / `--max_libraries` typed integer-or-string (P14) | Nextflow 26 hands CLI values over as strings; the schema accepts digit strings and the code converts. |
 | CRAM output only, no `--bam` (P12) | the genotype workflow reads CRAM. |
