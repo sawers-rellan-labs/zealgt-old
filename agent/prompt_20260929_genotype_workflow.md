@@ -1,6 +1,22 @@
-You are drafting the zealgt **genotype workflow** (`workflows/genotype.nf`, today a 13-line stub) in /Users/fvrodriguez/repos/zealgt,
-and taking it up the testing ladder to Gate 1 on hazel. Another session owns the CRAM workflow and is running its Gate 2 on hazel
-right now; the CRAM store is the only contract between the two workflows (docs/PLAN_pipeline.md §3).
+You are drafting the zealgt **genotype workflow** (`workflows/genotype.nf`, today a 13-line stub) on branch `genotype` in
+/Users/fvrodriguez/repos/zealgt-genotype, and taking it up the testing ladder to Gate 1 on hazel. Another session owns the CRAM workflow
+on `main` (/Users/fvrodriguez/repos/zealgt) and is running its Gate 2 on hazel right now; the CRAM store is the only contract between
+the two workflows (docs/PLAN_pipeline.md §3).
+
+## Where you work: branch `genotype`, its own checkouts (set up 2026-09-29)
+- Laptop: the git worktree **/Users/fvrodriguez/repos/zealgt-genotype** (branch `genotype`, tracking origin/genotype). All your git
+  commands use `git -C /Users/fvrodriguez/repos/zealgt-genotype …`. Never touch /Users/fvrodriguez/repos/zealgt (the CRAM session's
+  `main` checkout) and never `git checkout` another branch in either directory. Wherever this prompt says /Users/fvrodriguez/repos/zealgt
+  for your own files (agent/ scripts, commits, pushes), use the worktree path.
+- hazel: the clone **/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype** (branch `genotype`, core.fileMode false). Pull there:
+  `ssh hazel 'git -C /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype pull --ff-only'`. Never use ZEAL/zealgt (CRAM Gate 2 runs from
+  it). Launch and work dirs under /share/maize/frodrig4/nf_work/genotype_<run>/ so nothing collides with CRAM runs.
+- Push: `git -C /Users/fvrodriguez/repos/zealgt-genotype push origin genotype`. Bring CRAM fixes in regularly:
+  `git -C /Users/fvrodriguez/repos/zealgt-genotype fetch origin`, then `git -C /Users/fvrodriguez/repos/zealgt-genotype merge origin/main`;
+  resolve shared-file conflicts minimally; never hand-merge conf/env_prefixes.config — regenerate it with
+  `bash bin/build_envs.sh --write-config` and commit.
+- Merge back: after Gate 1 passes and CodeRabbit is clean on the branch, open a PR `genotype` → `main` (`gh pr create`) and stop; the
+  user approves and merges. Env prefixes are content-hashed, so both checkouts share /share/maize/frodrig4/conda/zealgt/ safely.
 
 ## How to work: you are a coordinator, subagents do the work
 Your own context has to last the whole task. Do not read large files, run builds, write modules or debug on hazel yourself.
