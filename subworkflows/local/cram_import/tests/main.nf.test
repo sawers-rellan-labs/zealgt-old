@@ -1,0 +1,57 @@
+nextflow_workflow {
+
+    name "Test Subworkflow CRAM_IMPORT"
+    script "../main.nf"
+    workflow "CRAM_IMPORT"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "cram_import"
+    tag "markdup_import"
+    tag "cram_qc_provenance"
+    tag "samtools/stats"
+    tag "picard/collectwgsmetrics"
+    tag "provenance"
+    tag "stub"
+
+    test("OLD_1 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            workflow {
+                """
+                def ref = "${projectDir}/tests/fixtures/ref/tiny.fa"
+                input[0] = channel.of([
+                    [ id:'OLD_1', sample:'OLD_1', library:'LIBX', qc_group:'testset', single_end:false ],
+                    file(ref, checkIfExists: true), file("\${ref}.fai", checkIfExists: true),
+                    '@RG\\\\tID:OLD_1\\\\tSM:OLD_1\\\\tLB:LIBX\\\\tPL:ILLUMINA'
+                ])
+                input[1] = channel.empty()
+                input[2] = channel.value([
+                    [ id:'tiny' ], file(ref, checkIfExists: true), file("\${ref}.fai", checkIfExists: true),
+                    [ file("\${ref}.l2b", checkIfExists: true), file("\${ref}.mbw", checkIfExists: true) ]
+                ])
+                input[3] = channel.of([ 'OLD_1', [ sample:'OLD_1' ] ])
+                input[4] = channel.of([ 'OLD_1', [] ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/cram_import/OLD_1.cram").exists() },
+                { assert snapshot(
+                    workflow.out.cram.collect { meta, cram, crai -> [meta.id, file(cram).name, file(crai).name] },
+                    workflow.out.qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
+                    workflow.out.provenance.collect { meta, json -> [meta.id, file(json).name] },
+                    workflow.out.versions.collect { v -> v.toString() }.sort()
+                ).match() }
+            )
+        }
+    }
+}

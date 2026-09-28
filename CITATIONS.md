@@ -10,9 +10,29 @@
 
 ## Pipeline tools
 
+- [cutadapt](https://doi.org/10.14806/ej.17.1.200) (DEMUX)
+
+> Martin M. Cutadapt removes adapter sequences from high-throughput sequencing reads. EMBnet.journal. 2011;17(1):10-12. doi: 10.14806/ej.17.1.200.
+
+- [Trimmomatic](https://pubmed.ncbi.nlm.nih.gov/24695404/)
+
+> Bolger AM, Lohse M, Usadel B. Trimmomatic: a flexible trimmer for Illumina sequence data. Bioinformatics. 2014 Aug 1;30(15):2114-20. doi: 10.1093/bioinformatics/btu170. PubMed PMID: 24695404.
+
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
 > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
+
+- [minibwa](https://github.com/lh3/minibwa) (ALIGN_MARKDUP)
+
+> Li H. minibwa (v0.7). Software, https://github.com/lh3/minibwa.
+
+- [SAMtools](https://pubmed.ncbi.nlm.nih.gov/33590861/) (ALIGN_MARKDUP, MARKDUP_IMPORT, SAMTOOLS_STATS)
+
+> Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, Whitwham A, Keane T, McCarthy SA, Davies RM, Li H. Twelve years of SAMtools and BCFtools. GigaScience. 2021 Feb 16;10(2):giab008. doi: 10.1093/gigascience/giab008. PubMed PMID: 33590861.
+
+- [Picard](https://broadinstitute.github.io/picard/) (CollectWgsMetrics)
+
+> Broad Institute. Picard Toolkit. 2019. GitHub repository: https://broadinstitute.github.io/picard/.
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 

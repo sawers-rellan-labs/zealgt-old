@@ -3,33 +3,42 @@
 # zealgt local subworkflow; see the header comment of main.nf and docs/PLAN_pipeline.md §3
 # Versions: the modules publish their versions to the `versions` topic (collated in workflows/cram.nf);
 # `versions` here re-emits the eval tuples [ process, tool, version ] of the nf-core-style modules.
-name: read_trimming
-description: TRIMMOMATIC (ILLUMINACLIP on the staged adapter FASTA) then FASTQC of the trimmed pairs
+name: cram_qc_provenance
+description: SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS for CRAMs without stored QC, and the PROVENANCE record of every CRAM
 keywords:
   - zealgt
   - cram workflow
-  - read_trimming
+  - cram_qc_provenance
 components:
-  - trimmomatic
-  - fastqc
+  - samtools/stats
+  - picard/collectwgsmetrics
+  - provenance
 input:
-  - ch_reads:
+  - ch_cram:
       type: file
       description: |
-        channel: [ val(meta), [ R1, R2 ] ]
-  - ch_adapters:
+        channel: [ val(meta), cram, crai, [ versions.yml ] ]
+  - ch_ref:
       type: file
       description: |
-        channel: value adapter FASTA
+        channel: value [ val(meta2), fasta, fai, [ index ] ]
+  - ch_records:
+      type: map
+      description: |
+        channel: [ sample_id, record map ]
+  - ch_stored_qc:
+      type: file
+      description: |
+        channel: [ sample_id, [ QC files already in the store ] ]
 output:
-  - reads:
-      type: file
-      description: |
-        channel: [ val(meta), [ paired.trim_1, paired.trim_2 ] ]
   - qc:
       type: file
       description: |
         channel: [ val(meta), QC file ]
+  - provenance:
+      type: file
+      description: |
+        channel: [ val(meta), json ]
   - versions:
       type: list
       description: |

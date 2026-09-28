@@ -1,31 +1,57 @@
 ---
-# zealgt local module (nf-core module conventions, simplified meta)
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. Wraps a python module template.
 name: provenance
-description: "Per-sample provenance record of a stored CRAM: settings, origin, tool versions, CRAM size"
+description: One JSON provenance record per stored CRAM (settings built by the pipeline + versions.yml of the steps + CRAM size); storeDir next to the CRAM.
 keywords:
   - provenance
+  - cram
 tools:
   - python:
-      description: python (pinned in environment.yml)
+      description: Python standard library script (module template, templates/write_provenance.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: ""
 input:
-  - meta:
-      type: map
-      description: "Sample meta"
-  - cram:
-      type: file
-      description: "the stored CRAM"
-  - versions:
-      type: file
-      description: "versions.yml files of the steps that made it"
-  - record:
-      type: string
-      description: "single-line JSON built by the workflow"
+  - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+    - cram:
+        type: file
+        description: The stored CRAM (its size is recorded)
+        pattern: "*.cram"
+        ontologies: []
+    - versions:
+        type: file
+        description: versions.yml files of the steps that made the CRAM
+        pattern: "*.versions.yml"
+        ontologies: []
+    - record:
+        type: string
+        description: Single-line JSON record of the settings (zgProvenanceRecord)
 output:
-  - json:
-      description: "<sample>.provenance.json"
-  - versions:
-      description: "<sample>.provenance.versions.yml"
+  json:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+      - "*.provenance.json":
+          type: file
+          description: "Provenance record (schema zealgt.provenance/1)"
+          pattern: "*.provenance.json"
+          ontologies: []
+  versions:
+    - "*.provenance.versions.yml":
+        type: file
+        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        pattern: "*.provenance.versions.yml"
+        ontologies: []
 authors:
-  - "@zealgt"
+  - "@faustovrz"
 maintainers:
-  - "@zealgt"
+  - "@faustovrz"

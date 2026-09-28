@@ -1,0 +1,93 @@
+{
+    "OLD_1 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "OLD_1",
+                            "sample": "OLD_1",
+                            "library": "LIBX",
+                            "qc_group": "testset",
+                            "single_end": false
+                        },
+                        "OLD_1.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "OLD_1.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "OLD_1",
+                            "sample": "OLD_1",
+                            "library": "LIBX",
+                            "qc_group": "testset",
+                            "single_end": false
+                        },
+                        "OLD_1.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "OLD_1",
+                            "sample": "OLD_1",
+                            "library": "LIBX",
+                            "qc_group": "testset",
+                            "single_end": false
+                        },
+                        "OLD_1.read_group.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    "OLD_1.markdup_import.versions.yml:md5,b0f676a63b17b24e2375921dbc18efc4"
+                ],
+                "cram": [
+                    [
+                        {
+                            "id": "OLD_1",
+                            "sample": "OLD_1",
+                            "library": "LIBX",
+                            "qc_group": "testset",
+                            "single_end": false
+                        },
+                        "OLD_1.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "OLD_1.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "markdup_stats": [
+                    [
+                        {
+                            "id": "OLD_1",
+                            "sample": "OLD_1",
+                            "library": "LIBX",
+                            "qc_group": "testset",
+                            "single_end": false
+                        },
+                        "OLD_1.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "read_group": [
+                    [
+                        {
+                            "id": "OLD_1",
+                            "sample": "OLD_1",
+                            "library": "LIBX",
+                            "qc_group": "testset",
+                            "single_end": false
+                        },
+                        "OLD_1.read_group.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "OLD_1.markdup_import.versions.yml:md5,b0f676a63b17b24e2375921dbc18efc4"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T01:36:12.048414",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

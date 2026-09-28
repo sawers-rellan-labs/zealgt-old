@@ -6,6 +6,20 @@ per-line **ancestry** (RTIGER) and **imputed genotypes** at the union of informa
 Successor of the exploratory work in `zealbc1` (chr10 pilots, 2026-09-10 → 24). Code and data are separate: this repo is code and docs;
 data and results live on the BZea partition on hazel.
 
+## Quick start
+A Nextflow pipeline built on the nf-core template (deliberate deviations in `docs/usage.md`). On hazel, through the head job
+(never the login node; `.claude/skills/hazel-debug-loop`):
+
+```bash
+# raw library -> CRAMs + QC + provenance + registry entry, into the store
+sbatch scripts/submit_head_job.sbatch <run_id> -profile hazel,short --entry read_demultiplexing --libraries <lib> --outdir <results>
+# existing CRAMs (meta/dev_import.csv) -> duplicate marking + read groups
+sbatch scripts/submit_head_job.sbatch <run_id> -profile hazel,short --entry markdup_import --import_samples <ids> --outdir <results>
+```
+
+Locally: `nextflow run . -profile test,stub -stub --outdir <dir>` (wiring), `bash scripts/run_checks.sh` (lint + nf-test, before
+every push). Usage and outputs: `docs/usage.md`, `docs/output.md`.
+
 ## Documents
 | file | what |
 |---|---|

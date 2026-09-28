@@ -1,42 +1,144 @@
 ---
-# zealgt local module (nf-core module conventions, simplified meta)
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module: a pipeline step named after its step, not its tool (the name keys the hazel conda prefix, so it is kept)
 name: demux
-description: "Exact inline-barcode demultiplexing of one library with cutadapt (-e 0 --no-indels), barcode and skip bases removed by one anchored 5' pattern per read"
+description: Exact inline-barcode demultiplexing of one library with cutadapt (-e 0 --no-indels); the barcode and the skip bases of the read structure are removed by one anchored 5' pattern per read. Wraps cutadapt; streams lanes or batch-1 tar members in place (pigz, tar, coreutils).
 keywords:
   - demultiplexing
   - inline barcode
   - cutadapt
+  - read structure
 tools:
   - cutadapt:
-      description: cutadapt (pinned in environment.yml)
+      description: Cutadapt finds and removes adapter sequences, primers and other unwanted sequence; here, anchored inline barcodes
+      homepage: https://cutadapt.readthedocs.io/
+      documentation: https://cutadapt.readthedocs.io/en/stable/guide.html
+      doi: 10.14806/ej.17.1.200
+      licence: ["MIT"]
+      identifier: biotools:cutadapt
+      args_id: "$args"
 input:
-  - meta:
-      type: map
-      description: "Library meta: id, source, layout, read_structure_r1/r2 (fgbio notation), tar_members_r1/r2"
-  - r1:
-      type: file
-      description: "R1 lane FASTQs (or one tar for batch 1)"
-  - r2:
-      type: file
-      description: "R2 lane FASTQs (or one tar)"
-  - barcodes:
-      type: list
-      description: "[sample_id, barcode_r1, barcode_r2] per sample"
+  - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+    - r1:
+        type: file
+        description: R1 lane FASTQs of the library (or one tar holding the R1 members, batch 1)
+        pattern: "*.{fq.gz,fastq.gz,tar}"
+        ontologies: []
+    - r2:
+        type: file
+        description: R2 lane FASTQs (or one tar holding the R2 members)
+        pattern: "*.{fq.gz,fastq.gz,tar}"
+        ontologies: []
+    - barcodes:
+        type: list
+        description: "[ sample_id, barcode_r1, barcode_r2 ] per sample (barcode_r2 '' for R1-only layouts)"
+    - read_structures:
+        type: list
+        description: "[ R1, R2 ] read structures in fgbio notation, e.g. [ '6B2S+T', '6B2S+T' ] or [ '8B12S+T', '8S+T' ]"
+    - tar_members:
+        type: list
+        description: "[ [ R1 tar members ], [ R2 tar members ] ]; [ [], [] ] for lane FASTQs"
   - subsample:
       type: integer
-      description: "read pairs to take (0 = all)"
+      description: Read pairs to take from the start of the library (0 = all)
 output:
-  - reads:
-      description: "demux/<sample>_R{1,2}.fastq.gz"
-  - json:
-      description: "<library>.cutadapt.json"
-  - log:
-      description: "<library>.cutadapt.log"
-  - versions:
-      description: "versions.yml"
-  - versions_meta:
-      description: "[meta, versions.yml]"
+  reads:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "demux/*_R{1,2}.fastq.gz":
+          type: file
+          description: "Demultiplexed reads, one pair per sample (empty files for a sample without reads)"
+          pattern: "*_R{1,2}.fastq.gz"
+          ontologies: []
+  json:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "*.cutadapt.json":
+          type: file
+          description: "cutadapt JSON report (per-barcode matches)"
+          pattern: "*.cutadapt.json"
+          ontologies: []
+  log:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "*.cutadapt.log":
+          type: file
+          description: "cutadapt text report"
+          pattern: "*.cutadapt.log"
+          ontologies: []
+  versions_cutadapt:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - cutadapt:
+          type: string
+          description: Name of the tool
+      - cutadapt --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+  versions_pigz:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - pigz:
+          type: string
+          description: Name of the tool
+      - pigz --version 2>&1 | sed 's/pigz //':
+          type: eval
+          description: The expression to obtain the version of the tool
+  versions_tar:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - tar:
+          type: string
+          description: Name of the tool
+      - tar --version | head -1 | grep -oE "[0-9]+([.][0-9]+)+" | head -1:
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - cutadapt:
+          type: string
+          description: Name of the tool
+      - cutadapt --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - pigz:
+          type: string
+          description: Name of the tool
+      - pigz --version 2>&1 | sed 's/pigz //':
+          type: eval
+          description: The expression to obtain the version of the tool
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - tar:
+          type: string
+          description: Name of the tool
+      - tar --version | head -1 | grep -oE "[0-9]+([.][0-9]+)+" | head -1:
+          type: eval
+          description: The expression to obtain the version of the tool
 authors:
-  - "@zealgt"
+  - "@faustovrz"
 maintainers:
-  - "@zealgt"
+  - "@faustovrz"

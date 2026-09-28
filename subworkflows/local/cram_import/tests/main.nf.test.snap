@@ -1,0 +1,33 @@
+{
+    "OLD_1 - stub": {
+        "content": [
+            [
+                [
+                    "OLD_1",
+                    "OLD_1.cram",
+                    "OLD_1.cram.crai"
+                ]
+            ],
+            [
+                "OLD_1 OLD_1.CollectWgsMetrics.coverage_metrics",
+                "OLD_1 OLD_1.markdup.stats",
+                "OLD_1 OLD_1.stats"
+            ],
+            [
+                [
+                    "OLD_1",
+                    "OLD_1.provenance.json"
+                ]
+            ],
+            [
+                "[CRAM_IMPORT:CRAM_QC_PROVENANCE:PICARD_COLLECTWGSMETRICS, picard, 3.5.0]",
+                "[CRAM_IMPORT:CRAM_QC_PROVENANCE:SAMTOOLS_STATS, samtools, 1.24]"
+            ]
+        ],
+        "timestamp": "2026-09-28T01:36:34.601424",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

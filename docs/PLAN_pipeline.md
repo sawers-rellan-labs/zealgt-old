@@ -95,7 +95,7 @@ text after variable substitution, its inputs, and its environment (conda / conta
 6. Tools: minibwa, samtools, bcftools, CRISP, nilHMM, PHG — the ones in use. **Reproducible environments** (user, 2026-09-27): every
    module carries its own pinned `environment.yml` in the repo (nf-core convention; a module whose script pipes tools together pins
    those few tools, e.g. minibwa + samtools); tools that are not conda packages (CRISP, nilHMM) get a pinned-commit
-   `build.sh` in the same env; `bin/build_envs.sh` builds them all once, as an xfer job (compute nodes are offline), into
+   `build.sh` in the same env; `scripts/build_envs.sh` builds them all once, as an xfer job (compute nodes are offline), into
    `/share/maize/frodrig4/conda/zealgt/` (fast GPFS; not persistent, rebuilt from the repo by one command; never on `/rsstu`, user
    2026-09-28), and never at task time. The zealbc1-era envs are replaced; their versions are kept in `envs/legacy_zealbc1/`.
 
@@ -135,8 +135,8 @@ sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comp
 | # | workflow | entry | modules | per | main output (store) |
 |---|---|---|---|---|---|
 | 1 | CRAM | `read_demultiplexing` | FETCH_LIBRARY (source adapter) → DEMUX (cutadapt exact inline) → DEMUX_QC | library | per-sample FASTQ (`work/`, until the library's CRAMs are stored), `demux_qc/<library>.tsv` |
-| 1b | CRAM | `read_trimming` | TRIMMOMATIC (batch-1 parameters) → FASTQC | sample | trimmed FASTQ (`work/`, as above), FastQC report |
-| 2 | CRAM | `read_alignment` | ALIGN_MARKDUP, one process with a minibwa + samtools env: ALIGN (minibwa -x sr) → READ_GROUPS → `fixmate -m` → `sort` → **MARK_DUPLICATES** (`samtools markdup -d 2500`) → CRAM (no MAPQ filter) → FASTQC (trimmed reads) → SAMTOOLS_STATS + markdup stats → COLLECT_WGS_METRICS (Picard; λ = `MEAN_COVERAGE`, missing = 1 − `PCT_1X`, as the zealhmm missing-data model) → MULTIQC; no mosdepth (decided, user, 2026-09-27: nothing downstream reads it) | sample | `cram/<sample>.cram` + QC + provenance |
+| 1b | CRAM | (step of `read_demultiplexing`; subworkflow READ_TRIMMING — the FASTQ entry was removed 2026-09-28, its inputs no longer exist) | TRIMMOMATIC (batch-1 parameters) → FASTQC | sample | trimmed FASTQ (`work/`, as above), FastQC report |
+| 2 | CRAM | (step of `read_demultiplexing`; subworkflow READ_ALIGNMENT; existing CRAMs enter through `markdup_import`) | ALIGN_MARKDUP, one process with a minibwa + samtools env: ALIGN (minibwa -x sr) → READ_GROUPS → `fixmate -m` → `sort` → **MARK_DUPLICATES** (`samtools markdup -d 2500`) → CRAM (no MAPQ filter) → FASTQC (trimmed reads) → SAMTOOLS_STATS + markdup stats → COLLECT_WGS_METRICS (Picard; λ = `MEAN_COVERAGE`, missing = 1 − `PCT_1X`, as the zealhmm missing-data model) → MULTIQC; no mosdepth (decided, user, 2026-09-27: nothing downstream reads it) | sample | `cram/<sample>.cram` + QC + provenance |
 | 2b | genotype | `sample_quality_control` | MIN_COVERAGE (exclude < 0.05×, below) → QC_PANEL_COUNTS (`mpileup -I` at a blind QC panel, one task per sample) → COVERAGE_QC → RELATEDNESS_QC → DONOR_CONTENT_QC | sample / cohort | `sample_qc.tsv`: pass/fail + reason per sample; discovery and every caller read it |
 | 3 | genotype | `variant_discovery` | WITNESS_POOL → CRISP (BC1 samples + witness only) → BED_CLIP (`bcftools view -T`, §4 #9) → WITNESS_VETO → B73_CONTROL_COUNTS (`mpileup -I`) → POOLED_LIKELIHOOD_TIERS | donor × chr | `step4/<donor>.sites.tsv.gz` |
 | 4 | genotype | `ancestry_inference` | LINE_ALLELE_COUNTS → RTIGER (own tier-A sites, rigidity 500, run as in zealbc1 — §4 #10). Needs only stage 3, not the union | donor × chr | ancestry segments per line |

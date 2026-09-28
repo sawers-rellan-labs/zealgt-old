@@ -1,0 +1,109 @@
+{
+    "LIBX - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.read_start.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.cutadapt.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "5": [
+                    "LIBX.demux_qc.versions.yml:md5,6be5c2277b7d9b00450bc02f3c829321"
+                ],
+                "json": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.cutadapt.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "read_start": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.read_start.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "tsv": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX"
+                        },
+                        "LIBX.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "LIBX.demux_qc.versions.yml:md5,6be5c2277b7d9b00450bc02f3c829321"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T01:36:08.658958",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

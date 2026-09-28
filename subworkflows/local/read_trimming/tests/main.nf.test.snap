@@ -1,0 +1,29 @@
+{
+    "LX_1 - stub": {
+        "content": [
+            [
+                [
+                    "LX_1",
+                    [
+                        "LX_1.paired.trim_1.fastq.gz",
+                        "LX_1.paired.trim_2.fastq.gz"
+                    ]
+                ]
+            ],
+            [
+                "LX_1 LX_1.summary",
+                "LX_1 LX_1.zip",
+                "LX_1 LX_1_out.log"
+            ],
+            [
+                "[READ_TRIMMING:FASTQC, fastqc, 0.12.1]",
+                "[READ_TRIMMING:TRIMMOMATIC, trimmomatic, 0.39]"
+            ]
+        ],
+        "timestamp": "2026-09-28T01:36:45.679283",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

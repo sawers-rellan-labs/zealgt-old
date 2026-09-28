@@ -1,31 +1,48 @@
 ---
-# zealgt local subworkflow (nf-core conventions, simplified meta); see the header comment of main.nf and docs/PLAN_pipeline.md §3
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow; see the header comment of main.nf and docs/PLAN_pipeline.md §3
+# Versions: the modules publish their versions to the `versions` topic (collated in workflows/cram.nf);
+# `versions` here re-emits the eval tuples [ process, tool, version ] of the nf-core-style modules.
 name: read_demultiplexing
-description: "zealgt CRAM workflow stage read_demultiplexing (PLAN §3); inputs and outputs are listed in main.nf take:/emit: comments"
+description: One DEMUX task per library, then its demux QC in the store
 keywords:
   - zealgt
   - cram workflow
   - read_demultiplexing
 components:
   - demux
-  - demux/qc # modules/local/demux_qc
+  - demux/qc  # modules/local/demux_qc (lint maps _ to /)
 input:
   - ch_libraries:
-      description: "channel: [ val(meta), [ raw R1 ], [ raw R2 ], val(barcodes) ]  (meta.id = library)"
-  - subsample:
-      description: "integer: read pairs per library, 0 = all"
+      type: file
+      description: |
+        channel: [ val(meta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ]
+  - val_subsample:
+      type: integer
+      description: |
+        read pairs per library, 0 = all
 output:
   - reads:
-      description: "channel: [ val(library meta), [ <sample>_R{1,2}.fastq.gz ... ] ]"
+      type: file
+      description: |
+        channel: [ val(meta), [ <sample>_R{1,2}.fastq.gz ] ]
   - report:
-      description: "channel: [ val(library meta), cutadapt report ]"
-  - versions:
-      description: "channel: [ val(library meta), versions.yml ]"
+      type: file
+      description: |
+        channel: [ val(meta), cutadapt report ]
   - demux_qc:
-      description: "channel: [ val(library meta), <library>.tsv (store) ]"
+      type: file
+      description: |
+        channel: [ val(meta), <library>.tsv ]
   - summary:
-      description: "channel: [ val(library meta), <library>.summary.tsv (store) ]"
+      type: file
+      description: |
+        channel: [ val(meta), <library>.summary.tsv ]
+  - versions:
+      type: list
+      description: |
+        channel: [ process, tool, version ]
 authors:
-  - "@zealgt"
+  - "@faustovrz"
 maintainers:
-  - "@zealgt"
+  - "@faustovrz"

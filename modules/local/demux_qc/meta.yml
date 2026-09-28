@@ -1,46 +1,110 @@
 ---
-# zealgt local module (nf-core module conventions, simplified meta)
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). Wraps a python module template.
 name: demux_qc
-description: "Per-library demultiplexing QC in the store: per-sample pairs and assignment rate, read-start composition, TruSeq read-through share"
+description: Per-library demultiplexing QC from the cutadapt JSON and the demuxed reads (assigned pairs per sample, assignment rate, read-start base composition, TruSeq read-through share); storeDir <store>/demux_qc.
 keywords:
   - demultiplexing
   - qc
+  - read structure
 tools:
   - python:
-      description: python (pinned in environment.yml)
+      description: Python standard library script (module template, templates/summarize_demux.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
 input:
-  - meta:
-      type: map
-      description: "Library meta"
-  - json:
-      type: file
-      description: "cutadapt JSON report"
-  - report:
-      type: file
-      description: "cutadapt text report"
-  - reads:
-      type: file
-      description: "demuxed FASTQs"
-  - barcodes:
-      type: list
-      description: "[sample_id, barcode_r1, barcode_r2]"
+  - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+    - json:
+        type: file
+        description: cutadapt JSON report of the library
+        pattern: "*.cutadapt.json"
+        ontologies: []
+    - report:
+        type: file
+        description: cutadapt text report of the library
+        pattern: "*.cutadapt.log"
+        ontologies: []
+    - reads:
+        type: file
+        description: Demultiplexed reads <sample>_R{1,2}.fastq.gz
+        pattern: "*_R{1,2}.fastq.gz"
+        ontologies: []
+    - barcodes:
+        type: list
+        description: "[ sample_id, barcode_r1, barcode_r2 ] per sample"
   - subsample:
       type: integer
-      description: "read pairs taken (0 = all)"
+      description: Read pairs the library was subsampled to (0 = all), recorded in the tables
 output:
-  - tsv:
-      description: "<library>.tsv"
-  - summary:
-      description: "<library>.summary.tsv"
-  - read_start:
-      description: "<library>.read_start.tsv"
-  - json:
-      description: "<library>.cutadapt.json"
-  - log:
-      description: "<library>.cutadapt.log"
-  - versions:
-      description: "<library>.demux_qc.versions.yml"
+  tsv:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "*.tsv":
+          type: file
+          description: "Per-sample assigned pairs and share of input"
+          pattern: "*.tsv"
+          ontologies: []
+  summary:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "*.summary.tsv":
+          type: file
+          description: "Library summary: input, assigned, unassigned pairs, assignment rate"
+          pattern: "*.summary.tsv"
+          ontologies: []
+  read_start:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "*.read_start.tsv":
+          type: file
+          description: "Base composition of the first positions and adapter read-through share per sample and read"
+          pattern: "*.read_start.tsv"
+          ontologies: []
+  json:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "*.cutadapt.json":
+          type: file
+          description: "cutadapt JSON report, kept in the store"
+          pattern: "*.cutadapt.json"
+          ontologies: []
+  log:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing library information
+              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+      - "*.cutadapt.log":
+          type: file
+          description: "cutadapt text report, kept in the store"
+          pattern: "*.cutadapt.log"
+          ontologies: []
+  versions:
+    - "*.demux_qc.versions.yml":
+        type: file
+        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        pattern: "*.demux_qc.versions.yml"
+        ontologies: []
 authors:
-  - "@zealgt"
+  - "@faustovrz"
 maintainers:
-  - "@zealgt"
+  - "@faustovrz"

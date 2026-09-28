@@ -1,45 +1,109 @@
 ---
-# zealgt local module (nf-core module conventions, simplified meta)
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). Wraps samtools (+ gawk) in one pipe.
 name: markdup_import
-description: "Read groups + duplicate marking for existing CRAMs/BAMs (addreplacerg -> collate -> fixmate -m -> sort -> markdup -d 2500), no realignment"
+description: Duplicate marking + read groups for existing CRAMs/BAMs (no realignment); the input header RG is kept only if it is the single RG and its SM is the sample, otherwise the sample-sheet RG replaces it; storeDir <store>/cram_import.
 keywords:
   - duplicate marking
   - read groups
   - cram
+  - samtools
 tools:
   - samtools:
-      description: samtools (pinned in environment.yml)
+      description: SAMtools, utilities for SAM/BAM/CRAM alignments
+      homepage: http://www.htslib.org/
+      documentation: http://www.htslib.org/doc/samtools.html
+      doi: 10.1093/bioinformatics/btp352
+      licence: ["MIT"]
+      identifier: biotools:samtools
+      args_id: "$args (markdup), $args2 (fixmate), $args3 (sort)"
   - gawk:
-      description: gawk (pinned in environment.yml)
+      description: GNU awk, drops stale @RG header lines when the sample-sheet read group is used
+      homepage: https://www.gnu.org/software/gawk/
+      documentation: https://www.gnu.org/software/gawk/manual/
+      licence: ["GPL-3.0-or-later"]
+      identifier: ""
+      args_id: ""
 input:
-  - meta:
-      type: map
-      description: "Sample meta incl. read_group (sample-sheet fallback)"
-  - input:
-      type: file
-      description: "CRAM or BAM"
-  - index:
-      type: file
-      description: "crai / bai / csi"
-  - meta2:
-      type: map
-      description: "Reference meta"
-  - fasta:
-      type: file
-      description: "reference FASTA"
-  - fai:
-      type: file
-      description: "FASTA index"
+  - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+    - input:
+        type: file
+        description: CRAM or BAM to import
+        pattern: "*.{cram,bam}"
+        ontologies: []
+    - index:
+        type: file
+        description: Its index
+        pattern: "*.{crai,bai,csi}"
+        ontologies: []
+    - read_group:
+        type: string
+        description: Escaped @RG line of the sample sheet, used when the input header does not carry the sample's single RG
+  - - meta2:
+            type: map
+            description: |
+              Groovy Map containing reference information
+              e.g. [ id:'B73' ]
+    - fasta:
+        type: file
+        description: Reference FASTA
+        pattern: "*.{fa,fasta}"
+        ontologies: []
+    - fai:
+        type: file
+        description: FASTA index
+        pattern: "*.fai"
+        ontologies: []
 output:
-  - cram:
-      description: "[meta, <sample>.cram, <sample>.cram.crai]"
-  - markdup_stats:
-      description: "<sample>.markdup.stats"
-  - read_group:
-      description: "<sample>.read_group.txt (which RG was applied and why)"
-  - versions:
-      description: "<sample>.markdup_import.versions.yml"
+  cram:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+      - "*.cram":
+          type: file
+          description: "Duplicate-marked CRAM with one read group"
+          pattern: "*.cram"
+          ontologies: []
+      - "*.cram.crai":
+          type: file
+          description: "CRAM index"
+          pattern: "*.cram.crai"
+          ontologies: []
+  markdup_stats:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+      - "*.markdup.stats":
+          type: file
+          description: "samtools markdup statistics"
+          pattern: "*.markdup.stats"
+          ontologies: []
+  read_group:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+      - "*.read_group.txt":
+          type: file
+          description: "Which read group was applied and why (header or sample sheet)"
+          pattern: "*.read_group.txt"
+          ontologies: []
+  versions:
+    - "*.markdup_import.versions.yml":
+        type: file
+        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        pattern: "*.markdup_import.versions.yml"
+        ontologies: []
 authors:
-  - "@zealgt"
+  - "@faustovrz"
 maintainers:
-  - "@zealgt"
+  - "@faustovrz"

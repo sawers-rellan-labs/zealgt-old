@@ -32,6 +32,7 @@ nextflow_process {
         then {
             assertAll(
                 { assert process.success },
+                { assert snapshot(process.out).match() },
                 { assert file(process.out.json[0][1]).name == "LX_1.provenance.json" },
                 { assert file(process.out.json[0][1]).text.contains("LX_1") }
             )

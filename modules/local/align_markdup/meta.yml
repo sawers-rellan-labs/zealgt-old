@@ -1,43 +1,99 @@
 ---
-# zealgt local module (nf-core module conventions, simplified meta)
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). Wraps minibwa + samtools in one pipe.
 name: align_markdup
-description: "minibwa -x sr with read group -> samtools fixmate -m -> sort -> markdup -d 2500 -> CRAM + crai (duplicates flagged, no MAPQ filter)"
+description: Trimmed read pair -> analysis-ready CRAM; minibwa map with the read group on every record, samtools fixmate -> sort -> markdup (duplicates flagged, not removed) -> CRAM + .crai; storeDir <store>/cram.
 keywords:
   - alignment
   - duplicate marking
   - cram
+  - minibwa
+  - samtools
 tools:
   - minibwa:
-      description: minibwa (pinned in environment.yml)
+      description: minibwa, a short-read aligner by Heng Li (map -x sr)
+      homepage: https://github.com/lh3/minibwa
+      documentation: https://github.com/lh3/minibwa
+      licence: ["MIT"]
+      identifier: ""
+      args_id: "$args"
   - samtools:
-      description: samtools (pinned in environment.yml)
+      description: SAMtools, utilities for SAM/BAM/CRAM alignments
+      homepage: http://www.htslib.org/
+      documentation: http://www.htslib.org/doc/samtools.html
+      doi: 10.1093/bioinformatics/btp352
+      licence: ["MIT"]
+      identifier: biotools:samtools
+      args_id: "$args2 (markdup), $args3 (fixmate), $args4 (sort)"
 input:
-  - meta:
-      type: map
-      description: "Sample meta incl. read_group (escaped @RG line)"
-  - reads:
-      type: file
-      description: "trimmed R1, R2"
-  - meta2:
-      type: map
-      description: "Reference meta"
-  - fasta:
-      type: file
-      description: "B73 v5 FASTA"
-  - fai:
-      type: file
-      description: "FASTA index"
-  - index:
-      type: file
-      description: "minibwa index (.l2b, .mbw)"
+  - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+    - reads:
+        type: file
+        description: Trimmed read pair [ R1, R2 ]
+        pattern: "*.fastq.gz"
+        ontologies: []
+    - read_group:
+        type: string
+        description: "Escaped @RG line for minibwa -R, e.g. '@RG\\tID:LX_1\\tSM:LX_1\\tLB:LIBX\\tPL:ILLUMINA'"
+  - - meta2:
+            type: map
+            description: |
+              Groovy Map containing reference information
+              e.g. [ id:'B73' ]
+    - fasta:
+        type: file
+        description: Reference FASTA
+        pattern: "*.{fa,fasta}"
+        ontologies: []
+    - fai:
+        type: file
+        description: FASTA index
+        pattern: "*.fai"
+        ontologies: []
+    - index:
+        type: file
+        description: minibwa index files next to the FASTA
+        pattern: "*.{l2b,mbw}"
+        ontologies: []
 output:
-  - cram:
-      description: "[meta, <sample>.cram, <sample>.cram.crai]"
-  - markdup_stats:
-      description: "<sample>.markdup.stats"
-  - versions:
-      description: "<sample>.align_markdup.versions.yml"
+  cram:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+      - "*.cram":
+          type: file
+          description: "Duplicate-marked CRAM"
+          pattern: "*.cram"
+          ontologies: []
+      - "*.cram.crai":
+          type: file
+          description: "CRAM index"
+          pattern: "*.cram.crai"
+          ontologies: []
+  markdup_stats:
+    - - meta:
+            type: map
+            description: |
+              Groovy Map containing sample information (no custom keys are read by the module)
+              e.g. [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ]
+      - "*.markdup.stats":
+          type: file
+          description: "samtools markdup statistics"
+          pattern: "*.markdup.stats"
+          ontologies: []
+  versions:
+    - "*.align_markdup.versions.yml":
+        type: file
+        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        pattern: "*.align_markdup.versions.yml"
+        ontologies: []
 authors:
-  - "@zealgt"
+  - "@faustovrz"
 maintainers:
-  - "@zealgt"
+  - "@faustovrz"

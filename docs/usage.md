@@ -1,199 +1,98 @@
 # sawers-rellan-labs/zealgt: Usage
 
-> _Documentation of pipeline parameters is generated automatically from the pipeline schema and can no longer be found in markdown files._
+> _Every parameter is documented in `nextflow_schema.json` (`nextflow run . --help --show_hidden`). This page explains how the
+> pieces fit together._
 
 ## Introduction
 
-<!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
+zealgt has two workflows, chosen by `--workflow`, that meet only at the **store** (docs/PLAN_pipeline.md §3):
 
-## Samplesheet input
+- `--workflow cram` (default): raw sequencing libraries -> analysis-ready CRAMs + QC + provenance + the demux registry.
+- `--workflow genotype`: CRAM store -> ancestry and imputed genotypes (skeleton; not implemented yet).
 
-You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row as shown in the examples below.
+The CRAM workflow has two entries (`--entry`):
 
-```bash
---input '[path to samplesheet file]'
-```
+| entry | input | steps | store output |
+|---|---|---|---|
+| `read_demultiplexing` (default) | `--libraries <lib>` rows of `--input` (meta/samples.csv) | DEMUX (cutadapt, exact inline barcodes) -> DEMUX_QC -> READ_TRIMMING (Trimmomatic, FastQC) -> READ_ALIGNMENT (minibwa, samtools markdup -> CRAM) -> SAMTOOLS_STATS + Picard CollectWgsMetrics -> PROVENANCE -> REGISTRY | `demux_qc/`, `cram/`, `registry/` |
+| `markdup_import` | `--import_sheet` (meta/dev_import.csv) | MARKDUP_IMPORT (read groups + samtools markdup, no realignment) -> SAMTOOLS_STATS + Picard -> PROVENANCE | `cram_import/` |
 
-### Multiple runs of the same sample
+Trimming and alignment are internal steps of `read_demultiplexing`; there is no FASTQ entry (the pre-demultiplexed FASTQs it
+would read no longer exist). Both entries end at the CRAM stop point and write one MultiQC report per library (per import set).
 
-The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once e.g. to increase sequencing depth. The pipeline will concatenate the raw reads before performing any downstream analysis. Below is an example for the same sample sequenced across 3 lanes:
+## Sample sheets
 
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L003_R1_001.fastq.gz,AEG588A1_S1_L003_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
-```
+Both sheets are validated and parsed by nf-schema (`samplesheetToList`); the pipeline does not re-check what the schemas say.
 
-### Full samplesheet
+### `--input`: meta/samples.csv (assets/schema_input.json)
 
-The pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
+The single sample sheet of the project, one row per sequenced well, built by `python3 meta/build_samples.py` from
+`meta/sources/` (provenance in `meta/PROVENANCE.md`). It is validated at parameter validation on every run.
 
-A final samplesheet file consisting of both single- and paired-end data may look something like the one below. This is for 6 samples, where `TREATMENT_REP3` has been sequenced twice.
+| column | rule |
+|---|---|
+| `sample_id` | `[A-Za-z0-9_.-]+`, unique in the sheet |
+| `source` | `bc1`, `bc2s3_batch1`, `bc2s3_batch2` |
+| `library` | BC1 pool, batch-2 row or batch-1 plate; what `--libraries` names |
+| `raw_location` | absolute directory of the raw library (repo-relative only under `tests/fixtures/`) |
+| `raw_r1`, `raw_r2` | batch 1 only: `<tar>:<member>;...` inside `raw_location`, one tar per read; empty for lane FASTQs (`--raw_r1_glob`, `--raw_r2_glob`) |
+| `barcode_r1`, `barcode_r2` | inline barcodes (`[ACGT]+`; `barcode_r2` empty for R1-only layouts) |
+| `barcode_layout` | `symmetric` (BC1, batch 2: `--read_structure_symmetric`) or `r1_only` (batch 1: `--read_structure_r1_only`) |
+| `rg_lb`, `rg_pl` | read-group LB / PL (default the library, ILLUMINA) |
 
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP2,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz
-CONTROL_REP3,AEG588A3_S3_L002_R1_001.fastq.gz,AEG588A3_S3_L002_R2_001.fastq.gz
-TREATMENT_REP1,AEG588A4_S4_L003_R1_001.fastq.gz,
-TREATMENT_REP2,AEG588A5_S5_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
-```
+All samples of one library must agree on `source`, `barcode_layout`, `raw_location`, `raw_r1` and `raw_r2` (checked by
+build_samples.py and again when the library is read).
 
-| Column    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
-| `fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
+### `--import_sheet`: meta/dev_import.csv (assets/schema_import.json)
 
-An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
+Existing CRAMs / BAMs made by zealbc1 / nilhmm (no duplicate marking, no read groups). Columns: `sample_id` (unique),
+`source`, `role`, `library`, `donor`, `import_set`, `path` + `index` (must exist), `size_bytes`, `made_by`, `dup_marked`,
+`read_groups` (ignored: the read group is decided from the input header), `include` (`TRUE`/`FALSE`), `note`.
+`--import_samples a,b` and `--import_sets x,y` restrict the rows. This sheet has no `schema` key in `nextflow_schema.json` on
+purpose: parameter validation would otherwise stat every CRAM of the sheet on every run of every entry.
 
-## Running the pipeline
+## Running on hazel
 
-The typical command for running the pipeline is as follows:
-
-```bash
-nextflow run sawers-rellan-labs/zealgt --input ./samplesheet.csv --outdir ./results  -profile docker
-```
-
-This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
-
-Note that the pipeline will create the following files in your working directory:
+Everything runs through the head job `scripts/submit_head_job.sbatch` (never the login node; hazel-debug-loop skill), which
+takes a run id (scratch directory `/share/maize/frodrig4/nf_work/<run_id>`) and the `nextflow run` arguments:
 
 ```bash
-work                # Directory containing the nextflow working files
-<OUTDIR>            # Finished results in specified location (defined with --outdir)
-.nextflow_log       # Log file from Nextflow
-# Other nextflow hidden files, eg. history of pipeline runs and old logs.
+sbatch /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch <run_id> -profile hazel,short \
+    --workflow cram --entry read_demultiplexing --libraries 1A --outdir /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/<run_id>
 ```
 
-If you wish to repeatedly use the same parameters for multiple runs, rather than specifying each flag in the command, you can specify these in a params file.
+Profiles: `hazel,stub` (Gate 0, `-stub`), `hazel,short` (gates, 1 h cap), `hazel,normal` (Gate 2 and later; heavy tasks on
+compute/normal), `hazel,local` (one allocation, explicit resources). The conda prefixes are prebuilt by
+`scripts/build_envs.sbatch` (an xfer job) and listed in `conf/env_prefixes.config`; no env is ever built at task time.
 
-Pipeline settings can be provided in a `yaml` or `json` file via `-params-file <file>`.
+### Store rules
 
-> [!WARNING]
-> Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/running/run-pipelines#configuring-pipelines), other infrastructural tweaks (such as output directories), or module arguments (args).
+- `--store` (default `ZEAL/store`) is the permanent storeDir root. A stored output is never recomputed, whatever changed.
+- `--subsample N` (Gate 1) needs a store directory named `subsample_<N>`, e.g. `--store ZEAL/store/subsample_1000000`, so a
+  subset never lands where the real CRAMs go. A store named `subsample_*` without `--subsample` is refused too.
+- Stub runs need a store inside a directory named `store_stub*` and outside `ZEAL/store`; `-profile stub` sets
+  `<outdir>/store_stub`.
+- A library in the registry (`assets/registry_seed.csv` or `<store>/registry/<lib>.registry.tsv`) is refused unless named with
+  `--force_demux <lib>`; at most `--max_libraries` (default 1) libraries per run.
+- Samples whose CRAM is already in `<store>/cram` are not trimmed or aligned again; their missing QC and provenance are made.
 
-The above pipeline run specified with a params file in yaml format:
+## Testing
 
-```bash
-nextflow run sawers-rellan-labs/zealgt -profile docker -params-file params.yaml
-```
+`-profile test` runs `read_demultiplexing` on the fixture library LIBX (tests/fixtures: 3 samples, 940 read pairs, a tiny
+reference with its minibwa index). `-profile test,stub -stub` checks the wiring without tools. nf-test runs the module,
+subworkflow and pipeline stub tests; `scripts/run_checks.sh` runs everything before a push (docs/CONTRIBUTING.md).
 
-with:
+## Deliberate deviations from the nf-core specifications
 
-```yaml title="params.yaml"
-input: './samplesheet.csv'
-outdir: './results/'
-<...>
-```
-
-You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
-
-### Updating the pipeline
-
-When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
-
-```bash
-nextflow pull sawers-rellan-labs/zealgt
-```
-
-### Reproducibility
-
-It is a good idea to specify the pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
-
-First, go to the [sawers-rellan-labs/zealgt releases page](https://github.com/sawers-rellan-labs/zealgt/releases) and find the latest pipeline version - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`. Of course, you can switch to another version by changing the number after the `-r` flag.
-
-This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future. For example, at the bottom of the MultiQC reports.
-
-To further assist in reproducibility, you can use share and reuse [parameter files](#running-the-pipeline) to repeat pipeline runs with the same settings without having to write out a command with every single parameter.
-
-> [!TIP]
-> If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
-
-## Core Nextflow arguments
-
-> [!NOTE]
-> These options are part of Nextflow and use a _single_ hyphen (pipeline parameters use a double-hyphen)
-
-### `-profile`
-
-Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
-
-Several generic profiles are bundled with the pipeline which instruct the pipeline to use software packaged using different methods (Docker, Singularity, Podman, Shifter, Charliecloud, Apptainer, Conda) - see below.
-
-> [!IMPORTANT]
-> We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility, however when this is not possible, Conda is also supported.
-
-Note that multiple profiles can be loaded, for example: `-profile test,docker` - the order of arguments is important!
-They are loaded in sequence, so later profiles can overwrite earlier profiles.
-
-If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the `PATH`. This is _not_ recommended, since it can lead to different results on different machines dependent on the computer environment.
-
-- `test`
-  - A profile with a complete configuration for automated testing
-  - Includes links to test data so needs no other parameters
-- `docker`
-  - A generic configuration profile to be used with [Docker](https://docker.com/)
-- `singularity`
-  - A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
-- `podman`
-  - A generic configuration profile to be used with [Podman](https://podman.io/)
-- `shifter`
-  - A generic configuration profile to be used with [Shifter](https://nersc.gitlab.io/development/shifter/how-to-use/)
-- `charliecloud`
-  - A generic configuration profile to be used with [Charliecloud](https://charliecloud.io/)
-- `apptainer`
-  - A generic configuration profile to be used with [Apptainer](https://apptainer.org/)
-- `wave`
-  - A generic configuration profile to enable [Wave](https://seqera.io/wave/) containers. Use together with one of the above (requires Nextflow `24.03.0-edge` or later).
-- `conda`
-  - A generic configuration profile to be used with [Conda](https://conda.io/docs/). Please only use Conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity, Podman, Shifter, Charliecloud, or Apptainer.
-
-### `-resume`
-
-Specify this when restarting a pipeline. Nextflow will use cached results from any pipeline steps where the inputs are the same, continuing from where it got to previously. For input to be considered the same, not only the names must be identical but the files' contents as well. For more info about this parameter, see [this blog post](https://www.nextflow.io/blog/2019/demystifying-nextflow-resume.html).
-
-You can also supply a run name to resume a specific run: `-resume [run-name]`. Use the `nextflow log` command to show previous run names.
-
-### `-c`
-
-Specify the path to a specific config file (this is a core Nextflow command). See the [nf-core website documentation](https://nf-co.re/usage/configuration) for more information.
-
-## Custom configuration
-
-### Resource requests
-
-Whilst the default requirements set within the pipeline will hopefully work for most people and with most input data, you may find that you want to customise the compute resources that the pipeline requests. Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the pipeline steps, if the job exits with any of the error codes specified [here](https://github.com/nf-core/rnaseq/blob/4c27ef5610c87db00c3c5a3eed10b1d161abf575/conf/base.config#L18) it will automatically be resubmitted with higher resources request (2 x original, then 3 x original). If it still fails after the third attempt then the pipeline execution is stopped.
-
-To change the resource requests, please see the [max resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and [customise process resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#customize-process-resources) section of the nf-core website.
-
-### Custom Containers
-
-In some cases, you may wish to change the container or conda environment used by a pipeline steps for a particular tool. By default, nf-core pipelines use containers and software from the [biocontainers](https://biocontainers.pro/) or [bioconda](https://bioconda.github.io/) projects. However, in some cases the pipeline specified version maybe out of date.
-
-To use a different container from the default container or conda environment specified in a pipeline, please see the [updating tool versions](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#update-tool-versions) section of the nf-core website.
-
-### Custom Tool Arguments
-
-A pipeline might not always support every possible argument or option of a particular tool used in pipeline. Fortunately, nf-core pipelines provide some freedom to users to insert additional parameters that the pipeline does not include by default.
-
-## Running in the background
-
-Nextflow handles job submissions and supervises the running jobs. The Nextflow process must run until the pipeline is finished.
-
-The Nextflow `-bg` flag launches Nextflow in the background, detached from your terminal so that the workflow does not stop if you log out of your session. The logs are saved to a file.
-
-Alternatively, you can use `screen` / `tmux` or similar tool to create a detached session which you can log back into at a later time.
-Some HPC setups also allow you to run nextflow within a cluster job submitted your job scheduler (from where it submits more jobs).
-
-## Nextflow memory requirements
-
-In some cases, the Nextflow Java virtual machines can start to request a large amount of memory.
-We recommend adding the following line to your environment to limit this (typically in `~/.bashrc` or `~./bash_profile`):
-
-```bash
-NXF_OPTS='-Xms1g -Xmx4g'
-```
+| deviation | why |
+|---|---|
+| Conda only, no containers; no `-profile docker` (M6) | hazel compute nodes are offline and run no container engine for this project; every module has a pinned `environment.yml` and a prebuilt prefix. The stale template container configs were removed (.nf-core.yml). |
+| Build-pinned conda packages (M10) | linux-64 is the only target, and the hazel prefix is keyed by the sha of `environment.yml`; the pins are what was built and smoke-tested. |
+| No GitHub Actions CI (P2) | private offline cluster; `scripts/run_checks.sh` runs the same checks locally before every push. |
+| Resources read from Slurm at run time (M7, P16) | `${task.cpus}` / `${task.memory}` in a script change the task hash on every retry with more memory. Scripts `source export_slurm_resources.sh` (bin/, found on the task PATH by name, so no checkout path enters the hash); `conf/local.config` and `conf/test.config` give an explicit override. The four patched nf-core modules change resources only (plus the staged Trimmomatic adapters). |
+| storeDir store, nothing published by default (P15) | CRAMs, demux QC, registry and provenance live in the store and are never recomputed; nf-core QC modules (with `eval` versions, which storeDir forbids) publish into the store instead. |
+| Step-named local modules (M11) | `demux`, `demux_qc`, `align_markdup`, `markdup_import`, `provenance`, `registry` name pipeline steps; renaming a module directory renames its hazel conda prefix (rebuild). Each meta.yml names the tools it wraps. |
+| One versions.yml per storeDir module (M3) | storeDir does not allow `eval` outputs; the yml lists every tool of the pipe. DEMUX (not storeDir'd) emits one topic tuple per tool. |
+| Per-source read structures as two params (P17) | chosen by `barcode_layout`; both values are recorded in every provenance record. |
+| `--subsample` / `--max_libraries` typed integer-or-string (P14) | Nextflow 26 hands CLI values over as strings; the schema accepts digit strings and the code converts. |
+| CRAM output only, no `--bam` (P12) | the genotype workflow reads CRAM. |

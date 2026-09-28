@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: utils_nfcore_zealgt_pipeline
+description: Pipeline initialisation (parameter validation, run guards, the entry's inputs from the nf-schema-validated sample sheets, provenance records) and completion for sawers-rellan-labs/zealgt
+keywords:
+  - utility
+  - pipeline
+  - initialise
+  - samplesheet
+components:
+  - utils_nextflow_pipeline
+  - utils_nfcore_pipeline
+  - utils_nfschema_plugin
+input:
+  - version:
+      type: boolean
+      description: Display version and exit
+  - validate_params:
+      type: boolean
+      description: Validate parameters against the schema at runtime
+  - monochrome_logs:
+      type: boolean
+      description: Do not use coloured log outputs
+  - nextflow_cli_args:
+      type: list
+      description: Positional nextflow CLI args
+  - outdir:
+      type: string
+      description: The output directory where the results will be saved
+  - help:
+      type: boolean
+      description: Display help message and exit
+  - help_full:
+      type: boolean
+      description: Show the full help message
+  - show_hidden:
+      type: boolean
+      description: Show hidden parameters in the help message
+output:
+  - libraries:
+      type: file
+      description: |
+        channel: [ val(lmeta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ] (read_demultiplexing)
+  - samples:
+      type: map
+      description: |
+        channel: [ val(meta), val(read_group) ], every sample of the run (read_demultiplexing)
+  - imports:
+      type: file
+      description: |
+        channel: [ val(meta), cram|bam, crai|bai, val(read_group) ] (markdup_import)
+  - records:
+      type: map
+      description: |
+        channel: [ val(sample_id), val(provenance record) ]
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

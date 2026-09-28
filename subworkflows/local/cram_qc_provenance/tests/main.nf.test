@@ -1,0 +1,57 @@
+nextflow_workflow {
+
+    name "Test Subworkflow CRAM_QC_PROVENANCE"
+    script "../main.nf"
+    workflow "CRAM_QC_PROVENANCE"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "cram_qc_provenance"
+    tag "samtools/stats"
+    tag "picard/collectwgsmetrics"
+    tag "provenance"
+    tag "stub"
+
+    test("LX_1 new, LX_2 with stored stats - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            workflow {
+                """
+                def ref = "${projectDir}/tests/fixtures/ref/tiny.fa"
+                def raw = "${projectDir}/tests/fixtures/raw/LIBX"
+                // stand-ins for the CRAM / index (a stub never reads them)
+                input[0] = channel.of(
+                    [ [ id:'LX_1', library:'LIBX', qc_group:'LIBX' ], file("\${raw}/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("\${raw}/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true), [] ],
+                    [ [ id:'LX_2', library:'LIBX', qc_group:'LIBX' ], file("\${raw}/LIBX_TESTFC01_L2_1.fq.gz", checkIfExists: true), file("\${raw}/LIBX_TESTFC01_L2_2.fq.gz", checkIfExists: true), [] ]
+                )
+                input[1] = channel.value([
+                    [ id:'tiny' ], file(ref, checkIfExists: true), file("\${ref}.fai", checkIfExists: true),
+                    [ file("\${ref}.l2b", checkIfExists: true), file("\${ref}.mbw", checkIfExists: true) ]
+                ])
+                input[2] = channel.of([ 'LX_1', [ sample:'LX_1' ] ], [ 'LX_2', [ sample:'LX_2' ] ])
+                // LX_2's samtools stats is "already stored": SAMTOOLS_STATS must run for LX_1 only
+                def stored = file("\${workDir}/LX_2.stats")
+                stored.text = 'SN\\tstored\\n'
+                input[3] = channel.of([ 'LX_1', [] ], [ 'LX_2', [ stored ] ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.trace.tasks().findAll { t -> t.name.contains('SAMTOOLS_STATS') }.size() == 1 },
+                { assert snapshot(
+                    workflow.out.qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
+                    workflow.out.provenance.collect { meta, json -> [meta.id, file(json).name, file(json).text.trim()] }.sort { a -> a[0] },
+                    workflow.out.versions.collect { v -> v.toString() }.sort()
+                ).match() }
+            )
+        }
+    }
+}

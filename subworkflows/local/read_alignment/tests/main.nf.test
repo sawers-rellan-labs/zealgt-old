@@ -1,0 +1,61 @@
+nextflow_workflow {
+
+    name "Test Subworkflow READ_ALIGNMENT"
+    script "../main.nf"
+    workflow "READ_ALIGNMENT"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "read_alignment"
+    tag "align_markdup"
+    tag "cram_qc_provenance"
+    tag "samtools/stats"
+    tag "picard/collectwgsmetrics"
+    tag "provenance"
+    tag "stub"
+
+    test("LX_1, LX_2 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            workflow {
+                """
+                def raw = "${projectDir}/tests/fixtures/raw/LIBX"
+                def ref = "${projectDir}/tests/fixtures/ref/tiny.fa"
+                input[0] = channel.of(
+                    [ [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ],
+                      [ file("\${raw}/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("\${raw}/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true) ] ],
+                    [ [ id:'LX_2', sample:'LX_2', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ],
+                      [ file("\${raw}/LIBX_TESTFC01_L2_1.fq.gz", checkIfExists: true), file("\${raw}/LIBX_TESTFC01_L2_2.fq.gz", checkIfExists: true) ] ]
+                )
+                input[1] = channel.of([ 'LX_1', '@RG\\\\tID:LX_1\\\\tSM:LX_1\\\\tLB:LIBX\\\\tPL:ILLUMINA' ], [ 'LX_2', '@RG\\\\tID:LX_2\\\\tSM:LX_2\\\\tLB:LIBX\\\\tPL:ILLUMINA' ])
+                input[2] = channel.empty()
+                input[3] = channel.value([
+                    [ id:'tiny' ], file(ref, checkIfExists: true), file("\${ref}.fai", checkIfExists: true),
+                    [ file("\${ref}.l2b", checkIfExists: true), file("\${ref}.mbw", checkIfExists: true) ]
+                ])
+                input[4] = channel.of([ 'LX_1', [ sample:'LX_1' ] ], [ 'LX_2', [ sample:'LX_2' ] ])
+                input[5] = channel.of([ 'LX_1', [] ], [ 'LX_2', [] ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert file("${outputDir}/store_stub/cram/LX_1.cram").exists() },
+                { assert file("${outputDir}/store_stub/cram/LX_2.provenance.json").exists() },
+                { assert snapshot(
+                    workflow.out.cram.collect { meta, cram, crai -> [meta.id, file(cram).name, file(crai).name] }.sort { a -> a[0] },
+                    workflow.out.qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
+                    workflow.out.provenance.collect { meta, json -> [meta.id, file(json).name] }.sort { a -> a[0] },
+                    workflow.out.versions.collect { v -> v.toString() }.sort()
+                ).match() }
+            )
+        }
+    }
+}

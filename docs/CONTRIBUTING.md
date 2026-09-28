@@ -156,4 +156,23 @@ If you update images or graphics, follow the nf-core [style guidelines](https://
 
 ## Pipeline specific contribution guidelines
 
-<!-- TODO nf-core: Add any pipeline specific contribution guidelines here, such as coding styles, procedures, checklists etc. -->
+zealgt is developed on `main` by one lab and runs on an offline cluster; the GitHub-based steps above (forks, `dev` branch,
+GitHub Actions) do not apply. The rules that do:
+
+- [ ] **Checks before every push** (in place of CI): `bash scripts/run_checks.sh` must pass — `nf-core pipelines lint` with
+      0 failures, `nf-core pipelines schema lint`, `nextflow lint` without errors, and `nf-test test --tag stub` (local module,
+      subworkflow and pipeline stub tests with snapshots). Laptop command, with the local tools and the version shims of the
+      nf-core modules' `eval` outputs on PATH:
+      `ZG_CHECK_PATH=$PWD/agent/bin:$PWD/agent/.venv_nfcore/bin:$PWD/agent/stubbin NXF_VER=26.04.6 bash scripts/run_checks.sh`.
+      The snapshots hold those shim versions (they equal the environment.yml pins, except DEMUX's `tar`, which is the laptop's).
+- [ ] **Never edit an `environment.yml`, or rename a `modules/local/*` directory**: the hazel conda prefix is
+      `<module id>-<sha8 of environment.yml>`; either change forces a rebuild (`scripts/build_envs.sh`).
+- [ ] **Hash hygiene** (docs/PLAN_pipeline.md §2): no `${task.cpus}` / `${task.memory}` / checkout paths in a `script:`;
+      source `export_slurm_resources.sh` by name; python helpers are module templates (`templates/<verb_object>.py`), which are
+      hashed by content. Group edits that change task hashes into one commit before a gate.
+- [ ] **Sample sheets are validated by nf-schema** (`assets/schema_input.json`, `assets/schema_import.json`): add a rule to the
+      schema, not a hand check in the workflow. `workflows/cram.nf` only wires channels; inputs are built in
+      `subworkflows/local/utils_nfcore_zealgt_pipeline`.
+- [ ] **Script names are verb_object** (`export_slurm_resources.sh`, `write_registry.py`, `submit_head_job.sbatch`). `bin/` holds
+      only what tasks run; operator scripts live in `scripts/`.
+- [ ] Hazel runs follow the hazel-debug-loop skill (`.claude/skills/hazel-debug-loop/`) and the gates of docs/PLAN_pipeline.md §6.

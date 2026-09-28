@@ -32,7 +32,10 @@ from `docs/REQUIREMENTS.md`.
 - **`git config core.fileMode false`** on the hazel checkout (the `/rsstu` ACL strips the exec bit; otherwise every pull shows
   spurious "modified" scripts). Set once after cloning.
 - **Invoke scripts through their interpreter with an explicit path** — `Rscript "${projectDir}/bin/x.R"`, `bash "${projectDir}/bin/x.sh"`,
-  `python "${projectDir}/bin/x.py"` — never rely on `+x` + PATH.
+  `python "${projectDir}/bin/x.py"` — never rely on `+x` + PATH. zealgt's task scripts avoid `${projectDir}` in the script text
+  (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`), and the resource helper is
+  sourced by name, `source export_slurm_resources.sh` — bash `source` searches the task PATH (Nextflow adds `bin/`) and needs no
+  exec bit. Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`).
 
 ## How commands run
 - Each hazel action is one **non-interactive, one-line** `ssh hazel '<cmd>'`, self-contained (`cd`, `conda activate`). No state
@@ -44,7 +47,7 @@ from `docs/REQUIREMENTS.md`.
 - **Everything that computes goes through Slurm**: `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h; `short` is
   not allowed on the default `compute` partition). Workflow 1 alignment of deep libraries uses compute/normal. Downloads use
   `--partition=xfer --mem=8G`. Never run nextflow or any heavy process on the login node — even a stub run is a tiny job.
-- **Conda envs are built by `bin/build_envs.sh` as an xfer job** from each module's pinned `environment.yml` (+ `build.sh` for
+- **Conda envs are built by `scripts/build_envs.sh` as an xfer job** from each module's pinned `environment.yml` (+ `build.sh` for
   non-conda tools) into `/share/maize/frodrig4/conda/zealgt/` — fast GPFS, rebuilt from the repo whenever /share is wiped; never on
   `/rsstu` (too slow to build on). Compute nodes have no internet, so Nextflow must never build an env at task time; every process
   points at its prebuilt prefix with `withName` in conf/hazel.config. `conda.enabled` per profile (on for slurm/local, off for stub).

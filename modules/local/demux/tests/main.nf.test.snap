@@ -1,0 +1,147 @@
+{
+    "LIBX, 3 samples, 6B2S+T symmetric - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "layout": "symmetric",
+                            "n_samples": 3,
+                            "pu": "TESTFC01.1,TESTFC01.2"
+                        },
+                        [
+                            "LX_1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                        ]
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "layout": "symmetric",
+                            "n_samples": 3,
+                            "pu": "TESTFC01.1,TESTFC01.2"
+                        },
+                        "LIBX.cutadapt.json:md5,e34d7ed3a679097fbb16f529db302a88"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "layout": "symmetric",
+                            "n_samples": 3,
+                            "pu": "TESTFC01.1,TESTFC01.2"
+                        },
+                        "LIBX.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        "DEMUX",
+                        "cutadapt",
+                        "4.9"
+                    ]
+                ],
+                "4": [
+                    [
+                        "DEMUX",
+                        "pigz",
+                        "2.8"
+                    ]
+                ],
+                "5": [
+                    [
+                        "DEMUX",
+                        "tar",
+                        "3.5.3"
+                    ]
+                ],
+                "json": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "layout": "symmetric",
+                            "n_samples": 3,
+                            "pu": "TESTFC01.1,TESTFC01.2"
+                        },
+                        "LIBX.cutadapt.json:md5,e34d7ed3a679097fbb16f529db302a88"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "layout": "symmetric",
+                            "n_samples": 3,
+                            "pu": "TESTFC01.1,TESTFC01.2"
+                        },
+                        "LIBX.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "reads": [
+                    [
+                        {
+                            "id": "LIBX",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "layout": "symmetric",
+                            "n_samples": 3,
+                            "pu": "TESTFC01.1,TESTFC01.2"
+                        },
+                        [
+                            "LX_1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                        ]
+                    ]
+                ],
+                "versions_cutadapt": [
+                    [
+                        "DEMUX",
+                        "cutadapt",
+                        "4.9"
+                    ]
+                ],
+                "versions_pigz": [
+                    [
+                        "DEMUX",
+                        "pigz",
+                        "2.8"
+                    ]
+                ],
+                "versions_tar": [
+                    [
+                        "DEMUX",
+                        "tar",
+                        "3.5.3"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T01:36:05.991044",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

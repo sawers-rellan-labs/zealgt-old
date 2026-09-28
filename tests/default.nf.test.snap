@@ -1,0 +1,239 @@
+{
+    "-profile test, --entry markdup_import - stub": {
+        "content": [
+            {
+                "MARKDUP_IMPORT": {
+                    "samtools": 1.21,
+                    "gawk": "5.4.1"
+                },
+                "PICARD_COLLECTWGSMETRICS": {
+                    "picard": "3.5.0"
+                },
+                "PROVENANCE": {
+                    "python": "3.12.14"
+                },
+                "SAMTOOLS_STATS": {
+                    "samtools": 1.24
+                },
+                "Workflow": {
+                    "sawers-rellan-labs/zealgt": "v0.1.0dev"
+                }
+            },
+            [
+                "imp",
+                "imp/IMP_A.cram",
+                "imp/IMP_A.cram.crai",
+                "imp/IMP_B.cram",
+                "imp/IMP_B.cram.crai",
+                "imp/IMP_C.cram",
+                "imp/IMP_C.cram.crai",
+                "import.csv",
+                "multiqc",
+                "multiqc/multiqc_data",
+                "multiqc/multiqc_data/.stub",
+                "multiqc/multiqc_plots",
+                "multiqc/multiqc_plots/.stub",
+                "multiqc/multiqc_report.html",
+                "pipeline_info",
+                "pipeline_info/zealgt_software_mqc_versions.yml",
+                "store_stub",
+                "store_stub/cram_import",
+                "store_stub/cram_import/IMP_A.CollectWgsMetrics.coverage_metrics",
+                "store_stub/cram_import/IMP_A.cram",
+                "store_stub/cram_import/IMP_A.cram.crai",
+                "store_stub/cram_import/IMP_A.markdup.stats",
+                "store_stub/cram_import/IMP_A.markdup_import.versions.yml",
+                "store_stub/cram_import/IMP_A.provenance.json",
+                "store_stub/cram_import/IMP_A.provenance.versions.yml",
+                "store_stub/cram_import/IMP_A.read_group.txt",
+                "store_stub/cram_import/IMP_A.stats",
+                "store_stub/cram_import/IMP_B.CollectWgsMetrics.coverage_metrics",
+                "store_stub/cram_import/IMP_B.cram",
+                "store_stub/cram_import/IMP_B.cram.crai",
+                "store_stub/cram_import/IMP_B.markdup.stats",
+                "store_stub/cram_import/IMP_B.markdup_import.versions.yml",
+                "store_stub/cram_import/IMP_B.provenance.json",
+                "store_stub/cram_import/IMP_B.provenance.versions.yml",
+                "store_stub/cram_import/IMP_B.read_group.txt",
+                "store_stub/cram_import/IMP_B.stats"
+            ],
+            [
+                ".stub:md5,d41d8cd98f00b204e9800998ecf8427e",
+                ".stub:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "multiqc_report.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_A.CollectWgsMetrics.coverage_metrics:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_A.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_A.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_A.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_A.markdup_import.versions.yml:md5,acb307a5ef377eda827f80c32d3af404",
+                "IMP_A.provenance.versions.yml:md5,8f21c731643c14a9fc6ae912d78597da",
+                "IMP_A.read_group.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_A.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_B.CollectWgsMetrics.coverage_metrics:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_B.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_B.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_B.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_B.markdup_import.versions.yml:md5,acb307a5ef377eda827f80c32d3af404",
+                "IMP_B.provenance.versions.yml:md5,8f21c731643c14a9fc6ae912d78597da",
+                "IMP_B.read_group.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "IMP_B.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+            ]
+        ],
+        "timestamp": "2026-09-28T01:37:18.577303",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "-profile test, --entry read_demultiplexing - stub": {
+        "content": [
+            {
+                "ALIGN_MARKDUP": {
+                    "minibwa": "0.7-r421",
+                    "samtools": 1.21
+                },
+                "DEMUX": {
+                    "cutadapt": 4.9,
+                    "pigz": 2.8,
+                    "tar": "3.5.3"
+                },
+                "DEMUX_QC": {
+                    "python": "3.12.14"
+                },
+                "FASTQC": {
+                    "fastqc": "0.12.1"
+                },
+                "PICARD_COLLECTWGSMETRICS": {
+                    "picard": "3.5.0"
+                },
+                "PROVENANCE": {
+                    "python": "3.12.14"
+                },
+                "REGISTRY": {
+                    "python": "3.12.14"
+                },
+                "SAMTOOLS_STATS": {
+                    "samtools": 1.24
+                },
+                "TRIMMOMATIC": {
+                    "trimmomatic": 0.39
+                },
+                "Workflow": {
+                    "sawers-rellan-labs/zealgt": "v0.1.0dev"
+                }
+            },
+            [
+                "fastqc",
+                "fastqc/LIBX",
+                "fastqc/LIBX/LX_1.html",
+                "fastqc/LIBX/LX_1.zip",
+                "fastqc/LIBX/LX_2.html",
+                "fastqc/LIBX/LX_2.zip",
+                "fastqc/LIBX/LX_3.html",
+                "fastqc/LIBX/LX_3.zip",
+                "multiqc",
+                "multiqc/multiqc_data",
+                "multiqc/multiqc_data/.stub",
+                "multiqc/multiqc_plots",
+                "multiqc/multiqc_plots/.stub",
+                "multiqc/multiqc_report.html",
+                "pipeline_info",
+                "pipeline_info/zealgt_software_mqc_versions.yml",
+                "store_stub",
+                "store_stub/cram",
+                "store_stub/cram/LX_1.CollectWgsMetrics.coverage_metrics",
+                "store_stub/cram/LX_1.align_markdup.versions.yml",
+                "store_stub/cram/LX_1.cram",
+                "store_stub/cram/LX_1.cram.crai",
+                "store_stub/cram/LX_1.markdup.stats",
+                "store_stub/cram/LX_1.provenance.json",
+                "store_stub/cram/LX_1.provenance.versions.yml",
+                "store_stub/cram/LX_1.stats",
+                "store_stub/cram/LX_2.CollectWgsMetrics.coverage_metrics",
+                "store_stub/cram/LX_2.align_markdup.versions.yml",
+                "store_stub/cram/LX_2.cram",
+                "store_stub/cram/LX_2.cram.crai",
+                "store_stub/cram/LX_2.markdup.stats",
+                "store_stub/cram/LX_2.provenance.json",
+                "store_stub/cram/LX_2.provenance.versions.yml",
+                "store_stub/cram/LX_2.stats",
+                "store_stub/cram/LX_3.CollectWgsMetrics.coverage_metrics",
+                "store_stub/cram/LX_3.align_markdup.versions.yml",
+                "store_stub/cram/LX_3.cram",
+                "store_stub/cram/LX_3.cram.crai",
+                "store_stub/cram/LX_3.markdup.stats",
+                "store_stub/cram/LX_3.provenance.json",
+                "store_stub/cram/LX_3.provenance.versions.yml",
+                "store_stub/cram/LX_3.stats",
+                "store_stub/demux_qc",
+                "store_stub/demux_qc/LIBX.cutadapt.json",
+                "store_stub/demux_qc/LIBX.cutadapt.log",
+                "store_stub/demux_qc/LIBX.demux_qc.versions.yml",
+                "store_stub/demux_qc/LIBX.read_start.tsv",
+                "store_stub/demux_qc/LIBX.summary.tsv",
+                "store_stub/demux_qc/LIBX.tsv",
+                "store_stub/registry",
+                "store_stub/registry/LIBX.registry.tsv",
+                "store_stub/registry/LIBX.registry.versions.yml",
+                "trimmomatic",
+                "trimmomatic/LIBX",
+                "trimmomatic/LIBX/LX_1.summary",
+                "trimmomatic/LIBX/LX_1_out.log",
+                "trimmomatic/LIBX/LX_2.summary",
+                "trimmomatic/LIBX/LX_2_out.log",
+                "trimmomatic/LIBX/LX_3.summary",
+                "trimmomatic/LIBX/LX_3_out.log"
+            ],
+            [
+                "LX_1.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1.zip:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.zip:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.zip:md5,d41d8cd98f00b204e9800998ecf8427e",
+                ".stub:md5,d41d8cd98f00b204e9800998ecf8427e",
+                ".stub:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "multiqc_report.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1.CollectWgsMetrics.coverage_metrics:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1.align_markdup.versions.yml:md5,d63a257d36702d8448ded0a5df9d8f8f",
+                "LX_1.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1.provenance.versions.yml:md5,fea499850b92edaaca42f373790eefd6",
+                "LX_1.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.CollectWgsMetrics.coverage_metrics:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.align_markdup.versions.yml:md5,d63a257d36702d8448ded0a5df9d8f8f",
+                "LX_2.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.provenance.versions.yml:md5,fea499850b92edaaca42f373790eefd6",
+                "LX_2.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.CollectWgsMetrics.coverage_metrics:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.align_markdup.versions.yml:md5,d63a257d36702d8448ded0a5df9d8f8f",
+                "LX_3.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.provenance.versions.yml:md5,fea499850b92edaaca42f373790eefd6",
+                "LX_3.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LIBX.cutadapt.json:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LIBX.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LIBX.demux_qc.versions.yml:md5,b0610c0dcd24ec4d9dba4384191f09a7",
+                "LIBX.read_start.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LIBX.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LIBX.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LIBX.registry.versions.yml:md5,8cc64bcf68b409c38a99b6c8cb780f42",
+                "LX_1.summary:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1_out.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.summary:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2_out.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.summary:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3_out.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+            ]
+        ],
+        "timestamp": "2026-09-28T01:37:14.896133",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

@@ -3,12 +3,16 @@ nextflow_pipeline {
     name "Test pipeline"
     script "../main.nf"
     tag "pipeline"
+    tag "stub"
 
-    test("-profile test") {
+    test("-profile test, --entry read_demultiplexing - stub") {
+
+        options "-stub"
 
         when {
             params {
                 outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
             }
         }
 
@@ -17,14 +21,54 @@ nextflow_pipeline {
             def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
             // stable_content: All files in ${params.outdir}/ with stable content
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
-            assert workflow.success
             assertAll(
+                { assert workflow.success },
+                { assert workflow.trace.succeeded().size() == 22 },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
                     // All stable path name, with a relative path
                     stable_path,
                     // All files with stable contents
+                    stable_content
+                ).match() }
+            )
+        }
+    }
+
+    test("-profile test, --entry markdup_import - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir       = "$outputDir"
+                store        = "$outputDir/store_stub"
+                entry        = 'markdup_import'
+                // two touch-file CRAMs to import and one excluded row (include = FALSE)
+                def imp = new File("$outputDir/imp")
+                imp.mkdirs()
+                ['IMP_A', 'IMP_B', 'IMP_C'].each { s -> new File(imp, "${s}.cram").text = ''; new File(imp, "${s}.cram.crai").text = '' }
+                def sheet = new File("$outputDir/import.csv")
+                sheet.text = [
+                    'sample_id,source,role,library,donor,import_set,path,index,size_bytes,made_by,dup_marked,read_groups,include,note',
+                    "IMP_A,bc1,bc1_sample,2A,Zx.0540_P3,Zx.0540_P3,${imp}/IMP_A.cram,${imp}/IMP_A.cram.crai,10,nilhmm pool_run,no,no,TRUE,",
+                    "IMP_B,bc2s3_batch1,line,BZea5,Zx.0540_P3,Zx.0540_P3,${imp}/IMP_B.cram,${imp}/IMP_B.cram.crai,10,zealbc1 bc2s3_realign,no,no,TRUE,",
+                    "IMP_C,b73_control,b73_control,,,b73_control,${imp}/IMP_C.cram,${imp}/IMP_C.cram.crai,10,zealbc1 align_b73,no,check,FALSE,excluded",
+                ].join('\n') + '\n'
+                import_sheet = sheet.toString()
+            }
+        }
+
+        then {
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.trace.succeeded().size() == 9 },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
+                    stable_path,
                     stable_content
                 ).match() }
             )

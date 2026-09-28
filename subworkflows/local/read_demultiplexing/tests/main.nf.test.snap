@@ -1,0 +1,41 @@
+{
+    "LIBX, 3 samples, 6B2S+T symmetric - stub": {
+        "content": [
+            [
+                [
+                    "LIBX",
+                    [
+                        "LX_1_R1.fastq.gz",
+                        "LX_1_R2.fastq.gz",
+                        "LX_2_R1.fastq.gz",
+                        "LX_2_R2.fastq.gz",
+                        "LX_3_R1.fastq.gz",
+                        "LX_3_R2.fastq.gz"
+                    ]
+                ]
+            ],
+            [
+                [
+                    "LIBX",
+                    "LIBX.tsv"
+                ]
+            ],
+            [
+                [
+                    "LIBX",
+                    "LIBX.summary.tsv"
+                ]
+            ],
+            [
+                "[READ_DEMULTIPLEXING:DEMUX, cutadapt, 4.9]",
+                "[READ_DEMULTIPLEXING:DEMUX, pigz, 2.8]",
+                "[READ_DEMULTIPLEXING:DEMUX, tar, 3.5.3]"
+            ]
+        ],
+        "timestamp": "2026-09-28T01:36:42.971541",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

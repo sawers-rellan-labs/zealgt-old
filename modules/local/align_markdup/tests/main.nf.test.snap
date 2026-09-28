@@ -1,0 +1,73 @@
+{
+    "LX_1 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "LX_1",
+                            "sample": "LX_1",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "qc_group": "LIBX",
+                            "single_end": false
+                        },
+                        "LX_1.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "LX_1.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "LX_1",
+                            "sample": "LX_1",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "qc_group": "LIBX",
+                            "single_end": false
+                        },
+                        "LX_1.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "LX_1.align_markdup.versions.yml:md5,7a62f030f6c94bac43fcff89cf16ca9a"
+                ],
+                "cram": [
+                    [
+                        {
+                            "id": "LX_1",
+                            "sample": "LX_1",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "qc_group": "LIBX",
+                            "single_end": false
+                        },
+                        "LX_1.cram:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "LX_1.cram.crai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "markdup_stats": [
+                    [
+                        {
+                            "id": "LX_1",
+                            "sample": "LX_1",
+                            "library": "LIBX",
+                            "source": "bc1",
+                            "qc_group": "LIBX",
+                            "single_end": false
+                        },
+                        "LX_1.markdup.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "LX_1.align_markdup.versions.yml:md5,7a62f030f6c94bac43fcff89cf16ca9a"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T01:36:03.220449",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

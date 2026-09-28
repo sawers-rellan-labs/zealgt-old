@@ -1,12 +1,14 @@
-nextflow_process {
+nextflow_workflow {
 
-    name "Test Process DEMUX"
+    name "Test Subworkflow READ_DEMULTIPLEXING"
     script "../main.nf"
-    process "DEMUX"
+    workflow "READ_DEMULTIPLEXING"
 
-    tag "modules"
-    tag "modules_local"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "read_demultiplexing"
     tag "demux"
+    tag "demux_qc"
     tag "stub"
 
     test("LIBX, 3 samples, 6B2S+T symmetric - stub") {
@@ -17,7 +19,7 @@ nextflow_process {
             params {
                 store = "${outputDir}/store_stub"
             }
-            process {
+            workflow {
                 """
                 input[0] = channel.of([
                     [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric', n_samples:3, pu:'TESTFC01.1,TESTFC01.2' ],
@@ -34,12 +36,15 @@ nextflow_process {
 
         then {
             assertAll(
-                { assert process.success },
-                { assert snapshot(process.out).match() },
-                { assert process.out.reads[0][1].size() == 6 },
-                { assert process.out.reads[0][1].collect { f -> file(f).name }.sort() == ["LX_1_R1.fastq.gz", "LX_1_R2.fastq.gz", "LX_2_R1.fastq.gz", "LX_2_R2.fastq.gz", "LX_3_R1.fastq.gz", "LX_3_R2.fastq.gz"] },
-                { assert file(process.out.json[0][1]).name == "LIBX.cutadapt.json" },
-                { assert process.out.versions_cutadapt.size() == 1 }
+                { assert workflow.success },
+                { assert workflow.out.reads[0][1].size() == 6 },
+                { assert file("${outputDir}/store_stub/demux_qc/LIBX.tsv").exists() },
+                { assert snapshot(
+                    workflow.out.reads.collect { meta, fastqs -> [meta.id, fastqs.collect { f -> file(f).name }.sort()] },
+                    workflow.out.demux_qc.collect { meta, tsv -> [meta.id, file(tsv).name] },
+                    workflow.out.summary.collect { meta, tsv -> [meta.id, file(tsv).name] },
+                    workflow.out.versions.collect { v -> v.toString() }.sort()
+                ).match() }
             )
         }
     }

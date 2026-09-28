@@ -1,0 +1,37 @@
+{
+    "LX_1 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "LX_1",
+                            "library": "LIBX"
+                        },
+                        "LX_1.provenance.json:md5,c6ae071129eee1b3b54240dfacbdd130"
+                    ]
+                ],
+                "1": [
+                    "LX_1.provenance.versions.yml:md5,95e88bdfddc98c90f3403093963deac3"
+                ],
+                "json": [
+                    [
+                        {
+                            "id": "LX_1",
+                            "library": "LIBX"
+                        },
+                        "LX_1.provenance.json:md5,c6ae071129eee1b3b54240dfacbdd130"
+                    ]
+                ],
+                "versions": [
+                    "LX_1.provenance.versions.yml:md5,95e88bdfddc98c90f3403093963deac3"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T01:36:14.91212",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

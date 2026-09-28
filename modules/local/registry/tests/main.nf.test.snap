@@ -1,0 +1,35 @@
+{
+    "LIBX - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "LIBX"
+                        },
+                        "LIBX.registry.tsv:md5,4f666565526a752f6b7fd0bce683e6f3"
+                    ]
+                ],
+                "1": [
+                    "LIBX.registry.versions.yml:md5,ae69ac74fbadf1681e9cebbad0aa0a9d"
+                ],
+                "tsv": [
+                    [
+                        {
+                            "id": "LIBX"
+                        },
+                        "LIBX.registry.tsv:md5,4f666565526a752f6b7fd0bce683e6f3"
+                    ]
+                ],
+                "versions": [
+                    "LIBX.registry.versions.yml:md5,ae69ac74fbadf1681e9cebbad0aa0a9d"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T01:36:17.821226",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

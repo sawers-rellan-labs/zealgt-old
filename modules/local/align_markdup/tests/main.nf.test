@@ -20,9 +20,9 @@ nextflow_process {
             process {
                 """
                 input[0] = channel.of([
-                    [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false,
-                      read_group:'@RG\\\\tID:LX_1\\\\tSM:LX_1\\\\tLB:LIBX\\\\tPL:ILLUMINA' ],
-                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true) ]
+                    [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ],
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true) ],
+                    '@RG\\\\tID:LX_1\\\\tSM:LX_1\\\\tLB:LIBX\\\\tPL:ILLUMINA'
                 ])
                 input[1] = [
                     [ id:'tiny' ],
@@ -37,6 +37,7 @@ nextflow_process {
         then {
             assertAll(
                 { assert process.success },
+                { assert snapshot(process.out).match() },
                 { assert file(process.out.cram[0][1]).name == "LX_1.cram" },
                 { assert file(process.out.cram[0][2]).name == "LX_1.cram.crai" },
                 { assert file(process.out.markdup_stats[0][1]).name == "LX_1.markdup.stats" },
