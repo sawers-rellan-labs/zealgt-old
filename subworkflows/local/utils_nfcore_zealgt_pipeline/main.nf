@@ -228,8 +228,13 @@ def zgRunGuards() {
     if (zgSubsample() < 0) {
         error("--subsample must be >= 0 (read pairs; 0 = the whole library)")
     }
-    if (workflow.stubRun && !zgStoreRoot().contains('stub')) {
-        error("stub runs must not write into the real store: use a store path containing 'stub' (conf/stub.config sets <outdir>/store_stub), got ${zgStoreRoot()}")
+    if (workflow.stubRun) {
+        // the stub store must be its own directory named store_stub* and must not lie inside the production store
+        def stub_store = file(params.store).toAbsolutePath().normalize()
+        def production = file('/rsstu/users/r/rrellan/BZea/ZEAL/store').toAbsolutePath().normalize()
+        if (!stub_store.name.startsWith('store_stub') || stub_store.startsWith(production)) {
+            error("stub runs must not write into the real store: --store must be a directory named store_stub* outside ${production} (conf/stub.config sets <outdir>/store_stub), got ${stub_store}")
+        }
     }
     if (params.workflow == 'cram' && params.entry == 'read_demultiplexing' && !params.libraries) {
         error("--entry read_demultiplexing needs --libraries <library>[,<library>...] (meta/samples.csv 'library' column)")
