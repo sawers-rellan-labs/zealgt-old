@@ -738,7 +738,9 @@ def zgCodeVersion() {
     }
 }
 
-// Run-level settings recorded in every provenance record (PLAN §3 stop point), computed once per run.
+// Run-level settings recorded in every provenance record (PLAN §3 stop point), computed once per run. The record is a
+// PROVENANCE input (hashed), so it holds nothing that changes between launches of one session: no workflow.runName (a
+// -resume would rerun every PROVENANCE task; session_id + run_id + code_version identify the run).
 def zgRunSettings() {
     return [
         reference    : params.fasta,
@@ -746,7 +748,6 @@ def zgRunSettings() {
         pipeline     : "${workflow.manifest.name} ${workflow.manifest.version}".toString(),
         entry        : params.entry,
         run_id       : params.run_id ?: '',
-        run_name     : workflow.runName,
         session_id   : workflow.sessionId.toString(),
         profile      : workflow.profile,
         mapq_filter  : 'none (applied by the genotype workflow at read time)',

@@ -205,30 +205,16 @@ check(run_exit('r2') == '0', 'R2 finished (exit 0)')
 k1 = sorted((x['proc'], x['tag']) for x in r1)
 k2 = sorted((x['proc'], x['tag']) for x in r2)
 check(k1 == k2, 'R2: the same %d tasks as R1 (process, tag)' % len(k1))
-rerun_ok = []
+# strict: no exception (the provenance record no longer carries the run name, so nothing may differ per launch)
 for x in r2:
     if x['status'] == 'CACHED':
         continue
     key = (x['proc'], x['tag'])
     a, b = dumps['r1'].get(key), dumps['r2'].get(key)
-    if not a or not b:
-        check(False, 'R2: %s %s re-executed, no hash dump to explain it' % key)
-        continue
-    changed = diff_components(a, b)
-    # allowed only if every changed entry is a value that carries the run name (R1's before, R2's after)
-    carries = all(ea is not None and eb is not None and names['r1'] and names['r2'] and names['r1'] in ea['value']
-                  and names['r2'] in eb['value'] and ea['value'].replace(names['r1'], '') == eb['value'].replace(names['r2'], '')
-                  for _, ea, eb in changed)
-    if changed and carries:
-        rerun_ok.append((key, [c[0] for c in changed]))
-    else:
-        check(False, 'R2: %s %s re-executed; changed hash components %s' % (key[0], key[1], [c[0] for c in changed]))
+    comps = [c[0] for c in diff_components(a, b)] if a and b else 'no hash dump'
+    check(False, 'R2: %s %s re-executed; changed hash components %s' % (key[0], key[1], comps))
 n_cached = sum(x['status'] == 'CACHED' for x in r2)
-check(n_cached + len(rerun_ok) == len(r2) and len(r2) > 0,
-      'R2: %d of %d tasks CACHED; the other %d re-executed only because an input value carries the run name'
-      % (n_cached, len(r2), len(rerun_ok)))
-for key, comps in rerun_ok:
-    out('      %s %s: changed %s = the only difference is run name %s -> %s' % (key[0], key[1], comps, names['r1'], names['r2']))
+check(n_cached == len(r2) and len(r2) > 0, 'R2: every task CACHED (%d of %d)' % (n_cached, len(r2)))
 for p in STAGE1 + ['ALIGN_MARKDUP', 'SAMTOOLS_STATS', 'PICARD_COLLECTWGSMETRICS']:
     rows = tasks('r2', lambda x, p=p: x['proc'] == p)
     if rows:
