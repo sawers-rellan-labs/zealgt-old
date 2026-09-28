@@ -1,11 +1,11 @@
 # Run card: genotype workflow Gate 1, donor Zx.0540_P3 x chr10:1-20000000 (narrative: docs/runs/genotype_gate1_zx0540.md).
 # Genotype design §7.4. Real tools, hazel, -profile hazel,short. One head job per entry, in order, each after the previous
 # one finished (an entry reads the earlier entries' outputs from the keyed store and refuses to start without them):
-#   ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
+#   ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_r2_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
 #   entries: sample_quality_control variant_discovery ancestry_inference marker_union donor_allele_calling genotype_imputation reporting
 #
 # TWO PASSES, two store keys (review #7: a key is one set of settings):
-#   pass A = this file as it stands: genotype_store_key gate1_zx0540_nomask, mask_read_starts false (comparable with zealbc1)
+#   pass A = this file as it stands: genotype_store_key gate1_zx0540_nomask_r2, mask_read_starts false (comparable with zealbc1)
 #   pass B = the same card with three overrides on the command line (run ids genotype_gate1_mask_<entry>):
 #            --genotype_store_key gate1_zx0540_mask --mask_read_starts true
 #            --outdir /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/genotype_gate1_zx0540/mask
@@ -52,11 +52,10 @@ reference_donor_taxa: "Zx.0570_P2=mexicana"
 # run). This directory must hold mexicana.prior.tsv (columns c weight, 31 bins 0..1.5), derived ONCE by an agent script from
 # ZEAL/results/zealgt_checks/perline_hypotheses_20260926/qc_depth_TIL18.tsv with the step-2 script's c_prior() (nominal
 # depths 44 / 20, B73 DP >= 5, clip 1.5, +1). It is estimated on the same QC set the step-2 calls are later judged on, hence
-# circular. NOT YET WRITTEN, so it is null here: every entry's guard refuses a named directory that does not exist, and only
-# donor_allele_calling reads it. Once the directory exists, set it on that entry's command line (it is in that stage's
-# settings only, so the other stages' keys are unaffected):
-#   --mappability_priors /rsstu/users/r/rrellan/BZea/ZEAL/reference/calibration/mappability/qcset_til18_v0
-mappability_priors: null
+# circular. Written 2026-09-28 by job 973496 (agent/20260928_103350_write_mappability_prior.sbatch; README with sha256 next to
+# it) into the genotype-only store, not ZEAL/reference/. Only donor_allele_calling reads it, and it is in that stage's
+# settings only, so the other stages' keys are unaffected.
+mappability_priors: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev/reference_inputs/mappability/qcset_til18_v0
 # [decided] taxon prior; the review #11 sensitivity run is `flat` under another key
 mappability_prior_mode: taxon
 
@@ -64,7 +63,10 @@ mappability_prior_mode: taxon
 # genotype outputs go to <store>/genotype/<genotype_store_key>/ (settings/<stage>.json guards the key); next to the imported
 # CRAMs (cram_import/) in the genotype-only store, never in ZEAL/store
 store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
-genotype_store_key: gate1_zx0540_nomask
+# _r2: the first pass-A key gate1_zx0540_nomask holds sample_quality_control and a failed variant_discovery (job 974146,
+# ALLELE_COUNTS exit 141) under the code before the ALLELE_COUNTS SIGPIPE fix; allele_counts is in every stage's code hash,
+# so that key refuses the fixed code by design (review #7) and pass A restarts from entry 1 under this key
+genotype_store_key: gate1_zx0540_nomask_r2
 input_store_key: null            # = genotype_store_key
 outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/genotype_gate1_zx0540/nomask
 # [decided, PLAN:113] a CRAM whose provenance markdup differs from `samtools markdup ${markdup_args}` stops the run

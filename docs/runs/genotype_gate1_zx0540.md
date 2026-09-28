@@ -17,8 +17,12 @@ passes is the effect of the mask.
 
 | pass | `genotype_store_key` | `mask_read_starts` | `--outdir` | run ids |
 |---|---|---|---|---|
-| A | `gate1_zx0540_nomask` | false | `…/results/zealgt/genotype_gate1_zx0540/nomask` | `genotype_gate1_nomask_<entry>` |
+| A | `gate1_zx0540_nomask_r2` | false | `…/results/zealgt/genotype_gate1_zx0540/nomask` | `genotype_gate1_nomask_r2_<entry>` |
 | B | `gate1_zx0540_mask` | true | `…/results/zealgt/genotype_gate1_zx0540/mask` | `genotype_gate1_mask_<entry>` |
+
+The first pass-A key, `gate1_zx0540_nomask`, holds sample_quality_control and a failed variant_discovery (job 974146:
+ALLELE_COUNTS exit 141, SIGPIPE from `bgzip -dc | head -1` under pipefail). `allele_counts` is in every stage's code hash,
+so that key refuses the fixed code by design (review #7), and pass A restarts from entry 1 under `gate1_zx0540_nomask_r2`.
 
 Pass B uses the same card and overrides three values on the command line:
 `--genotype_store_key gate1_zx0540_mask --mask_read_starts true --outdir …/mask`.
@@ -51,7 +55,7 @@ Pass B uses the same card and overrides three values on the command line:
 | lowcopy BED | `ZEAL/results/pilot_1B_chr10/union/union_chr10.bed` | ok (chr10 only) |
 | reference donor table | `ZEAL/results/bench_zx0570_chr10/step4/Zx.0570_P2.sites.tsv.gz` | ok |
 | annotation panels | TIL18, Gigi, schnable (wideseq), mgdb26 chr10 SNP lists | ok (annotation columns only) |
-| mappability prior | `ZEAL/reference/calibration/mappability/qcset_til18_v0/mexicana.prior.tsv` | **[STOP-GAP] not written yet**; see below |
+| mappability prior | `ZEAL/store_genotype_dev/reference_inputs/mappability/qcset_til18_v0/mexicana.prior.tsv` (+ README, sha256) | **[STOP-GAP]** written by job 973496; see below |
 | blind QC panel | none | **[OPEN]** does not exist (REQUIREMENTS.md:24), so stage 2b uses MIN_COVERAGE only |
 
 **Mappability prior: stop-gap and circular (design §10 item 4, review #11).** No calibrated prior exists yet (PLAN:148-191; the
@@ -61,9 +65,8 @@ calibration has not been run). For Gate 1, `mexicana.prior.tsv` is derived once 
 - settings: nominal depths 44 / 20, B73 DP ≥ 5, clip 1.5, 31 bins, +1.
 
 The prior is estimated on the same QC set on which the step-2 calls are later judged, so it is circular. It is fine for a
-wiring and comparison gate, but not for a result. The card leaves `mappability_priors: null`, because every entry's guard
-refuses a named directory that does not exist. Once the file exists, pass the directory on the `donor_allele_calling`
-command line. It is part of that stage's settings only. A `flat` rerun (`mappability_prior_mode: flat`, new key) is the
+wiring and comparison gate, but not for a result. The card sets `mappability_priors` to that directory. It is part of the
+donor_allele_calling settings only. A `flat` rerun (`mappability_prior_mode: flat`, new key) is the
 review #11 sensitivity check.
 
 ## Commands
@@ -73,10 +76,10 @@ donor_allele_calling, genotype_imputation, reporting, submit the next one only a
 
 ```
 ssh hazel 'git -C /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype pull --ff-only'
-ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
+ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_r2_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
 ```
 
-For donor_allele_calling, also pass `--mappability_priors <dir>`. For pass B, add the three overrides above. Before any
+For pass B, use run ids `genotype_gate1_mask_<entry>` and add the three overrides above. Before any
 real-data run, the code must have passed a CodeRabbit review.
 
 ## Outputs
