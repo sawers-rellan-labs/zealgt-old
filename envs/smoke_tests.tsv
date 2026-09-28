@@ -19,3 +19,4 @@ pooled_likelihood_tiers	python3 --version
 rtiger	Rscript -e 'suppressPackageStartupMessages(library(nilHMM)); cat(as.character(packageVersion("nilHMM")))'
 chromosome_painting	Rscript -e 'library(ggplot2); cat(as.character(packageVersion("ggplot2")))'
 read_position_qc	samtools --version | head -1 && python3 --version
+bcftools_view	bcftools --version | head -1
