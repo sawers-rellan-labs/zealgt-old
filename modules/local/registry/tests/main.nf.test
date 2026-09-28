@@ -1,0 +1,44 @@
+nextflow_process {
+
+    name "Test Process REGISTRY"
+    script "../main.nf"
+    process "REGISTRY"
+
+    tag "modules"
+    tag "modules_local"
+    tag "registry"
+    tag "stub"
+
+    test("LIBX - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LIBX' ],
+                    file("${projectDir}/tests/fixtures/samples_template.csv", checkIfExists: true),
+                    [ file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true) ],
+                    [ 'LX_1', 'LX_2', 'LX_3' ]
+                ])
+                input[1] = '/stub/store'
+                input[2] = 'nftest'
+                input[3] = 'stub'
+                input[4] = 0
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert file(process.out.tsv[0][1]).name == "LIBX.registry.tsv" },
+                { assert file(process.out.tsv[0][1]).readLines().size() == 4 }
+            )
+        }
+    }
+}

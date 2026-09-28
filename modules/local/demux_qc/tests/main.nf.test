@@ -1,0 +1,44 @@
+nextflow_process {
+
+    name "Test Process DEMUX_QC"
+    script "../main.nf"
+    process "DEMUX_QC"
+
+    tag "modules"
+    tag "modules_local"
+    tag "demux_qc"
+    tag "stub"
+
+    test("LIBX - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LIBX', library:'LIBX' ],
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/samples_template.csv", checkIfExists: true),
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true) ],
+                    [ ['LX_1', 'GCCATA', 'GCCATA'] ]
+                ])
+                input[1] = 0
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert file(process.out.tsv[0][1]).name == "LIBX.tsv" },
+                { assert file(process.out.summary[0][1]).name == "LIBX.summary.tsv" },
+                { assert file(process.out.read_start[0][1]).name == "LIBX.read_start.tsv" },
+                { assert file("${outputDir}/store_stub/demux_qc/LIBX.tsv").exists() }
+            )
+        }
+    }
+}

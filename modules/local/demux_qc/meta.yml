@@ -1,0 +1,46 @@
+---
+# zealgt local module (nf-core module conventions, simplified meta)
+name: demux_qc
+description: "Per-library demultiplexing QC in the store: per-sample pairs and assignment rate, read-start composition, TruSeq read-through share"
+keywords:
+  - demultiplexing
+  - qc
+tools:
+  - python:
+      description: python (pinned in environment.yml)
+input:
+  - meta:
+      type: map
+      description: "Library meta"
+  - json:
+      type: file
+      description: "cutadapt JSON report"
+  - report:
+      type: file
+      description: "cutadapt text report"
+  - reads:
+      type: file
+      description: "demuxed FASTQs"
+  - barcodes:
+      type: list
+      description: "[sample_id, barcode_r1, barcode_r2]"
+  - subsample:
+      type: integer
+      description: "read pairs taken (0 = all)"
+output:
+  - tsv:
+      description: "<library>.tsv"
+  - summary:
+      description: "<library>.summary.tsv"
+  - read_start:
+      description: "<library>.read_start.tsv"
+  - json:
+      description: "<library>.cutadapt.json"
+  - log:
+      description: "<library>.cutadapt.log"
+  - versions:
+      description: "<library>.demux_qc.versions.yml"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

@@ -1,0 +1,45 @@
+---
+# zealgt local module (nf-core module conventions, simplified meta)
+name: markdup_import
+description: "Read groups + duplicate marking for existing CRAMs/BAMs (addreplacerg -> collate -> fixmate -m -> sort -> markdup -d 2500), no realignment"
+keywords:
+  - duplicate marking
+  - read groups
+  - cram
+tools:
+  - samtools:
+      description: samtools (pinned in environment.yml)
+  - gawk:
+      description: gawk (pinned in environment.yml)
+input:
+  - meta:
+      type: map
+      description: "Sample meta incl. read_group (sample-sheet fallback)"
+  - input:
+      type: file
+      description: "CRAM or BAM"
+  - index:
+      type: file
+      description: "crai / bai / csi"
+  - meta2:
+      type: map
+      description: "Reference meta"
+  - fasta:
+      type: file
+      description: "reference FASTA"
+  - fai:
+      type: file
+      description: "FASTA index"
+output:
+  - cram:
+      description: "[meta, <sample>.cram, <sample>.cram.crai]"
+  - markdup_stats:
+      description: "<sample>.markdup.stats"
+  - read_group:
+      description: "<sample>.read_group.txt (which RG was applied and why)"
+  - versions:
+      description: "<sample>.markdup_import.versions.yml"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

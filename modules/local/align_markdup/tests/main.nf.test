@@ -1,0 +1,47 @@
+nextflow_process {
+
+    name "Test Process ALIGN_MARKDUP"
+    script "../main.nf"
+    process "ALIGN_MARKDUP"
+
+    tag "modules"
+    tag "modules_local"
+    tag "align_markdup"
+    tag "stub"
+
+    test("LX_1 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false,
+                      read_group:'@RG\\\\tID:LX_1\\\\tSM:LX_1\\\\tLB:LIBX\\\\tPL:ILLUMINA' ],
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true) ]
+                ])
+                input[1] = [
+                    [ id:'tiny' ],
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true),
+                    [ file("${projectDir}/tests/fixtures/ref/tiny.fa.l2b", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.mbw", checkIfExists: true) ]
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert file(process.out.cram[0][1]).name == "LX_1.cram" },
+                { assert file(process.out.cram[0][2]).name == "LX_1.cram.crai" },
+                { assert file(process.out.markdup_stats[0][1]).name == "LX_1.markdup.stats" },
+                { assert file("${outputDir}/store_stub/cram/LX_1.cram").exists() }
+            )
+        }
+    }
+}

@@ -1,0 +1,43 @@
+---
+# zealgt local module (nf-core module conventions, simplified meta)
+name: align_markdup
+description: "minibwa -x sr with read group -> samtools fixmate -m -> sort -> markdup -d 2500 -> CRAM + crai (duplicates flagged, no MAPQ filter)"
+keywords:
+  - alignment
+  - duplicate marking
+  - cram
+tools:
+  - minibwa:
+      description: minibwa (pinned in environment.yml)
+  - samtools:
+      description: samtools (pinned in environment.yml)
+input:
+  - meta:
+      type: map
+      description: "Sample meta incl. read_group (escaped @RG line)"
+  - reads:
+      type: file
+      description: "trimmed R1, R2"
+  - meta2:
+      type: map
+      description: "Reference meta"
+  - fasta:
+      type: file
+      description: "B73 v5 FASTA"
+  - fai:
+      type: file
+      description: "FASTA index"
+  - index:
+      type: file
+      description: "minibwa index (.l2b, .mbw)"
+output:
+  - cram:
+      description: "[meta, <sample>.cram, <sample>.cram.crai]"
+  - markdup_stats:
+      description: "<sample>.markdup.stats"
+  - versions:
+      description: "<sample>.align_markdup.versions.yml"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

@@ -1,0 +1,40 @@
+nextflow_process {
+
+    name "Test Process PROVENANCE"
+    script "../main.nf"
+    process "PROVENANCE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "provenance"
+    tag "stub"
+
+    test("LX_1 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LX_1', library:'LIBX' ],
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true),
+                    [ file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ],
+                    '{"sample":"LX_1","entry":"read_demultiplexing"}'
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert file(process.out.json[0][1]).name == "LX_1.provenance.json" },
+                { assert file(process.out.json[0][1]).text.contains("LX_1") }
+            )
+        }
+    }
+}

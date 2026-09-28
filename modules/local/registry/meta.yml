@@ -1,0 +1,44 @@
+---
+# zealgt local module (nf-core module conventions, simplified meta)
+name: registry
+description: "Demux registry entry of one library, written only when its demux QC and all sample CRAMs are in the store"
+keywords:
+  - registry
+  - demultiplexing
+tools:
+  - python:
+      description: python (pinned in environment.yml)
+input:
+  - meta:
+      type: map
+      description: "Library meta"
+  - demux_qc:
+      type: file
+      description: "<library>.tsv from DEMUX_QC"
+  - crams:
+      type: file
+      description: "CRAMs + indexes of the library"
+  - samples:
+      type: list
+      description: "expected sample ids"
+  - store:
+      type: string
+      description: "store root"
+  - run_id:
+      type: string
+      description: "run id"
+  - code_version:
+      type: string
+      description: "git commit"
+  - subsample:
+      type: integer
+      description: "read pairs taken (0 = all)"
+output:
+  - tsv:
+      description: "<library>.registry.tsv"
+  - versions:
+      description: "<library>.registry.versions.yml"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

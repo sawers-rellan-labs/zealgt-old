@@ -1,0 +1,44 @@
+nextflow_process {
+
+    name "Test Process DEMUX"
+    script "../main.nf"
+    process "DEMUX"
+
+    tag "modules"
+    tag "modules_local"
+    tag "demux"
+    tag "stub"
+
+    test("LIBX, 3 samples, 6B2S+T symmetric - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric', read_structure_r1:'6B2S+T', read_structure_r2:'6B2S+T',
+                      tar_members_r1:[], tar_members_r2:[], n_samples:3, pu:'TESTFC01.1' ],
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L2_1.fq.gz", checkIfExists: true) ],
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L2_2.fq.gz", checkIfExists: true) ],
+                    [ ['LX_1', 'GCCATA', 'GCCATA'], ['LX_2', 'TCTGGT', 'TCTGGT'], ['LX_3', 'TGGCTT', 'TGGCTT'] ]
+                ])
+                input[1] = 0
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.reads[0][1].size() == 6 },
+                { assert process.out.reads[0][1].collect { f -> file(f).name }.sort() == ["LX_1_R1.fastq.gz", "LX_1_R2.fastq.gz", "LX_2_R1.fastq.gz", "LX_2_R2.fastq.gz", "LX_3_R1.fastq.gz", "LX_3_R2.fastq.gz"] },
+                { assert file(process.out.json[0][1]).name == "LIBX.cutadapt.json" },
+                { assert process.out.versions.size() == 1 }
+            )
+        }
+    }
+}

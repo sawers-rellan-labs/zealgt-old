@@ -1,0 +1,46 @@
+nextflow_process {
+
+    name "Test Process MARKDUP_IMPORT"
+    script "../main.nf"
+    process "MARKDUP_IMPORT"
+
+    tag "modules"
+    tag "modules_local"
+    tag "markdup_import"
+    tag "stub"
+
+    test("OLD_1 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'OLD_1', sample:'OLD_1', library:'LIBX', qc_group:'testset', single_end:false,
+                      read_group:'@RG\\\\tID:OLD_1\\\\tSM:OLD_1\\\\tLB:LIBX\\\\tPL:ILLUMINA' ],
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)
+                ])
+                input[1] = [
+                    [ id:'tiny' ],
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert file(process.out.cram[0][1]).name == "OLD_1.cram" },
+                { assert file(process.out.read_group[0][1]).name == "OLD_1.read_group.txt" },
+                { assert file("${outputDir}/store_stub/cram_import/OLD_1.cram").exists() }
+            )
+        }
+    }
+}

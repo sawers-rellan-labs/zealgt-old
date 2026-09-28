@@ -1,0 +1,42 @@
+---
+# zealgt local module (nf-core module conventions, simplified meta)
+name: demux
+description: "Exact inline-barcode demultiplexing of one library with cutadapt (-e 0 --no-indels), barcode and skip bases removed by one anchored 5' pattern per read"
+keywords:
+  - demultiplexing
+  - inline barcode
+  - cutadapt
+tools:
+  - cutadapt:
+      description: cutadapt (pinned in environment.yml)
+input:
+  - meta:
+      type: map
+      description: "Library meta: id, source, layout, read_structure_r1/r2 (fgbio notation), tar_members_r1/r2"
+  - r1:
+      type: file
+      description: "R1 lane FASTQs (or one tar for batch 1)"
+  - r2:
+      type: file
+      description: "R2 lane FASTQs (or one tar)"
+  - barcodes:
+      type: list
+      description: "[sample_id, barcode_r1, barcode_r2] per sample"
+  - subsample:
+      type: integer
+      description: "read pairs to take (0 = all)"
+output:
+  - reads:
+      description: "demux/<sample>_R{1,2}.fastq.gz"
+  - json:
+      description: "<library>.cutadapt.json"
+  - log:
+      description: "<library>.cutadapt.log"
+  - versions:
+      description: "versions.yml"
+  - versions_meta:
+      description: "[meta, versions.yml]"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

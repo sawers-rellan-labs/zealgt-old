@@ -1,0 +1,31 @@
+---
+# zealgt local module (nf-core module conventions, simplified meta)
+name: provenance
+description: "Per-sample provenance record of a stored CRAM: settings, origin, tool versions, CRAM size"
+keywords:
+  - provenance
+tools:
+  - python:
+      description: python (pinned in environment.yml)
+input:
+  - meta:
+      type: map
+      description: "Sample meta"
+  - cram:
+      type: file
+      description: "the stored CRAM"
+  - versions:
+      type: file
+      description: "versions.yml files of the steps that made it"
+  - record:
+      type: string
+      description: "single-line JSON built by the workflow"
+output:
+  - json:
+      description: "<sample>.provenance.json"
+  - versions:
+      description: "<sample>.provenance.versions.yml"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"
