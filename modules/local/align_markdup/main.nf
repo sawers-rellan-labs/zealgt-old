@@ -14,7 +14,7 @@
 // to its full -m x threads budget for any sample > ~20 M pairs and stays at ~1.09 x it). Gate 2 (gate2_3A and its relaunch;
 // main checkout agent/20260929_032000_align_rss.tsv + agent/handover_*_gate2.md): the old (memory - 12 GiB) / 4 rule made
 // every attempt (24 / 48 / 72 GB) OOM, and 6 of 8 first attempts at 24 GB with reserve 16 still OOM'd (minibwa growth).
-// Model: peak ~ minibwa <= ~16 GB + 1.1 x sort budget + ~1 GB; at 32 GB: ~3 GB sort, peak ~20 GB. Both params are referenced here, so they enter the task
+// Model: peak ~ minibwa <= ~16 GB + 1.1 x sort budget + ~1 GB; at 32 GB: sort 4 x 2304 MB (~9 GB), peak ~21-27 GB. Both params are referenced here, so they enter the task
 // hash by value: change them only with a deliberate re-tune. The chosen values are logged to stderr. The first-attempt
 // memory is params.align_memory_gb (conf/hazel.config).
 // A pipe stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so the memory-escalation retry
