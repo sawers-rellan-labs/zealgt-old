@@ -25,7 +25,7 @@ RUN_ID="$1"; shift || true
 [ -n "$RUN_ID" ] || { echo "usage: sbatch scripts/submit_head_job.sbatch <run_id> <nextflow run args>" >&2; exit 2; }
 case "$RUN_ID" in *[!A-Za-z0-9_.-]*) echo "run_id '$RUN_ID': letters, digits, _ . - only" >&2; exit 2 ;; esac
 
-REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt
+REPO="${ZG_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}"
 NXF_PREFIX="$(bash "$REPO/scripts/build_envs.sh" --list | awk -F'\t' '$1 == "nextflow" { print $5 }')"
 [ -x "$NXF_PREFIX/bin/nextflow" ] || { echo "nextflow env not built: $NXF_PREFIX (run scripts/build_envs.sbatch nextflow)" >&2; exit 1; }
 

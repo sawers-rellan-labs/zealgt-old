@@ -53,6 +53,10 @@ output:
       type: map
       description: |
         channel: [ val(sample_id), val(provenance record) ]
+  - genotype_samples:
+      type: file
+      description: |
+        channel: [ val(meta), cram, crai, metrics, val([mask_r1, mask_r2]) ] (--workflow genotype; genotype_functions.nf)
 authors:
   - "@faustovrz"
 maintainers:

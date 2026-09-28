@@ -11,6 +11,12 @@ nf_core_version: 4.1.0
 #   - No GitHub Actions CI (spec pipelines/requirements/ci_testing, MUST): the pipeline runs on a private offline cluster.
 #     scripts/run_checks.sh runs the same checks locally before every push (nf-core lint, schema lint, nf-test, stub runs;
 #     docs/CONTRIBUTING.md), so the github / ci template features are skipped and their files are not required.
+#   - Genotype workflow (docs/usage.md "Deliberate deviations"): nf-core bcftools/mpileup is not used (it always pipes into
+#     bcftools call and reheaders to one sample; every count here needs raw multi-sample AD at fixed sites, so the local
+#     allele_counts module runs mpileup -I -a AD | bcftools query); nf-core samtools/merge is not used for the witness pool
+#     (merge, read-group rewrite and index run as one pipe in witness_pool, so the ~2 GB intermediate never reaches work/);
+#     the python-only genotype modules share one python env (owned by pooled_likelihood_tiers, envs/process_aliases.tsv, as
+#     MERGE_LANES shares demux's), standard library only, to save ~14 conda prefixes on the group file quota.
 lint:
   container_configs: false
   files_unchanged:
@@ -38,6 +44,7 @@ lint:
         - params.import_sheet
         - params.registry_seed
         - params.trim_adapters
+        - params.genotype_input
     # zealgt: resources are set per process in conf/hazel.config and read from Slurm at run time
     # (bin/export_slurm_resources.sh, PLAN §2 rule 4), not as process.cpus / memory / time defaults.
     - process.cpus

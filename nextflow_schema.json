@@ -63,16 +63,23 @@
                         "genotype"
                     ],
                     "default": "cram",
-                    "description": "cram: raw libraries -> analysis-ready CRAMs; genotype: CRAM store -> genotypes (skeleton, not implemented)."
+                    "description": "cram: raw libraries -> analysis-ready CRAMs; genotype: CRAM store -> genotypes (run card -params-file docs/runs/<run>.yml)."
                 },
                 "entry": {
                     "type": "string",
                     "enum": [
                         "read_demultiplexing",
-                        "markdup_import"
+                        "markdup_import",
+                        "sample_quality_control",
+                        "variant_discovery",
+                        "ancestry_inference",
+                        "marker_union",
+                        "donor_allele_calling",
+                        "genotype_imputation",
+                        "reporting"
                     ],
                     "default": "read_demultiplexing",
-                    "description": "CRAM-workflow entry: read_demultiplexing (raw library -> CRAMs) or markdup_import (existing CRAMs -> duplicate marking + read groups); both end at the CRAM stop point."
+                    "description": "Entry of the chosen workflow. cram: read_demultiplexing (raw library -> CRAMs) or markdup_import (existing CRAMs -> duplicate marking + read groups), both ending at the CRAM stop point. genotype: one stage, run alone on the store outputs of the stages before it: sample_quality_control, variant_discovery, ancestry_inference, marker_union, donor_allele_calling, genotype_imputation, reporting. An entry of the other workflow is refused."
                 },
                 "libraries": {
                     "type": "string",
@@ -209,6 +216,623 @@
                 }
             }
         },
+        "genotype_workflow": {
+            "title": "Genotype workflow",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "--workflow genotype: sample sheet, CRAM store, keyed genotype store, units and thresholds (genotype design §5). Set them in the run card.",
+            "properties": {
+                "genotype_input": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "help_text": "Parsed and validated with samplesheetToList against assets/schema_genotype.json only by --workflow genotype (no `schema` key here, as import_sheet). CRAM, index, metrics and provenance are resolved as <cram_store>/<store_dir>/<sample_id>.* and checked at initialisation.",
+                    "fa_icon": "fas fa-file-csv",
+                    "default": "${projectDir}/meta/genotype_dev.csv",
+                    "description": "Genotype sample sheet (meta/genotype_dev.csv, built by meta/build_genotype_sheet.py): sample_id, role, donor, taxon, source, store_dir, mask_r1, mask_r2, include."
+                },
+                "cram_store": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "/rsstu/users/r/rrellan/BZea/ZEAL/store",
+                    "description": "Read-only CRAM store of the CRAM workflow: <cram_store>/{cram,cram_import}/<sample_id>.cram, .crai, .CollectWgsMetrics.coverage_metrics, .provenance.json. The genotype workflow never writes there."
+                },
+                "genotype_store_key": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+$",
+                    "description": "Required. Names <store>/genotype/<key>/, where the genotype outputs and settings/<stage>.json go; a rerun with the same key and other settings, code or samples is refused (review #7)."
+                },
+                "input_store_key": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+$",
+                    "description": "Key whose store outputs a downstream stage reads (default: genotype_store_key)."
+                },
+                "donors": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$",
+                    "description": "Required. Donors of this run (sheet column donor), comma-separated."
+                },
+                "donor_set": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+$",
+                    "description": "Name of the union set; required from marker_union on (names union/<set>.*, donor_alleles/<set>/, genotypes/<set>/)."
+                },
+                "regions": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.]+(:\\d+-\\d+)?(,[A-Za-z0-9_.]+(:\\d+-\\d+)?)*$",
+                    "default": "chr10",
+                    "description": "Units of the run: <chrom> or <chrom>:<start>-<end>, comma-separated (chr10 = the whole chromosome; Gate 1 chr10:1-20000000). Each chromosome must have ranges in --lowcopy_bed."
+                },
+                "lowcopy_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.bed$",
+                    "default": "/rsstu/users/r/rrellan/BZea/ZEAL/results/pilot_1B_chr10/union/union_chr10.bed",
+                    "description": "Low-copy reference ranges (BED); discovery and counts are restricted to them. chr10 only for now."
+                },
+                "qc_panel": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Blind QC panel positions for stage 2b (COVERAGE_QC, RELATEDNESS_QC, DONOR_CONTENT_QC); unset = panel QC not run, MIN_COVERAGE alone decides."
+                },
+                "annotation_panels": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+=\\S+?(,[A-Za-z0-9_.-]+=\\S+?)*$",
+                    "description": "Step-4 annotation columns only: <name>=<path>,... (known-site tables)."
+                },
+                "mappability_priors": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory holding <taxon>.prior.tsv (c grid, weight); required by donor_allele_calling."
+                },
+                "mappability_prior_mode": {
+                    "type": "string",
+                    "enum": [
+                        "taxon",
+                        "flat"
+                    ],
+                    "default": "taxon",
+                    "description": "taxon: the donor taxon's prior; flat: uniform on the grid (review #11 test)."
+                },
+                "b73_controls": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$",
+                    "default": "B73_ERR3288215,B73_skim10",
+                    "description": "Zero-class pools (sheet rows with role b73_control), comma-separated; must be non-empty outside stub runs."
+                },
+                "provenance_check": {
+                    "type": "string",
+                    "enum": [
+                        "strict",
+                        "warn"
+                    ],
+                    "default": "strict",
+                    "description": "strict: a CRAM whose provenance record disagrees with the current read-processing settings (markdup) stops the run; warn: logged only (PLAN §3)."
+                },
+                "mask_read_starts": {
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
+                    "pattern": "^([Tt]rue|[Ff]alse)$",
+                    "default": true,
+                    "description": "Set the first mask_r1 / mask_r2 cycles (from the sheet) to Q0 before every read consumer (5' bias); false = every mask 0, same code path."
+                },
+                "imputation_method": {
+                    "type": "string",
+                    "enum": [
+                        "raster",
+                        "phg",
+                        "both"
+                    ],
+                    "default": "raster",
+                    "description": "raster (Eq. S5.1); phg / both are accepted but not implemented yet (WP-PHG)."
+                },
+                "read_position_qc": {
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
+                    "pattern": "^([Tt]rue|[Ff]alse)$",
+                    "default": true,
+                    "description": "Reporting: ALT / other fraction by read cycle (the 5' bias residue)."
+                },
+                "min_coverage": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.05,
+                    "description": "2b: a sample with mean coverage below this fails (PLAN:243)."
+                },
+                "panel_min_markers": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 1000,
+                    "description": "2b coverage QC report: covered panel markers per sample x chromosome."
+                },
+                "relatedness_method": {
+                    "type": "string",
+                    "enum": [
+                        "vanraden_pseudohaploid",
+                        "vanraden_af"
+                    ],
+                    "default": "vanraden_pseudohaploid",
+                    "description": "2b relatedness: VanRaden-centred kinship from one random read per site (lines) or ALT fractions."
+                },
+                "relatedness_seed": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 1,
+                    "description": "2b: seed of the pseudo-haploid read draw."
+                },
+                "relatedness_flag_sd": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 3,
+                    "description": "2b: flag relatedness outliers beyond this many SD."
+                },
+                "donor_content_expected": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.125,
+                    "description": "2b: expected share of panel sites with ALT reads (12.5 %)."
+                },
+                "donor_content_flag_low": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.03,
+                    "description": "2b: flag a sample below this donor-content share."
+                },
+                "relatedness_qc": {
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
+                    "pattern": "^([Tt]rue|[Ff]alse)$",
+                    "default": true,
+                    "description": "2b: run RELATEDNESS_QC when a QC panel is set (pure python: run 2b per donor set)."
+                },
+                "donor_content_qc": {
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
+                    "pattern": "^([Tt]rue|[Ff]alse)$",
+                    "default": true,
+                    "description": "2b: run DONOR_CONTENT_QC when a QC panel is set."
+                },
+                "sample_qc_fail_on": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_]+(,[A-Za-z0-9_]+)*$",
+                    "default": "relatedness,donor_content",
+                    "description": "2b: panel checks whose flag fails a sample in sample_qc.tsv (MIN_COVERAGE always fails); comma-separated from relatedness, donor_content, panel_coverage."
+                },
+                "pileup_args": {
+                    "type": "string",
+                    "default": "-q 20 -Q 20 -d 10000",
+                    "description": "bcftools mpileup options of every count (ALLELE_COUNTS; -I and -a AD are fixed in the script)."
+                },
+                "crisp_args": {
+                    "type": "string",
+                    "default": "-p 12 --mmq 20 --filterreads 0 --minc 2",
+                    "description": "CRISP options of discovery (--bams/--ref/--bed/--regions/--sm are set by the module)."
+                },
+                "veto_min_alt_reads": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 1,
+                    "description": "3: keep a CRISP record when the BC2S3 witness has at least this many ALT reads."
+                },
+                "tier_counts_source": {
+                    "type": "string",
+                    "enum": [
+                        "crisp",
+                        "mpileup"
+                    ],
+                    "default": "crisp",
+                    "description": "3: tiers from the CRISP VCF counts or from bcftools mpileup counts at the kept sites."
+                },
+                "tier_eps0": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.005,
+                    "description": "3/6: default per-read error rate."
+                },
+                "tier_prior": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.5,
+                    "description": "3/6: prior of a segregating site in the tier posteriors."
+                },
+                "tier_plants": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 6,
+                    "description": "3/6: plants per BC1 pool (Bin(n, 1/2) lattice)."
+                },
+                "tier_zero_class_llr": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": -3,
+                    "description": "3/6: LLR below which a donor counts in the zero class."
+                },
+                "tier_zero_class_min_reads": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 20,
+                    "description": "3/6: zero-class reads needed to estimate epsilon."
+                },
+                "tier_eps_floor": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.001,
+                    "description": "3/6: lower bound of epsilon."
+                },
+                "tier_llr_a": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 6.9,
+                    "description": "3/6: LLR threshold of tier A."
+                },
+                "tier_llr_b": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 4.6,
+                    "description": "3/6: LLR threshold of tier B."
+                },
+                "tier_llr_c": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 2.2,
+                    "description": "3/6: LLR threshold of tier C."
+                },
+                "tier_llr_ref": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": -4,
+                    "description": "3/6: LLR at or below which a site is tier ref."
+                },
+                "tier_ref_min_depth": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 12,
+                    "description": "3/6: depth needed for tier ref."
+                },
+                "tier_a_min_pools_alt": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 2,
+                    "description": "3: pools with ALT reads needed for tier A (review #10)."
+                },
+                "tier_a_single_pool_min_alt": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 0,
+                    "description": "3: tier A from one pool with at least this many ALT reads (0 = off; review #10)."
+                },
+                "tier_ref_min_pools": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 1,
+                    "description": "3: pools needed for tier ref (review #10)."
+                },
+                "tier_a_single_pool_max_pools": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 2,
+                    "description": "3: the single-pool tier-A rule applies to donors with at most this many pools (review #10)."
+                },
+                "hidepth_factor": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 2,
+                    "description": "3/6: flag hidepth above this multiple of the median depth."
+                },
+                "af_gt_half_p": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.01,
+                    "description": "3/6: flag af_gt_half when the one-sided binomial p against 1/2 is below this."
+                },
+                "tier_af_gt_half_min_depth": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 4,
+                    "description": "3/6: depth needed to test af_gt_half."
+                },
+                "tier_inconsistent_min_alt": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 3,
+                    "description": "3/6: flag inconsistent when a pool expected at 0 has at least this many ALT reads."
+                },
+                "tier_inconsistent_min_depth": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 10,
+                    "description": "3/6: depth needed for the inconsistent flag."
+                },
+                "tier_witness_zero_class": {
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
+                    "pattern": "^([Tt]rue|[Ff]alse)$",
+                    "default": true,
+                    "description": "3: the BC2S3 witness pool counts in the zero class when its LLR allows (zealbc1 map.tsv behaviour)."
+                },
+                "rigidity": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 500,
+                    "description": "4: RTIGER rigidity."
+                },
+                "min_markers_factor": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 2,
+                    "description": "4: a line with fewer than min_markers_factor x rigidity covered own tier-A markers in the region is excluded (PLAN §4 #13)."
+                },
+                "rtiger_drop_invariant_sites": {
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
+                    "pattern": "^([Tt]rue|[Ff]alse)$",
+                    "default": true,
+                    "description": "4: drop sites with 0 ALT reads over all lines before RTIGER (as zealbc1)."
+                },
+                "gap_alt_posterior": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.999,
+                    "description": "6 step 1 and 2: call ALT when the posterior (log-odds scale) reaches this."
+                },
+                "gap_prior_w": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 2,
+                    "description": "6: weight w of the donor mean in the other-donor prior."
+                },
+                "gap_prior_scope": {
+                    "type": "string",
+                    "enum": [
+                        "all",
+                        "same_taxon"
+                    ],
+                    "default": "all",
+                    "description": "6: donors used for k and m of the prior."
+                },
+                "gap_prior_source": {
+                    "type": "string",
+                    "enum": [
+                        "other_donors",
+                        "fixed",
+                        "mu_only"
+                    ],
+                    "default": "other_donors",
+                    "description": "6 step 1 prior: other_donors (Eq. S5.3), fixed (gap_prior_fixed) or mu_only."
+                },
+                "gap_prior_fixed": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "exclusiveMinimum": 0,
+                    "exclusiveMaximum": 1,
+                    "default": 0.5,
+                    "description": "6: prior at every gap when gap_prior_source = fixed."
+                },
+                "reference_donor_tables": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+=\\S+?(,[A-Za-z0-9_.-]+=\\S+?)*$",
+                    "description": "5/6: read-only step-4 tables of donors not called in this run, <donor>=<path>,... (union and prior only; Gate 1: zealbc1 Zx.0570_P2)."
+                },
+                "eps_prior_alpha": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 1,
+                    "description": "6 step 2: alpha of the zero-class epsilon prior (review #1b)."
+                },
+                "eps_prior_beta": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 200,
+                    "description": "6 step 2: beta of the zero-class epsilon prior (review #1b)."
+                },
+                "b73_lines_alt_p": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.01,
+                    "description": "6 step 2: ALT reads in x = 0 lines above the zero-class epsilon at p below this block the site (review #1b)."
+                },
+                "b73_lines_min_alt": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 1,
+                    "description": "6 step 2: ALT reads in x = 0 lines needed before the blocked_b73_lines test (1 = any; 2 if 1 read is too strict at Gate 1)."
+                },
+                "lambda_sites": {
+                    "type": "string",
+                    "enum": [
+                        "all",
+                        "candidates"
+                    ],
+                    "default": "all",
+                    "description": "6 step 2: sites of the per-line depth scale lambda_i: all x = 0 union sites, or the candidate (missing) sites only as the pilot script."
+                },
+                "c_grid_max": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 1.5,
+                    "description": "6 step 2: upper end of the mappability grid c."
+                },
+                "c_grid_step": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.05,
+                    "description": "6 step 2: step of the mappability grid c."
+                },
+                "ks_floor": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.02,
+                    "description": "6 step 2: floor of the per-site depth factor k_s."
+                },
+                "phg_inbreeding": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0,
+                    "description": "7 PHG: inbreeding coefficient F of find-paths."
+                },
+                "phg_prob_same_gamete": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$",
+                    "default": 0.99999,
+                    "description": "7 PHG: probability of staying on the same gamete."
+                },
+                "reporting_expectation": {
+                    "type": "string",
+                    "enum": [
+                        "bc2s2",
+                        "bc2s3"
+                    ],
+                    "default": "bc2s2",
+                    "description": "8: genotype-frequency expectation the reports compare with."
+                },
+                "breakpoint_window_markers": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^-?\\d+$",
+                    "default": 500,
+                    "description": "8: window (markers) around a RTIGER breakpoint for the breakpoint-density check (review #12)."
+                }
+            }
+        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -321,6 +945,9 @@
         },
         {
             "$ref": "#/$defs/read_processing_settings"
+        },
+        {
+            "$ref": "#/$defs/genotype_workflow"
         },
         {
             "$ref": "#/$defs/zealgt_run_options"
