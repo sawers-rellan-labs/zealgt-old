@@ -65,9 +65,11 @@ and correct the numbers from `seff` / `sacct` after each gate — record them th
   - RTIGER, one donor × chromosome: 4 cpu, 16 GB, 2 h short (confirm; RTIGER is R, single-threaded per line).
   - marker_union, gap filling steps 1–2, raster, reporting: 1–2 cpu, 12–16 GB, 1 h short (step 2 measured 35 s / 0.9 GB on chr10).
   - reference_variant_space (AnchorWave, later): 8 cpu, 16 GB, 2 h short per chromosome; measure memory on one chromosome first.
-- Environments: prebuilt once on the login node from pinned ymls in envs/ into the persistent prefix
-  `/rsstu/users/r/rrellan/BZea/ZEAL/envs/<name>` (assembly, nilhmm, qc, nextflow; docs/PLAN_cleanup.md group 4 — `/share/maize/frodrig4/conda`
-  is being retired and is not persistent). Every `withLabel` names a prefix; compute nodes have no internet, so no env is built at task time.
+- Environments: use the existing ones as they are (user, 2026-09-27): `withLabel` prefixes `/share/maize/frodrig4/conda/env/assembly`
+  (minibwa, samtools, bcftools, cutadapt, wgsim), `env/nilhmm` (R, RTIGER, python3), `env/qc` (python with numpy, multiqc),
+  `env/nextflow`; check each with one `conda run -p <prefix> <tool> --version` on the login node before Gate 0 and report any that is
+  broken to the user. Do not rebuild, move or delete any environment (PLAN_cleanup group 4 and PLAN_pipeline §5 rule 6 are superseded on
+  this point); compute nodes have no internet, so no env is built at task time.
 - Scale to keep in view (§5): ~130 BC1 samples and ~185 lines to align in Task 1 (~1,000 CPU-h), ~3,000 CPU-h for all BC1 samples;
   the group file quota on /share (~224 K files left) is the binding limit, so every gate reports file counts and stub work/ is cleaned
   with consent.
