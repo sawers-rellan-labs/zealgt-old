@@ -1,4 +1,4 @@
-# env_id<TAB>smoke command (run inside the env by bin/build_envs.sh; first non-empty output line goes to envs/manifest.tsv)
+# env_id<TAB>smoke command (run inside the env by scripts/build_envs.sh; first non-empty output line goes to envs/manifest.tsv)
 nextflow	NXF_HOME=$CONDA_PREFIX/share/nextflow/home NXF_OFFLINE=true nextflow -version 2>&1 | grep -m1 -i version
 fastqc	fastqc --version
 multiqc	multiqc --version
