@@ -28,6 +28,15 @@ session (discussion #5612); do not hide logic from the hash. Issue #3581 (wontfi
    executable bin/ scripts are; non-executable interpreter-called bin/ scripts are not — keep output-affecting helpers in module
    templates/); §3 stage table (checkpoint, two stages); §5 (checkpoint footprint ≈ N libraries in flight × ~1× raw, hardlinked;
    cleanup rule); drop storeDir from the principles in favour of the explicit skip logic. REQUIREMENTS §4 unchanged except notes.
+3b. Operator ergonomics and measured fixes (user / Gate 2, 2026-09-28):
+   - scripts/submit_head_job.sbatch: prefix every console line of Nextflow with a timestamp (e.g. pipe through
+     `awk '{ print strftime("%F %T"), $0; fflush() }'`, keeping nextflow's exit status via PIPESTATUS), and print at the top the REPO used
+     and its `git rev-parse HEAD` (works with the genotype session's optional ZG_REPO).
+   - conf/normal.config: TRIMMOMATIC's own `withName` block loses to the combined DEMUX|TRIMMOMATIC|… selector (the 12 h override
+     never applied; measured 25–31 k pairs/s, so 4 h is enough) — remove the dead override or give TRIMMOMATIC its own block, and
+     add a check that each process gets the intended time/memory (`nextflow config -profile hazel,normal` or a stub run's trace).
+   - ALIGN_MARKDUP first-attempt memory and an explicit samtools sort -m from task.memory, from the Gate 2 OOM analysis in Phase E's
+     Gate 2 handover (24 GB was OOM-killed on most 3A samples).
 4. Gates: nfcore-compliance pre-push checklist (lint, schema lint, nextflow lint, nf-test incl. a cache test proving (a) a resource
    change keeps stage-1 and stage-2 tasks cached and (b) a stage-2 module edit does not rerun stage 1), CodeRabbit gate, push, then
    Gate 0 (stub) and Gate 1 (1A subsample through the same code path, multi-lane, full thread counts) on hazel. No Gate 2 rerun without
