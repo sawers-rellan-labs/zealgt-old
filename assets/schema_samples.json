@@ -1,0 +1,149 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_samples.json",
+    "title": "sawers-rellan-labs/zealgt - params.samples schema (meta/samples.csv, built by meta/build_samples.py)",
+    "description": "The single sample sheet of the CRAM workflow: library, raw location, inline barcodes and read-group fields per sample",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "meta": [
+                    "sample_id"
+                ],
+                "errorMessage": "sample_id: letters, digits, _ . - only"
+            },
+            "source": {
+                "type": "string",
+                "enum": [
+                    "bc1",
+                    "bc2s3_batch1",
+                    "bc2s3_batch2"
+                ],
+                "meta": [
+                    "source"
+                ]
+            },
+            "role": {
+                "type": "string",
+                "meta": [
+                    "role"
+                ]
+            },
+            "library": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "meta": [
+                    "library"
+                ]
+            },
+            "library_index": {
+                "meta": [
+                    "library_index"
+                ]
+            },
+            "raw_location": {
+                "type": "string",
+                "pattern": "^/\\S+$",
+                "meta": [
+                    "raw_location"
+                ]
+            },
+            "raw_r1": {
+                "type": "string",
+                "meta": [
+                    "raw_r1"
+                ]
+            },
+            "raw_r2": {
+                "type": "string",
+                "meta": [
+                    "raw_r2"
+                ]
+            },
+            "barcode_r1": {
+                "type": "string",
+                "pattern": "^[ACGT]+$",
+                "meta": [
+                    "barcode_r1"
+                ]
+            },
+            "barcode_r2": {
+                "type": "string",
+                "pattern": "^[ACGT]*$",
+                "meta": [
+                    "barcode_r2"
+                ]
+            },
+            "barcode_layout": {
+                "type": "string",
+                "enum": [
+                    "symmetric",
+                    "r1_only"
+                ],
+                "meta": [
+                    "barcode_layout"
+                ]
+            },
+            "plate": {
+                "meta": [
+                    "plate"
+                ]
+            },
+            "well": {
+                "meta": [
+                    "well"
+                ]
+            },
+            "donor": {
+                "type": "string",
+                "meta": [
+                    "donor"
+                ]
+            },
+            "taxon": {
+                "type": "string",
+                "meta": [
+                    "taxon"
+                ]
+            },
+            "nil_id": {
+                "meta": [
+                    "nil_id"
+                ]
+            },
+            "pedigree": {
+                "meta": [
+                    "pedigree"
+                ]
+            },
+            "is_check": {
+                "meta": [
+                    "is_check"
+                ]
+            },
+            "rg_lb": {
+                "type": "string",
+                "meta": [
+                    "rg_lb"
+                ]
+            },
+            "rg_pl": {
+                "type": "string",
+                "meta": [
+                    "rg_pl"
+                ]
+            }
+        },
+        "required": [
+            "sample_id",
+            "source",
+            "library",
+            "raw_location",
+            "barcode_r1",
+            "barcode_layout"
+        ]
+    }
+}

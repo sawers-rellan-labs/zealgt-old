@@ -1,0 +1,35 @@
+---
+# zealgt local subworkflow (nf-core conventions, simplified meta); see the header comment of main.nf and docs/PLAN_pipeline.md §3
+name: read_alignment
+description: "zealgt CRAM workflow stage read_alignment (PLAN §3); inputs and outputs are listed in main.nf take:/emit: comments"
+keywords:
+  - zealgt
+  - cram workflow
+  - read_alignment
+components:
+  - align/markdup # modules/local/align_markdup (lint maps _ to /)
+  - samtools/stats
+  - picard/collectwgsmetrics
+  - provenance
+input:
+  - ch_reads:
+      description: "channel: [ val(meta), [ R1, R2 ] ]  trimmed reads of the samples still to align"
+  - ch_stored:
+      description: "channel: [ val(meta), cram, crai, [ versions.yml ] ]  CRAMs already in <store>/cram"
+  - ch_ref:
+      description: "channel: value [ val(meta2), fasta, fai, [ minibwa index files ] ]"
+  - ch_record:
+      description: "channel: [ sample_id, record map, [ extra versions.yml ] ]  one per sample (new and stored)"
+  - store_dir:
+      description: "string: <store root>/cram, where the CRAMs and their QC live"
+output:
+  - cram:
+      description: "channel: [ val(meta), cram, crai ]"
+  - qc:
+      description: "channel: [ qc_group, file ]"
+  - provenance:
+      description: "channel: [ val(meta), json ]"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

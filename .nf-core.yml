@@ -24,6 +24,12 @@ lint:
     - .github/workflows/linting.yml
     - .github/.dockstore.yml
   nextflow_config:
+    # zealgt: these defaults point into the checkout (${projectDir}/meta, assets/); lint expands projectDir in the
+    # config but not in the schema, so the two strings never compare equal.
+    - config_defaults:
+        - params.samples
+        - params.registry_seed
+        - params.trim_adapters
     - process.cpus
     - process.memory
     - process.time

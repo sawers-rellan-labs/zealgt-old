@@ -1,0 +1,31 @@
+---
+# zealgt local subworkflow (nf-core conventions, simplified meta); see the header comment of main.nf and docs/PLAN_pipeline.md §3
+name: read_demultiplexing
+description: "zealgt CRAM workflow stage read_demultiplexing (PLAN §3); inputs and outputs are listed in main.nf take:/emit: comments"
+keywords:
+  - zealgt
+  - cram workflow
+  - read_demultiplexing
+components:
+  - demux
+  - demux/qc # modules/local/demux_qc
+input:
+  - ch_libraries:
+      description: "channel: [ val(meta), [ raw R1 ], [ raw R2 ], val(barcodes) ]  (meta.id = library)"
+  - subsample:
+      description: "integer: read pairs per library, 0 = all"
+output:
+  - reads:
+      description: "channel: [ val(library meta), [ <sample>_R{1,2}.fastq.gz ... ] ]"
+  - report:
+      description: "channel: [ val(library meta), cutadapt report ]"
+  - versions:
+      description: "channel: [ val(library meta), versions.yml ]"
+  - demux_qc:
+      description: "channel: [ val(library meta), <library>.tsv (store) ]"
+  - summary:
+      description: "channel: [ val(library meta), <library>.summary.tsv (store) ]"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

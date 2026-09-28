@@ -1,16 +1,16 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_input.json",
-    "title": "sawers-rellan-labs/zealgt pipeline - params.input schema",
-    "description": "Schema for the file provided with params.input",
+    "title": "sawers-rellan-labs/zealgt - params.input schema for --entry read_trimming / read_alignment",
+    "description": "Paired FASTQs per sample: demultiplexed reads (read_trimming) or trimmed reads (read_alignment). Every sample must be in params.samples (meta/samples.csv), which supplies library and read-group fields.",
     "type": "array",
     "items": {
         "type": "object",
         "properties": {
             "sample": {
                 "type": "string",
-                "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces",
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "errorMessage": "Sample name must be provided (letters, digits, _ . - only)",
                 "meta": ["id"]
             },
             "fastq_1": {
@@ -25,9 +25,9 @@
                 "format": "file-path",
                 "exists": true,
                 "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "errorMessage": "FastQ file for reads 2 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample", "fastq_1", "fastq_2"]
     }
 }

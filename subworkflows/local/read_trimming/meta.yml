@@ -1,0 +1,25 @@
+---
+# zealgt local subworkflow (nf-core conventions, simplified meta); see the header comment of main.nf and docs/PLAN_pipeline.md §3
+name: read_trimming
+description: "zealgt CRAM workflow stage read_trimming (PLAN §3); inputs and outputs are listed in main.nf take:/emit: comments"
+keywords:
+  - zealgt
+  - cram workflow
+  - read_trimming
+components:
+  - trimmomatic
+  - fastqc
+input:
+  - ch_reads:
+      description: "channel: [ val(meta), [ R1, R2 ] ]"
+output:
+  - reads:
+      description: "channel: [ val(meta), [ paired.trim_1, paired.trim_2 ] ]"
+  - qc:
+      description: "channel: [ qc_group, file ]  (MultiQC per library)"
+  - trim_version:
+      description: "channel: value 'x.y' (for provenance)"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"

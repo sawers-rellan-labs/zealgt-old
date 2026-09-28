@@ -1,0 +1,100 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_import.json",
+    "title": "sawers-rellan-labs/zealgt - params.input schema for --entry markdup_import (meta/dev_import.csv)",
+    "description": "Existing CRAMs / BAMs made by zealbc1 / nilhmm without duplicate marking, imported through the MARK_DUPLICATES + read-group pass",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "meta": [
+                    "id"
+                ]
+            },
+            "source": {
+                "type": "string",
+                "meta": [
+                    "source"
+                ]
+            },
+            "role": {
+                "type": "string",
+                "meta": [
+                    "role"
+                ]
+            },
+            "library": {
+                "type": "string",
+                "meta": [
+                    "library"
+                ]
+            },
+            "donor": {
+                "type": "string",
+                "meta": [
+                    "donor"
+                ]
+            },
+            "import_set": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "meta": [
+                    "import_set"
+                ]
+            },
+            "path": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.(cram|bam)$"
+            },
+            "index": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.(crai|bai|csi)$"
+            },
+            "size_bytes": {
+                "meta": [
+                    "size_bytes"
+                ]
+            },
+            "made_by": {
+                "meta": [
+                    "made_by"
+                ]
+            },
+            "dup_marked": {
+                "meta": [
+                    "dup_marked"
+                ]
+            },
+            "read_groups": {
+                "meta": [
+                    "read_groups_sheet"
+                ]
+            },
+            "include": {
+                "type": "boolean",
+                "meta": [
+                    "include"
+                ]
+            },
+            "note": {
+                "meta": [
+                    "note"
+                ]
+            }
+        },
+        "required": [
+            "sample_id",
+            "import_set",
+            "path",
+            "index",
+            "include"
+        ]
+    }
+}

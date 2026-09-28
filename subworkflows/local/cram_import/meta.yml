@@ -1,0 +1,35 @@
+---
+# zealgt local subworkflow (nf-core conventions, simplified meta); see the header comment of main.nf and docs/PLAN_pipeline.md §3
+name: cram_import
+description: "zealgt CRAM workflow stage cram_import (PLAN §3); inputs and outputs are listed in main.nf take:/emit: comments"
+keywords:
+  - zealgt
+  - cram workflow
+  - cram_import
+components:
+  - markdup/import # modules/local/markdup_import
+  - samtools/stats
+  - picard/collectwgsmetrics
+  - provenance
+input:
+  - ch_input:
+      description: "channel: [ val(meta), cram|bam, crai|bai ]  CRAMs to import (not yet in <store>/cram_import)"
+  - ch_stored:
+      description: "channel: [ val(meta), cram, crai, [ versions.yml ] ]  imports already stored"
+  - ch_ref:
+      description: "channel: value [ val(meta2), fasta, fai, [ index files ] ]"
+  - ch_record:
+      description: "channel: [ sample_id, record map, [ extra versions.yml ] ]"
+  - store_dir:
+      description: "string: <store root>/cram_import, where the imported CRAMs and their QC live"
+output:
+  - cram:
+      description: "channel: [ val(meta), cram, crai ]"
+  - qc:
+      description: "channel: [ qc_group, file ]"
+  - provenance:
+      description: "channel: [ val(meta), json ]"
+authors:
+  - "@zealgt"
+maintainers:
+  - "@zealgt"
