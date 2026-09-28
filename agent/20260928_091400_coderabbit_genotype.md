@@ -41,3 +41,12 @@ that. The genotype code passes the CodeRabbit gate. The commit that adds this lo
 |---|---|---|---|---|
 | 1 (3 groups) | 21efa02 | 2627bf0 | 6 (3 + 3 + 0) | 5 fixed (1cd6966, a503613), 1 rejected (1.3, reason above) |
 | 2 | 2627bf0 | a503613 | 0 | none |
+
+## Round 3 (Gate 1 fix loop): base d570ac7 (last reviewed head + log), head f9416d4
+`coderabbit review --committed --base-commit d570ac7 --agent` (2026-09-28, Gate 1 agent): commits 778e55f (ALLELE_COUNTS
+header read with `awk 'NR == 1'` instead of `head -1`: SIGPIPE exit 141 under pipefail, job 974146) and f9416d4 (Gate 1
+card: pass-A key gate1_zx0540_nomask_r2, mappability_priors set); 3 files: **0 findings**. Clean at **f9416d4**.
+
+| round | base | head | findings | action |
+|---|---|---|---|---|
+| 3 | d570ac7 | f9416d4 | 0 | none |
