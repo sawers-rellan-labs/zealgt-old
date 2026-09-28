@@ -100,6 +100,40 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
 (≈ 0.5 TB) assumed in PLAN §5 rule 3; dropping `-trimlog` would bring it to ≈ 0.45 TB. CRAMs ≈ 0.30 × raw (1A: 41 MB for 1 M pairs →
 ≈ 75 GB for the library). Store per sample: CRAM + crai + markdup stats + stats + CollectWgsMetrics + provenance (+ 2 versions.yml) = 8 files.
 
+**Measured usage, zealgt Gate 2 (2026-09-28, full BC1 library 3A, never demuxed before; `-profile hazel,normal`; traces
+`results/zealgt/gate2_3A/pipeline_info/execution_trace_2026-09-28_{07-24-13,10-24-23}.txt`; head jobs 972212 (stopped) and 973369
+(`-resume`, COMPLETED 4 h 15, 0.42 GB); `agent/handover_20260929_063000_gate2.md`, calibration `agent/20260928_204500_align_memory_calibration.md`).**
+3A: 130.9 GB raw, 3 lanes, 963,478,689 pairs, 916,445,030 assigned (0.951), 18.8–113.8 M pairs per sample.
+
+| process | tasks | cpus alloc → used | peak RSS (trace) | realtime | note |
+|---|---|---|---|---|---|
+| DEMUX (per lane, since b993c33) | 3 | 6 → 5.4–5.8 | 0.9 GB | 16–17 min per lane (~320 M pairs; ~5 µs/pair on 6 cores) | the lanes run side by side (maxForks 3) |
+| MERGE_LANES (cat of lane gzips) | 1 | 4 → 2.7 | < 10 MB | 3 min 51 | 124.7 GB written (a second copy of the demux FASTQs) |
+| DEMUX_QC | 1 | 1 → 0.8 | 0.1 GB | 20 s | |
+| TRIMMOMATIC | 12 | 8 → 2.9–3.7 | 0.6–0.8 GB | 10 min – 1 h 15 (**25–31 k pairs/s**) | the Gate 1 estimate (10 k/s) was 3× pessimistic; 4 h limit is ample |
+| FASTQC | 12 | 2 → 1.9 | 0.7–0.8 GB | 3–17 min | |
+| ALIGN_MARKDUP (completed attempts) | 12 | 8 → 7.0–7.5 | 23.1 (24 GB) / 23.9–46.5 (48 GB) / 48.2 (72 GB) GB | 21 min – 2 h 57 (~0.6 M pairs/min) | see the memory model below |
+| SAMTOOLS_STATS | 12 | 2 → 1.2–1.7 | 0.4 GB | 2–11 min | |
+| PICARD_COLLECTWGSMETRICS | 12 | 2 → 1.0 | 2.3–3.1 GB | 15–47 min | single-threaded |
+| PROVENANCE, REGISTRY, MULTIQC | 12, 1, 1 | 1 | < 0.6 GB | < 2 min | |
+
+**ALIGN_MARKDUP memory (Gate 2).** Slurm enforces 95 % of the allocation (`AllowedRAMSpace`); every OOM has MaxRSS = 0.95 × ReqMem.
+Peak ≈ M + sort budget (`-m` × 4), sort RSS ≈ 1.0 × its budget. M ≈ 10 GiB (minibwa after the B73 index load, fixmate / markdup a few MB)
+when the sample fits the sort buffer unspilled, **17–22.5 GiB when the sort spills** (every deep BC1 sample at practical allocations; in-memory
+sort data ≈ 0.785 GiB per M pairs): minibwa buffers mapped batches under back-pressure. History: with sort = (A − 12 GiB)/4 (old) all 12 first
+attempts at 24 GB and 8 of 10 second attempts at 48 GB were OOM-killed; with sort = max(768, (A − 16 GiB)·3/4/4) MiB (0a61f9c) 7 of 8 first
+attempts at 24 GB (1.5 GiB × 4 sort) still died (minibwa killed first, pipe `137 1 0 0`), all 7 retries at 48 GB completed (peaks 41.5–46.5 GB,
+M 17.5–22.5 GiB), and S_3A_9 completed at 24 GB at the cap. **Cost:** 37 non-completed task jobs = 145.7 allocated CPU-h of 396.6 for the whole
+run (37 %). Recommendation (calibration note §5, design M = 26 GiB for the deepest BC1 samples): reserve **R = 28 GiB** in
+`sort_mem_mb = (ZG_MEM_MB − R) × 3/4 / sort_threads` and **attempt 1 = 48 GB** (sort 15 GiB, predicted peak 41 GiB = 85 %); R = 16 (main
+today) is at the cap for deep samples at 48 GB, and a 32 GB first attempt is not viable for BC1. Not yet applied.
+
+Disk / files (Gate 2): `work/` **332 GB, 1,310 files** at the end (peak ≈ the end state: lane FASTQs 124.7 GB + merged copies 124.7 GB + trimmed
+99.4 GB; no trimlog since 98f8bae), plus `tmp/` 0.5 GB / 3 files (sort temps of stopped attempts). Store: 12 × 8 files, CRAMs 0.74–5.32 GB,
+**36 GB for 3A = 0.27 × raw**; demux_qc 6 files, registry 2 files. Group quota after the run: 785 GB / 20 TB, 802,230 / 1,000,000 files
+(lab-wide; this run holds ~1.3 K). Full-scale planning: `work/` ≈ 2.5 × raw per library in flight (MERGE_LANES doubles the demux FASTQs until
+the lane task dirs are cleaned).
+
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for
 BC1 alignment of deep libraries; downloads on `--partition=xfer --mem=8G`. Genome-wide ≈ chr10 × 14 for the per-chromosome stages;
 demultiplexing and alignment are already genome-wide.
