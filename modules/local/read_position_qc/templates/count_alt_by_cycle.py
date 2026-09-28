@@ -131,7 +131,7 @@ def count_sample(job):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
     nrec = 0
     for line in proc.stdout:
-        t = line.split(TAB, 11)
+        t = line.rstrip(NL).split(TAB, 11)
         nrec += 1
         for mate, cycle, cls in record_bases(int(t[1]), int(t[3]), t[5], t[9], t[10], sites, min_bq):
             b = bin_of(cycle, bins)
@@ -141,7 +141,8 @@ def count_sample(job):
             c[0] += 1
             c[cls] += 1
     if proc.wait() != 0:
-        raise SystemExit(f"READ_POSITION_QC: samtools view failed for {sample} (status {proc.returncode})")
+        # an Exception (not SystemExit) so that pool.map hands it back to the parent
+        raise RuntimeError(f"READ_POSITION_QC: samtools view failed for {sample} (status {proc.returncode})")
     return sample, counts, nrec
 
 
@@ -192,8 +193,11 @@ def main():
     jobs = [(s, find_alignment(s), fasta, bed, samtools_args, sites, a.min_bq, bins) for s in samples]
     ncpu = max(1, min(zg_cpus(), len(jobs)))
     if sites and jobs:
-        with multiprocessing.Pool(ncpu) as pool:
-            results = pool.map(count_sample, jobs)
+        try:
+            with multiprocessing.Pool(ncpu) as pool:
+                results = pool.map(count_sample, jobs)
+        except RuntimeError as e:
+            sys.exit(str(e))
     else:
         results = [(s, {}, 0) for s in samples]
     total = {}

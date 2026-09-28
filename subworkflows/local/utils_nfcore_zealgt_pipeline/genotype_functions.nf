@@ -55,13 +55,13 @@ def zgStageParamNames() {
 def zgStageModules() {
     def lcl = { names -> names.collect { n -> "modules/local/${n}".toString() } }
     return [
-        sample_quality_control: lcl.call(['mask_read_starts', 'allele_counts', 'min_coverage', 'coverage_qc', 'relatedness_qc',
+        sample_quality_control: lcl.call(['region_bed', 'mask_read_starts', 'allele_counts', 'min_coverage', 'coverage_qc', 'relatedness_qc',
                                      'donor_content_qc', 'sample_qc_table']),
         variant_discovery     : lcl.call(['region_bed', 'mask_read_starts', 'witness_pool', 'crisp', 'witness_veto', 'allele_counts',
                                      'pooled_likelihood_tiers']) + ['modules/nf-core/bcftools/view'],
         ancestry_inference    : lcl.call(['region_bed', 'mask_read_starts', 'allele_counts', 'rtiger_markers', 'line_marker_qc', 'rtiger']),
         marker_union          : lcl.call(['marker_union']),
-        donor_allele_calling  : lcl.call(['marker_union', 'mask_read_starts', 'allele_counts', 'pooled_likelihood_tiers',
+        donor_allele_calling  : lcl.call(['region_bed', 'mask_read_starts', 'allele_counts', 'pooled_likelihood_tiers',
                                      'gap_filling_bc1', 'gap_filling_lines', 'donor_founder']),
         genotype_imputation   : lcl.call(['rasterize']),
         reporting             : lcl.call(['genotype_summary', 'chromosome_painting', 'read_position_qc']),
