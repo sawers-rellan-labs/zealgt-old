@@ -1,0 +1,60 @@
+nextflow_process {
+
+    name "Test Process CHROMOSOME_PAINTING (real)"
+    script "../main.nf"
+    process "CHROMOSOME_PAINTING"
+
+    tag "modules"
+    tag "modules_local"
+    tag "chromosome_painting"
+    tag "real"
+
+    // Needs Rscript with data.table and ggplot2 on PATH (or the built env). Image bytes are not stable across R / device
+    // versions, so the test checks the files and the versions record, not their md5.
+    test("Zx.0001_P1.chrA_1-5000 - segments + line QC") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.png[0][1]).toFile().length() > 1000 },
+                { assert path(process.out.pdf[0][1]).toFile().length() > 1000 },
+                { assert path(process.out.versions[0]).readLines().collect { it.trim().split(':')[0] } ==
+                         [ '"CHROMOSOME_PAINTING"', 'r-base', 'r-data.table', 'r-ggplot2' ] }
+            )
+        }
+    }
+
+    test("no segments, no line QC - placeholder plot") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'empty.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    [],
+                    []
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.png[0][1]).toFile().length() > 0 }
+            )
+        }
+    }
+}

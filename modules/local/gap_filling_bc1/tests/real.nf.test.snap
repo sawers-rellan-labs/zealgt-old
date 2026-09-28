@@ -1,0 +1,31 @@
+{
+    "gt_set.chrA_1-5000 - other_donors prior": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "gt_set.chrA_1-5000",
+                        "donor_set": "gt_set",
+                        "region": "chrA_1-5000"
+                    },
+                    "gt_set.chrA_1-5000.tsv.gz:md5,bba52786705b0da49fc4b8883df59ac4"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "gt_set.chrA_1-5000",
+                        "donor_set": "gt_set",
+                        "region": "chrA_1-5000"
+                    },
+                    "gt_set.chrA_1-5000.summary.tsv:md5,003057a3158995da12b8bff45386c529"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:55:07.707269",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

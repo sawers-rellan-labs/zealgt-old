@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. No own environment.yml: it runs in the shared python env of the genotype python modules
+# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv GAP_FILLING_BC1 -> pooled_likelihood_tiers).
+name: gap_filling_bc1
+description: Stage-6 gap filling step 1 for every run donor of a set in one region (math supplement Eq. S4.1, S5.3) - own tier A -> ALT; gap -> REF if LLR <= -4 and pooled depth >= 12, ALT if LLR + logit(pi) >= logit(0.999) and not flagged hidepth / af_gt_half, else NA; prior pi from gap_prior_source (other_donors over the other run donors and the reference donors, fixed, mu_only). storeDir <store>/genotype/<key>/gap_bc1.
+keywords:
+  - genotyping
+  - gap filling
+  - pooled likelihood
+  - empirical Bayes
+tools:
+  - python:
+      description: Python standard library script (module template, templates/fill_gaps_bc1.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map with the donor set x region
+          e.g. [ id:'gt_set.chr10_1-20000000', donor_set:'gt_set', region:'chr10_1-20000000' ]
+    - union:
+        type: file
+        description: MARKER_UNION union table
+        pattern: "*.tsv{,.gz}"
+        ontologies: []
+    - joint_tables:
+        type: file
+        description: JOINT_POOLED_LIKELIHOOD per-donor tables <donor>.<region>.sites.tsv.gz at the union sites (chrom pos ref alt n a tier flags LLR; n_pools_alt n0 a0 eps logodds when present), matched to `donors` by name
+        pattern: "*.sites.tsv{,.gz}"
+        ontologies: []
+  - donors:
+      type: list
+      description: Run donors of the set (each needs a joint table)
+  - donor_taxa:
+      type: map
+      description: "donor -> taxon for the run and reference donors (used by --gap-prior-scope same_taxon); [:] allowed"
+output:
+  calls:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor set x region
+      - "*.tsv.gz":
+          type: file
+          description: "Long table per donor x union allele: chrom pos ref alt donor src tier n a n_pools_alt n0 a0 eps flags llr k m prior prior_source logodds state reason"
+          pattern: "*.tsv.gz"
+          ontologies: []
+  summary:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor set x region
+      - "*.summary.tsv":
+          type: file
+          description: "Per donor: mu, prior source requested / used, prior donors, counts by state and reason"
+          pattern: "*.summary.tsv"
+          ontologies: []
+  versions:
+    - "*.gap_filling_bc1.versions.yml":
+        type: file
+        description: Tool versions (python); storeDir forbids `eval` version outputs
+        pattern: "*.gap_filling_bc1.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

@@ -1,0 +1,49 @@
+nextflow_process {
+
+    name "Test Process MARKER_UNION"
+    script "../main.nf"
+    process "MARKER_UNION"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "marker_union"
+    tag "stub"
+
+    test("gt_set.chrA_1-5000 - two run donors + one reference donor - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'gt_set.chrA_1-5000', donor_set:'gt_set', region:'chrA_1-5000' ],
+                    [
+                        file("${projectDir}/modules/local/marker_union/tests/data/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true),
+                        file("${projectDir}/modules/local/marker_union/tests/data/Zx.0002_P1.chrA_1-5000.sites.tsv", checkIfExists: true)
+                    ],
+                    [ file("${projectDir}/modules/local/marker_union/tests/data/zealbc1_reference.sites.tsv", checkIfExists: true) ]
+                ])
+                input[1] = [ 'Zx.0001_P1', 'Zx.0002_P1' ]
+                input[2] = [ 'Zx.0570_P2' ]
+                input[3] = 'chrA:1-5000'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.union[0][1]).name == "gt_set.chrA_1-5000.tsv.gz" },
+                { assert file(process.out.sites[0][1]).name == "gt_set.chrA_1-5000.union_sites.tsv" },
+                { assert file(process.out.per_donor[0][1]).name == "gt_set.chrA_1-5000.per_donor.tsv" },
+                { assert file("${outputDir}/store_stub/genotype/test/union/gt_set.chrA_1-5000.tsv.gz").exists() }
+            )
+        }
+    }
+}

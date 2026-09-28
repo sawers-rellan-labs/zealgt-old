@@ -1,0 +1,31 @@
+{
+    "Zx.0001_P1.chrA_1-5000 - taxon prior": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.tsv.gz:md5,62cb09368f4bb90aeaddcb42c585d557"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.summary.tsv:md5,fbe8c71e7df69e00ca3b36356a47a590"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:56:49.278584",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

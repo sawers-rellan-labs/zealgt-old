@@ -1,0 +1,48 @@
+nextflow_process {
+
+    name "Test Process RASTERIZE (real)"
+    script "../main.nf"
+    process "RASTERIZE"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "rasterize"
+    tag "real"
+
+    // Donor alleles (tests/data, = DONOR_FOUNDER's result on the chain fixture): 100 ALT (own), 300 ALT (step 2), 400 REF,
+    // 500 NA; 200 multiallelic (dropped). Segments: L1 x = 2 on 1-350, x = 0 on 380-5000; L2 x = 0; L3 excluded by line QC.
+    // Eq. S5.1: L1 -> 2, 2, 0, 0 (500: D missing but x = 0 -> 0); L2 -> 0, 0, 0, 0; L3 -> NA everywhere.
+    test("Zx.0001_P1.chrA_1-5000") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            def matrix = path(process.out.matrix[0][1]).linesGzip
+            def long_rows = path(process.out.genotypes[0][1]).linesGzip.drop(1).collect { it.split('\t') }
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out.genotypes, process.out.matrix).match() },
+                { assert matrix == [ "chrom\tpos\tref\talt\tL1\tL2\tL3", "chrA\t100\tA\tG\t2\t0\tNA", "chrA\t300\tG\tA\t2\t0\tNA",
+                                     "chrA\t400\tT\tC\t0\t0\tNA", "chrA\t500\tA\tC\t0\t0\tNA" ] },
+                { assert long_rows.size() == 12 },
+                { assert long_rows.find { it[0] == 'L1' && it[2] == '300' }[8] == '1.9999864' },
+                { assert long_rows.find { it[0] == 'L3' && it[2] == '100' }[5..8] == [ 'NA', 'ALT', 'NA', 'NA' ] }
+            )
+        }
+    }
+}

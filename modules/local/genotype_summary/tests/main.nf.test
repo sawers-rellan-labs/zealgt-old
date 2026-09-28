@@ -1,0 +1,40 @@
+nextflow_process {
+
+    name "Test Process GENOTYPE_SUMMARY"
+    script "../main.nf"
+    process "GENOTYPE_SUMMARY"
+
+    tag "modules"
+    tag "modules_local"
+    tag "genotype_summary"
+    tag "stub"
+
+    test("Zx.0001_P1.chrA_1-5000 - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.summary[0][1]).name == "Zx.0001_P1.chrA_1-5000.genotype_summary.tsv" },
+                { assert file(process.out.single_locus[0][1]).name == "Zx.0001_P1.chrA_1-5000.single_locus.tsv" },
+                { assert file(process.out.breakpoint_density[0][1]).name == "Zx.0001_P1.chrA_1-5000.breakpoint_density.tsv" }
+            )
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "S1 - raw": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000.lines",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000",
+                        "role": "line"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.lines.read_position_qc.tsv:md5,a0d7f7dc0908e239a59d686e718cc60e"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T08:01:11.937849",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

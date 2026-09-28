@@ -1,0 +1,41 @@
+{
+    "gt_set.chrA_1-5000 - two run donors + one reference donor": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "gt_set.chrA_1-5000",
+                        "donor_set": "gt_set",
+                        "region": "chrA_1-5000"
+                    },
+                    "gt_set.chrA_1-5000.tsv.gz:md5,1d878730d131a502173cc4d9ce932770"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "gt_set.chrA_1-5000",
+                        "donor_set": "gt_set",
+                        "region": "chrA_1-5000"
+                    },
+                    "gt_set.chrA_1-5000.union_sites.tsv:md5,5cf1bcfe8c197dff6560590311f0dd74"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "gt_set.chrA_1-5000",
+                        "donor_set": "gt_set",
+                        "region": "chrA_1-5000"
+                    },
+                    "gt_set.chrA_1-5000.per_donor.tsv:md5,265f1b81ad6232500b92a2410899e9ed"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:54:23.791744",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

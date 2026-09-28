@@ -1,0 +1,46 @@
+nextflow_process {
+
+    name "Test Process GAP_FILLING_LINES"
+    script "../main.nf"
+    process "GAP_FILLING_LINES"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "gap_filling_lines"
+    tag "stub"
+
+    test("Zx.0001_P1.chrA_1-5000 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.lines.ad.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/mexicana.prior.tsv", checkIfExists: true)
+                ])
+                input[1] = 'Zx.0001_P1'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.calls[0][1]).name == "Zx.0001_P1.chrA_1-5000.tsv.gz" },
+                { assert file(process.out.summary[0][1]).name == "Zx.0001_P1.chrA_1-5000.summary.tsv" },
+                { assert file("${outputDir}/store_stub/genotype/test/gap_lines/gt_set/Zx.0001_P1.chrA_1-5000.tsv.gz").exists() }
+            )
+        }
+    }
+}

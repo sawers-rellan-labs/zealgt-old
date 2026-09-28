@@ -1,0 +1,43 @@
+nextflow_process {
+
+    name "Test Process RASTERIZE"
+    script "../main.nf"
+    process "RASTERIZE"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "rasterize"
+    tag "stub"
+
+    test("Zx.0001_P1.chrA_1-5000 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.genotypes[0][1]).name == "Zx.0001_P1.chrA_1-5000.tsv.gz" },
+                { assert file(process.out.matrix[0][1]).name == "Zx.0001_P1.chrA_1-5000.matrix.tsv.gz" },
+                { assert file("${outputDir}/store_stub/genotype/test/genotypes/gt_set/Zx.0001_P1.chrA_1-5000.tsv.gz").exists() }
+            )
+        }
+    }
+}
