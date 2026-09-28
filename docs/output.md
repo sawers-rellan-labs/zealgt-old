@@ -24,13 +24,18 @@ layout into its own store named `subsample_<N>`; a stub run into `store_stub*`.
 Run settings (`reference`, `code_version` = git commit of the checkout, `-dirty` if modified; `pipeline`, `entry`, `run_id`,
 `session_id`, `profile`, `mapq_filter`, `markdup`; no Nextflow run name: the record is a hashed task input, and a name that
 changes per launch would rerun PROVENANCE on every `-resume`), the sample (`sample`, `library`, `source`, `role`, `donor`,
-`store_dir`, `read_group`), its `origin` (demux: raw location and files, tar members, cutadapt args, read structure, layout,
-barcodes, subsample, the checkpoint FASTQs `fastq_checkpoint`, and the stage-1 run `stage1_run_id`, `stage1_session_id`,
-`stage1_code_version`, `stage1_tool_versions` (DEMUX and TRIMMOMATIC tool versions); import: input path, maker, input
-filters), for demultiplexed samples `trimming` and `alignment` settings, and, added by the module, `cram_file`, `cram_bytes`,
+`store_dir`, `read_group`), the registry snapshot `registry` (meta/PROVENANCE.md "Identifiers": `file` = the `--input` registry,
+relative to the pipeline directory when inside it, e.g. `meta/samples.csv`; `code_version` = the commit at which the row was read,
+for demultiplexed samples the stage-1 commit; `row` = the sample's `sample_id`, `source`, `role`, `library`, `plate`, `well`,
+`donor`, `taxon`, `nil_id`, `pedigree`, `is_check` as strings, named as in `meta/samples.csv`, `is_check` as `true`/`false`;
+`note`; an imported sample not in the registry has `row` null and a note), its `origin` (demux: raw location and files, tar
+members, cutadapt args, read structure, layout, barcodes, subsample, the checkpoint FASTQs `fastq_checkpoint`, and the stage-1
+run `stage1_run_id`, `stage1_session_id`, `stage1_code_version`, `stage1_tool_versions` (DEMUX and TRIMMOMATIC tool versions);
+import: input path, maker, input filters, and `import_sheet_row`, the import sheet's row as strings), for demultiplexed samples `trimming` and `alignment` settings, and, added by the module, `cram_file`, `cram_bytes`,
 `tool_versions_yml` (the versions.yml of the steps that made the CRAM), `record_written_utc`. `read_demultiplexing` (stage 2
 chained) and `read_alignment` (stage 2 alone) build the record from the same checkpoint row, so for one sample the two differ
-only in the run fields.
+only in the run fields (the registry snapshot is identical). No line or nil id is written into a CRAM header: the read group is
+`ID` = `SM` = `sample_id`, one per sample.
 
 ## FASTQ checkpoint (`--fastq_checkpoint`)
 

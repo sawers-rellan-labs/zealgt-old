@@ -83,9 +83,53 @@
                 "LX_2.stats:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "LIBX.tsv:md5,a1292129af6284c1c0a1cb59d9d57cd7",
                 "LIBX.registry.versions.yml:md5,8cc64bcf68b409c38a99b6c8cb780f42"
+            ],
+            [
+                [
+                    "LX_1",
+                    {
+                        "file": "registry file: tests/fixtures/samples_test.csv",
+                        "code_version": "test",
+                        "row": {
+                            "sample_id": "LX_1",
+                            "source": "bc1",
+                            "role": "bc1_sample",
+                            "library": "LIBX",
+                            "plate": "",
+                            "well": "1",
+                            "donor": "Zx.TEST_P1",
+                            "taxon": "mexicana",
+                            "nil_id": "Zx9000001",
+                            "pedigree": "Zx.TEST_P1_P1",
+                            "is_check": "false"
+                        },
+                        "note": ""
+                    }
+                ],
+                [
+                    "LX_2",
+                    {
+                        "file": "registry file: tests/fixtures/samples_test.csv",
+                        "code_version": "test",
+                        "row": {
+                            "sample_id": "LX_2",
+                            "source": "bc1",
+                            "role": "bc1_sample",
+                            "library": "LIBX",
+                            "plate": "",
+                            "well": "2",
+                            "donor": "Zx.TEST_P1",
+                            "taxon": "mexicana",
+                            "nil_id": "",
+                            "pedigree": "Zx.TEST_P1_P2",
+                            "is_check": "false"
+                        },
+                        "note": ""
+                    }
+                ]
             ]
         ],
-        "timestamp": "2026-09-28T10:27:32.946944",
+        "timestamp": "2026-09-28T14:26:32.298803",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -169,9 +213,51 @@
                 "IMP_B.provenance.versions.yml:md5,8f21c731643c14a9fc6ae912d78597da",
                 "IMP_B.read_group.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "IMP_B.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+            ],
+            [
+                [
+                    "IMP_A",
+                    {
+                        "sample_id": "IMP_A",
+                        "source": "bc1",
+                        "role": "bc1_sample",
+                        "library": "2A",
+                        "donor": "Zx.0540_P3",
+                        "import_set": "Zx.0540_P3",
+                        "size_bytes": "10",
+                        "made_by": "nilhmm pool_run",
+                        "dup_marked": "no",
+                        "read_groups": "no",
+                        "include": "true",
+                        "note": ""
+                    },
+                    "registry file: tests/fixtures/samples_test.csv",
+                    null,
+                    "sample_id not in the registry"
+                ],
+                [
+                    "IMP_B",
+                    {
+                        "sample_id": "IMP_B",
+                        "source": "bc2s3_batch1",
+                        "role": "line",
+                        "library": "BZea5",
+                        "donor": "Zx.0540_P3",
+                        "import_set": "Zx.0540_P3",
+                        "size_bytes": "10",
+                        "made_by": "zealbc1 bc2s3_realign",
+                        "dup_marked": "no",
+                        "read_groups": "no",
+                        "include": "true",
+                        "note": ""
+                    },
+                    "registry file: tests/fixtures/samples_test.csv",
+                    null,
+                    "sample_id not in the registry"
+                ]
             ]
         ],
-        "timestamp": "2026-09-28T10:27:37.388244",
+        "timestamp": "2026-09-28T14:26:36.889602",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -328,9 +414,65 @@
                 "LIBX.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "LIBX.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "LIBX.registry.versions.yml:md5,8cc64bcf68b409c38a99b6c8cb780f42"
+            ],
+            [
+                [
+                    "LX_1.provenance.json",
+                    "registry file: tests/fixtures/samples_test.csv",
+                    {
+                        "sample_id": "LX_1",
+                        "source": "bc1",
+                        "role": "bc1_sample",
+                        "library": "LIBX",
+                        "plate": "",
+                        "well": "1",
+                        "donor": "Zx.TEST_P1",
+                        "taxon": "mexicana",
+                        "nil_id": "",
+                        "pedigree": "Zx.TEST_P1_P1",
+                        "is_check": "false"
+                    },
+                    ""
+                ],
+                [
+                    "LX_2.provenance.json",
+                    "registry file: tests/fixtures/samples_test.csv",
+                    {
+                        "sample_id": "LX_2",
+                        "source": "bc1",
+                        "role": "bc1_sample",
+                        "library": "LIBX",
+                        "plate": "",
+                        "well": "2",
+                        "donor": "Zx.TEST_P1",
+                        "taxon": "mexicana",
+                        "nil_id": "",
+                        "pedigree": "Zx.TEST_P1_P2",
+                        "is_check": "false"
+                    },
+                    ""
+                ],
+                [
+                    "LX_3.provenance.json",
+                    "registry file: tests/fixtures/samples_test.csv",
+                    {
+                        "sample_id": "LX_3",
+                        "source": "bc1",
+                        "role": "bc1_sample",
+                        "library": "LIBX",
+                        "plate": "",
+                        "well": "3",
+                        "donor": "Zx.TEST_P1",
+                        "taxon": "mexicana",
+                        "nil_id": "",
+                        "pedigree": "Zx.TEST_P1_P3",
+                        "is_check": "false"
+                    },
+                    ""
+                ]
             ]
         ],
-        "timestamp": "2026-09-28T11:51:00.504623",
+        "timestamp": "2026-09-28T14:26:18.116371",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

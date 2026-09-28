@@ -393,6 +393,7 @@ def zgDemuxInputs() {
     zgCheckDemuxRequest(libs)
     def rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json").collect { row -> (row instanceof List ? row[0] : row) as Map }
     def settings = zgRunSettings()
+    def registry_file = zgRegistryFile()
     def out = [libraries: [], checkpoint: [], imports: [], records: []]
     libs.each { lib ->
         def lrows = rows.findAll { r -> r.library == lib }
@@ -416,6 +417,7 @@ def zgDemuxInputs() {
                 sample: r.sample_id, library: lib,
                 fastq_1: ckpt.resolve("${r.sample_id}.paired.trim_1.fastq.gz"), fastq_2: ckpt.resolve("${r.sample_id}.paired.trim_2.fastq.gz"),
                 source: r.source, role: r.role, donor: r.donor, taxon: r.taxon,
+                plate: r.plate, well: r.well, nil_id: r.nil_id, pedigree: r.pedigree, is_check: r.is_check, registry_file: registry_file,
                 read_group: zgReadGroup(r.sample_id, r.rg_lb ?: r.library, r.rg_pl, pu),
                 read_structure: structures.join(' '), layout: first.barcode_layout, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2,
                 demux_args: params.demux_args, trim_illuminaclip: params.trim_illuminaclip, trim_args: params.trim_args,
@@ -479,7 +481,8 @@ def zgAlignmentInputs() {
 
 // Checkpoint samplesheet columns, in file order (assets/schema_checkpoint.json)
 def zgCheckpointColumns() {
-    return ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'read_group', 'read_structure', 'layout',
+    return ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'plate', 'well', 'nil_id', 'pedigree',
+            'is_check', 'registry_file', 'read_group', 'read_structure', 'layout',
             'barcode_r1', 'barcode_r2', 'demux_args', 'trim_illuminaclip', 'trim_args', 'trim_adapters', 'raw_location',
             'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample', 'stage1_run_id', 'stage1_session_id',
             'stage1_code_version', 'stage1_tool_versions']
@@ -555,7 +558,8 @@ def zgCheckpointRecord(Map settings, Map row) {
                   fastq_checkpoint: [row.fastq_1, row.fastq_2], stage1_run_id: row.stage1_run_id,
                   stage1_session_id: row.stage1_session_id, stage1_code_version: row.stage1_code_version,
                   stage1_tool_versions: zgParseToolVersions(row.stage1_tool_versions)]
-    return zgProvenanceRecord(settings, meta, "${params.store}/cram", origin, row.read_group) + [
+    def registry = zgRegistrySnapshot(row.registry_file, row.stage1_code_version, row + [sample_id: row.sample])
+    return zgProvenanceRecord(settings, meta, "${params.store}/cram", origin, row.read_group, registry) + [
         trimming : [tool: 'trimmomatic', illuminaclip: row.trim_illuminaclip, args: row.trim_args,
                     adapters: row.trim_adapters, phred: 'auto-detected'], // no -phred33: nf-core TRIMMOMATIC appends ext.args after the outputs
         alignment: [tool: 'minibwa map', args: params.align_args, read_group: row.read_group],
@@ -679,6 +683,8 @@ def zgImportInputs() {
         error("markdup_import: no rows selected from ${params.import_sheet}")
     }
     def settings = zgRunSettings()
+    def registry_file = zgRegistryFile()
+    def registry_rows = zgRegistryRows()
     def out = [libraries: [], checkpoint: [], imports: [], records: []]
     rows.each { row, path, index ->
         def lib = row.library ?: row.import_set
@@ -686,10 +692,14 @@ def zgImportInputs() {
                     donor: row.donor ?: '', single_end: false, qc_group: row.import_set]
         def read_group = zgReadGroup(row.id, lib, 'ILLUMINA', '')
         def origin = [kind: 'import', path: path.toString(), made_by: row.made_by ?: '', note: row.note ?: '',
-                      input_filters: 'as made by zealbc1 / nilhmm (minibwa -x sr, MAPQ 20, -F 0x904)']
+                      input_filters: 'as made by zealbc1 / nilhmm (minibwa -x sr, MAPQ 20, -F 0x904)',
+                      import_sheet_row: zgImportRowSnapshot(row, path, index)]
+        // registry snapshot from the registry row of the same sample_id (null, with a note, for a sample not in the registry,
+        // e.g. the SRA B73 controls); the import sheet's own row is in origin.import_sheet_row
+        def registry = zgRegistrySnapshot(registry_file, settings.code_version, registry_rows[row.id])
         out.imports << [meta, path, index, read_group]
         out.records << [meta.id, zgProvenanceRecord(settings, meta, "${params.store}/cram_import", origin,
-                        'from the input header if it has exactly one @RG with SM = sample, else the sample sheet (see <sample>.read_group.txt)')]
+                        'from the input header if it has exactly one @RG with SM = sample, else the sample sheet (see <sample>.read_group.txt)', registry)]
     }
     zgCheckStoredCrams("${params.store}/cram_import", out.imports.collect { i -> i[0].id })
     return out
@@ -755,18 +765,58 @@ def zgRunSettings() {
     ]
 }
 
-// One sample's provenance record: run settings + sample fields + origin (PROVENANCE adds versions.yml files and the CRAM size).
-def zgProvenanceRecord(Map settings, Map meta, String store_dir, Map origin, String read_group) {
+// One sample's provenance record: run settings + sample fields + registry snapshot + origin (PROVENANCE adds versions.yml
+// files and the CRAM size).
+def zgProvenanceRecord(Map settings, Map meta, String store_dir, Map origin, String read_group, Map registry) {
     return settings + [
         sample     : meta.id,
         library    : meta.library,
         source     : meta.source ?: '',
         role       : meta.role ?: '',
         donor      : meta.donor ?: '',
+        registry   : registry,
         store_dir  : store_dir,
         origin     : origin,
         read_group : read_group,
     ]
+}
+
+//
+// Registry snapshot (meta/PROVENANCE.md "Identifiers"): the sample's identity and biology columns of the registry
+// (--input, meta/samples.csv), named as there, as strings, with the registry file and the code version (git commit) the row
+// was read at; a later registry change shows as a difference from the current row. The technical columns (raw files,
+// barcodes, rg_*) are in origin / read_group. Line and nil ids go only here, never into a CRAM header. The chained run reads
+// the row from --input; --entry read_alignment from the checkpoint samplesheet (the same columns, written by stage 1), so
+// both records hold the same snapshot; nothing in it changes between launches (the record is a hashed PROVENANCE input).
+//
+def zgRegistryFields() {
+    return ['sample_id', 'source', 'role', 'library', 'plate', 'well', 'donor', 'taxon', 'nil_id', 'pedigree', 'is_check']
+}
+
+// --input as recorded: relative to the pipeline directory when inside it (meta/samples.csv: code_version pins its content)
+def zgRegistryFile() {
+    def p = file(params.input).toAbsolutePath().normalize()
+    def root = projectDir.toAbsolutePath().normalize()
+    return p.startsWith(root) ? root.relativize(p).toString() : p.toString()
+}
+
+// The registry rows by sample_id (markdup_import: imported samples are looked up there)
+def zgRegistryRows() {
+    return samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
+        .collect { r -> (r instanceof List ? r[0] : r) as Map }
+        .collectEntries { r -> [r.sample_id, r] }
+}
+
+def zgRegistrySnapshot(String registry_file, String code_version, Map row) {
+    return [file: registry_file, code_version: code_version,
+            row : row == null ? null : zgRegistryFields().collectEntries { f -> [f, zgCell(row[f])] },
+            note: row == null ? 'sample_id not in the registry' : '']
+}
+
+// The import sheet's row as recorded (markdup_import), strings, path and index as given
+def zgImportRowSnapshot(Map row, path, index) {
+    return ['sample_id', 'source', 'role', 'library', 'donor', 'import_set', 'size_bytes', 'made_by', 'dup_marked', 'read_groups',
+            'include', 'note'].collectEntries { f -> [f, zgCell(row[[sample_id: 'id', read_groups: 'read_groups_sheet'][f] ?: f])] } + [path: path.toString(), index: index.toString()]
 }
 
 //

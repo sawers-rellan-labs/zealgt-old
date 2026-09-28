@@ -143,7 +143,9 @@ CRAM's provenance record against the current read-processing settings.
 Per sample, into the store: CRAM + index (B73 v5, coordinate-sorted, read groups in every read, **duplicates flagged, not removed**,
 all mapped primary reads, **no MAPQ filter**); per-sample QC (FastQC of the trimmed reads, `samtools stats`/`flagstat`, markdup
 stats, mosdepth λ); per-library demux QC and MultiQC; a provenance record (source, demux tool, trimming parameters, aligner and
-version, markdup settings, code version); the registry entry. MAPQ, base-quality and duplicate filters are applied by the genotype workflow at
+version, markdup settings, code version, and a snapshot of the sample's `meta/samples.csv` row: donor, pedigree, nil_id, taxon,
+role, …; identifier rules in meta/PROVENANCE.md "Identifiers": `sample_id` is the only key, RG `ID` = `SM` = `sample_id`, one read
+group per sample, no line or nil id in a CRAM header); the registry entry. MAPQ, base-quality and duplicate filters are applied by the genotype workflow at
 read time (`mpileup -q20 -Q20`, CRISP `--mmq 20`), so a threshold change never needs realignment. (The nilhmm CRAMs were written with
 `-q 20 -F 0x904`; new CRAMs are not.) Anything that needs reference ranges, a site panel or the pedigree belongs to the genotype workflow.
 

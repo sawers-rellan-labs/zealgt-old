@@ -97,8 +97,10 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
   the current registry at the end, recording the registry commit it used.
 - **Read groups:** one read group per sample (lanes of a library are one pool; `PU` lists the lanes; duplicate marking reads
   flowcell/lane/tile from the read names). Per-lane read groups only if lane QC ever shows a lane effect.
-- Status (2026-09-28): the CRAM workflow already follows the key and read-group rules; the provenance snapshot has `donor` but not yet
-  the line/pedigree and nil_id (to add on branch `simplify`); the edge translation is a rule for the genotype workflow (branch `genotype`).
+- Status (2026-09-28): the CRAM workflow follows the key and read-group rules; on branch `simplify` the provenance record holds the
+  registry snapshot (`registry`: file, code_version, row with sample_id, source, role, library, plate, well, donor, taxon, nil_id,
+  pedigree, is_check; docs/output.md), the same for the chained run and `read_alignment` (via the checkpoint samplesheet); the edge
+  translation is a rule for the genotype workflow (branch `genotype`).
 
 ## Unresolved
 1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another

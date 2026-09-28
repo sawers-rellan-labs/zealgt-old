@@ -30,7 +30,9 @@ entries end at the CRAM stop point and write one MultiQC report per library (per
   `work/` (`/share` on hazel); a failed link fails the run.
 - Once every sample of the library is trimmed, the run writes `<lib>/samplesheet.csv` (assets/schema_checkpoint.json), one row per
   sample with everything stage 2 needs: `sample`, `library`, `fastq_1`, `fastq_2`, `source`, `role`, `donor`, `taxon`,
-  `read_group`, `read_structure` (crops already applied), `layout`, `barcode_r1`, `barcode_r2`, `demux_args`,
+  `plate`, `well`, `nil_id`, `pedigree`, `is_check` (with `source` … `taxon`: the registry row's identity and biology columns,
+  named as in `meta/samples.csv`, for the provenance record's registry snapshot), `registry_file` (the `--input` they were read
+  from), `read_group`, `read_structure` (crops already applied), `layout`, `barcode_r1`, `barcode_r2`, `demux_args`,
   `trim_illuminaclip`, `trim_args`, `trim_adapters`, `raw_location`, `raw_files_r1`, `raw_files_r2`, `tar_members_r1`,
   `tar_members_r2` (`;`-joined lists), `subsample`, `stage1_run_id`, `stage1_session_id`, `stage1_code_version`,
   `stage1_tool_versions` (`tool=version;...` of DEMUX and TRIMMOMATIC). Both stage-2 entries build meta, read group and the
