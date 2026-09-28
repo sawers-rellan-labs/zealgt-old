@@ -1,5 +1,8 @@
-# bin/slurm_resources.sh — sourced at the top of every local and patched module script:
-#     source "${projectDir}/bin/slurm_resources.sh"
+# bin/export_slurm_resources.sh — sourced at the top of every local and patched module script:
+#     source export_slurm_resources.sh
+# by name, not by path: Nextflow puts the pipeline's bin/ on every task's PATH and bash `source` searches PATH (no exec bit
+# needed, so core.fileMode=false on hazel does not matter). A path such as "${projectDir}/bin/..." would put the checkout
+# location into every task hash (a second clone or a moved checkout would rerun everything).
 #
 # Why (PLAN §2 rule 4, hash hygiene): a task's hash covers its evaluated script text, so `${task.cpus}` / `${task.memory}`
 # in a script turn every resource change (e.g. a retry at 48 GB) into a cache miss on the next -resume. Scripts therefore
@@ -18,7 +21,7 @@
 # One line `zg_resources cpus=… mem_mb=… java_mem_mb=… source=… job=…` goes to stderr (.command.err / .command.log,
 # not the script text, so it never enters the hash). If TMPDIR is set (conf/hazel.config env scope) it is created.
 #
-# Safe under the template's `bash -euo pipefail`. Run directly (`bash bin/slurm_resources.sh`) to print the values.
+# Safe under the template's `bash -euo pipefail`. Run directly (`bash bin/export_slurm_resources.sh`) to print the values.
 
 _zg_fail() {
     echo "zg_resources ERROR: $*" >&2

@@ -4,15 +4,24 @@ Changes in component 'nf-core/trimmomatic'
 Changes in 'trimmomatic/main.nf':
 --- modules/nf-core/trimmomatic/main.nf
 +++ modules/nf-core/trimmomatic/main.nf
-@@ -29,10 +29,15 @@
+@@ -9,6 +9,7 @@
+ 
+     input:
+     tuple val(meta), path(reads)
++    path adapters // zealgt patch: adapter FASTA staged (ILLUMINACLIP in ext.args, conf/modules.config)
+ 
+     output:
+     tuple val(meta), path("*.paired.trim*.fastq.gz")   , emit: trimmed_reads
+@@ -29,10 +30,16 @@
          "${prefix}.SE.paired.trim.fastq.gz" // HACK to avoid unpaired and paired in the trimmed_reads output
          : "${prefix}.paired.trim_1.fastq.gz ${prefix}.unpaired.trim_1.fastq.gz ${prefix}.paired.trim_2.fastq.gz ${prefix}.unpaired.trim_2.fastq.gz"
      def qual_trim = task.ext.args2 ?: ''
-+    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/slurm_resources.sh at run
++    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/export_slurm_resources.sh at run
 +    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
 +    // The bioconda wrapper otherwise starts the JVM with its default -Xmx1g.
++    // zealgt patch: the adapter FASTA is an input (staged, so no absolute path in ext.args or the script).
      """
-+    source "${projectDir}/bin/slurm_resources.sh"
++    source export_slurm_resources.sh
      trimmomatic \\
 +        -Xmx\${ZG_JAVA_MEM_MB}m \\
          $trimmed \\

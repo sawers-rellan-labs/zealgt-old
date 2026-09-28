@@ -15,11 +15,11 @@ Changes in 'fastqc/main.nf':
 -    // FastQC memory value allowed range (100 - 10000)
 -    def fastqc_memory = memory_in_mb > 10000 ? 10000 : (memory_in_mb < 100 ? 100 : memory_in_mb)
 -    def fastqc_memory_arg = fastqc_memory ? "--memory ${fastqc_memory}" : ''
-+    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/slurm_resources.sh at run
++    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/export_slurm_resources.sh at run
 +    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
 +    // --memory = JVM heap / threads, clamped to FastQC's allowed range (100 - 10000) in bash.
 +    """
-+    source "${projectDir}/bin/slurm_resources.sh"
++    source export_slurm_resources.sh
 +    fastqc_memory=\$(( ZG_JAVA_MEM_MB / ZG_CPUS ))
 +    [ "\$fastqc_memory" -le 10000 ] || fastqc_memory=10000
 +    [ "\$fastqc_memory" -ge 100 ] || fastqc_memory=100

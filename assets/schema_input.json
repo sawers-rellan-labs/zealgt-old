@@ -1,57 +1,153 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_input.json",
-    "title": "sawers-rellan-labs/zealgt - params.input schema for --entry read_trimming / read_alignment",
-    "description": "Paired FASTQs per sample: demultiplexed reads (read_trimming) or trimmed reads (read_alignment). Every sample must be in params.samples (meta/samples.csv), which supplies library and read-group fields. crop_r1 / crop_r2 are required: the non-genomic 5' bases the FASTQs still carry (e.g. Nirwan's filtered_S batch-1 reads: 12 on R1, 0 on R2); only 0 is supported so far, so reads that still carry primer bases are refused instead of aligned.",
+    "title": "sawers-rellan-labs/zealgt - params.input schema (meta/samples.csv, built by meta/build_samples.py)",
+    "description": "The single sample sheet of the CRAM workflow: library, raw location, inline barcodes and read-group fields per sample. --entry read_demultiplexing takes the rows of the --libraries it names; all samples of one library must agree on source, barcode_layout, raw_location, raw_r1 and raw_r2 (checked by meta/build_samples.py and again when the library is read).",
     "type": "array",
     "items": {
         "type": "object",
         "properties": {
-            "sample": {
+            "sample_id": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_.-]+$",
-                "errorMessage": "Sample name must be provided (letters, digits, _ . - only)",
                 "meta": [
-                    "id"
+                    "sample_id"
+                ],
+                "errorMessage": "sample_id: letters, digits, _ . - only (and unique in the sheet)"
+            },
+            "source": {
+                "type": "string",
+                "enum": [
+                    "bc1",
+                    "bc2s3_batch1",
+                    "bc2s3_batch2"
+                ],
+                "meta": [
+                    "source"
                 ]
             },
-            "fastq_1": {
+            "role": {
                 "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "meta": [
+                    "role"
+                ]
             },
-            "fastq_2": {
+            "library": {
                 "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
-            },
-            "crop_r1": {
-                "type": "integer",
-                "minimum": 0,
+                "pattern": "^\\S+$",
                 "meta": [
-                    "crop_r1"
-                ],
-                "errorMessage": "crop_r1: bases still to remove from the 5' end of read 1 (primer / randomer / skip bases left by the demultiplexer); 0 if none"
+                    "library"
+                ]
             },
-            "crop_r2": {
-                "type": "integer",
-                "minimum": 0,
+            "library_index": {
                 "meta": [
-                    "crop_r2"
+                    "library_index"
+                ]
+            },
+            "raw_location": {
+                "type": "string",
+                "pattern": "^(/|tests/fixtures/)\\S+$",
+                "meta": [
+                    "raw_location"
                 ],
-                "errorMessage": "crop_r2: bases still to remove from the 5' end of read 2 (primer / randomer / skip bases left by the demultiplexer); 0 if none"
+                "errorMessage": "raw_location: absolute directory of the raw library (a path relative to the pipeline directory is allowed only under tests/fixtures/)"
+            },
+            "raw_r1": {
+                "type": "string",
+                "meta": [
+                    "raw_r1"
+                ]
+            },
+            "raw_r2": {
+                "type": "string",
+                "meta": [
+                    "raw_r2"
+                ]
+            },
+            "barcode_r1": {
+                "type": "string",
+                "pattern": "^[ACGT]+$",
+                "meta": [
+                    "barcode_r1"
+                ]
+            },
+            "barcode_r2": {
+                "type": "string",
+                "pattern": "^[ACGT]*$",
+                "meta": [
+                    "barcode_r2"
+                ]
+            },
+            "barcode_layout": {
+                "type": "string",
+                "enum": [
+                    "symmetric",
+                    "r1_only"
+                ],
+                "meta": [
+                    "barcode_layout"
+                ]
+            },
+            "plate": {
+                "meta": [
+                    "plate"
+                ]
+            },
+            "well": {
+                "meta": [
+                    "well"
+                ]
+            },
+            "donor": {
+                "type": "string",
+                "meta": [
+                    "donor"
+                ]
+            },
+            "taxon": {
+                "type": "string",
+                "meta": [
+                    "taxon"
+                ]
+            },
+            "nil_id": {
+                "meta": [
+                    "nil_id"
+                ]
+            },
+            "pedigree": {
+                "meta": [
+                    "pedigree"
+                ]
+            },
+            "is_check": {
+                "meta": [
+                    "is_check"
+                ]
+            },
+            "rg_lb": {
+                "type": "string",
+                "meta": [
+                    "rg_lb"
+                ]
+            },
+            "rg_pl": {
+                "type": "string",
+                "meta": [
+                    "rg_pl"
+                ]
             }
         },
         "required": [
-            "sample",
-            "fastq_1",
-            "fastq_2",
-            "crop_r1",
-            "crop_r2"
+            "sample_id",
+            "source",
+            "library",
+            "raw_location",
+            "barcode_r1",
+            "barcode_layout"
         ]
-    }
+    },
+    "uniqueEntries": [
+        "sample_id"
+    ]
 }

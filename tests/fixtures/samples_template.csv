@@ -1,4 +1,0 @@
-sample_id,source,role,library,library_index,raw_location,raw_r1,raw_r2,barcode_r1,barcode_r2,barcode_layout,plate,well,donor,taxon,nil_id,pedigree,is_check,rg_lb,rg_pl
-LX_1,bc1,bc1_sample,LIBX,,@RAW@/LIBX,,,GCCATA,GCCATA,symmetric,,1,Zx.TEST_P1,mexicana,,Zx.TEST_P1_P1,FALSE,LIBX,ILLUMINA
-LX_2,bc1,bc1_sample,LIBX,,@RAW@/LIBX,,,TCTGGT,TCTGGT,symmetric,,2,Zx.TEST_P1,mexicana,,Zx.TEST_P1_P2,FALSE,LIBX,ILLUMINA
-LX_3,bc1,bc1_sample,LIBX,,@RAW@/LIBX,,,TGGCTT,TGGCTT,symmetric,,3,Zx.TEST_P1,mexicana,,Zx.TEST_P1_P3,FALSE,LIBX,ILLUMINA

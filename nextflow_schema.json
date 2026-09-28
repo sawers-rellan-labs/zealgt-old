@@ -18,9 +18,23 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
+                    "schema": "assets/schema_input.json",
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Sample sheet of the entry: paired FASTQs (read_trimming / read_alignment, assets/schema_input.json) or CRAMs to import (markdup_import, assets/schema_import.json; default meta/dev_import.csv).",
+                    "default": "${projectDir}/meta/samples.csv",
+                    "description": "The single sample sheet (meta/samples.csv, built by meta/build_samples.py): library, raw location, inline barcodes and read-group fields per sample. --entry read_demultiplexing takes the rows of --libraries.",
+                    "help_text": "Validated against assets/schema_input.json at parameter validation and parsed with samplesheetToList.",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "import_sheet": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "default": "${projectDir}/meta/dev_import.csv",
+                    "description": "--entry markdup_import: existing CRAMs / BAMs to import (meta/dev_import.csv).",
+                    "help_text": "Parsed and validated with samplesheetToList against assets/schema_import.json only by the markdup_import entry. It has no `schema` key here on purpose: parameter validation would otherwise check that every CRAM in the sheet exists on every run of every entry.",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -33,17 +47,6 @@
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
-                },
-                "samples": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "schema": "assets/schema_samples.json",
-                    "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
-                    "default": "${projectDir}/meta/samples.csv",
-                    "description": "The single sample sheet (meta/samples.csv): library, raw location, inline barcodes, read-group fields per sample.",
-                    "fa_icon": "fas fa-file-csv"
                 }
             }
         },
@@ -66,12 +69,10 @@
                     "type": "string",
                     "enum": [
                         "read_demultiplexing",
-                        "read_trimming",
-                        "read_alignment",
                         "markdup_import"
                     ],
                     "default": "read_demultiplexing",
-                    "description": "CRAM-workflow stage to start from; every entry ends at the CRAM stop point."
+                    "description": "CRAM-workflow entry: read_demultiplexing (raw library -> CRAMs) or markdup_import (existing CRAMs -> duplicate marking + read groups); both end at the CRAM stop point."
                 },
                 "libraries": {
                     "type": "string",
@@ -90,7 +91,8 @@
                     ],
                     "pattern": "^[1-9]\\d*$",
                     "default": 1,
-                    "description": "Libraries per read_demultiplexing run (one library in flight, PLAN §5 rule 3)."
+                    "description": "Libraries per read_demultiplexing run (one library in flight, PLAN §5 rule 3).",
+                    "minimum": 1
                 },
                 "subsample": {
                     "type": [
@@ -99,15 +101,18 @@
                     ],
                     "pattern": "^\\d+$",
                     "default": 0,
-                    "description": "Read pairs per library for Gate 1 (0 = all). Store outputs go to <store>/subsample_<N>."
+                    "description": "Read pairs per library for Gate 1 (0 = all). With N > 0, --store must be a directory named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs go.",
+                    "minimum": 0
                 },
                 "import_samples": {
                     "type": "string",
-                    "description": "markdup_import: restrict to these sample_ids (comma-separated)."
+                    "description": "markdup_import: restrict to these sample_ids (comma-separated).",
+                    "pattern": "^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$"
                 },
                 "import_sets": {
                     "type": "string",
-                    "description": "markdup_import: restrict to these import_set values (comma-separated)."
+                    "description": "markdup_import: restrict to these import_set values (comma-separated).",
+                    "pattern": "^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$"
                 },
                 "raw_r1_glob": {
                     "type": "string",
@@ -132,7 +137,8 @@
                 "store": {
                     "type": "string",
                     "default": "/rsstu/users/r/rrellan/BZea/ZEAL/store",
-                    "description": "Store root: demux_qc/, cram/, cram_import/, registry/ (PLAN §5 rule 2)."
+                    "description": "Store root: demux_qc/, cram/, cram_import/, registry/ (PLAN §5 rule 2). A --subsample run needs a store named subsample_<N>; a stub run one named store_stub* (conf/stub.config).",
+                    "format": "directory-path"
                 },
                 "fasta": {
                     "type": "string",
@@ -232,14 +238,6 @@
                     ],
                     "hidden": true
                 },
-                "max_multiqc_email_size": {
-                    "type": "string",
-                    "description": "File size limit when attaching MultiQC reports to summary emails.",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "default": "25.MB",
-                    "fa_icon": "fas fa-file-upload",
-                    "hidden": true
-                },
                 "monochrome_logs": {
                     "type": "boolean",
                     "description": "Do not use coloured log outputs.",
@@ -259,23 +257,11 @@
                     "fa_icon": "fas fa-image",
                     "hidden": true
                 },
-                "multiqc_methods_description": {
-                    "type": "string",
-                    "description": "Custom MultiQC yaml file containing HTML including a methods description.",
-                    "fa_icon": "fas fa-cog"
-                },
                 "validate_params": {
                     "type": "boolean",
                     "description": "Boolean whether to validate parameters against the schema at runtime",
                     "default": true,
                     "fa_icon": "fas fa-check-square",
-                    "hidden": true
-                },
-                "pipelines_testdata_base_path": {
-                    "type": "string",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Base URL or local path to location of pipeline test dataset files",
-                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
                     "hidden": true
                 },
                 "trace_report_suffix": {
@@ -298,6 +284,13 @@
                 "show_hidden": {
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
+                },
+                "pipelines_testdata_base_path": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Base URL or local path to location of pipeline test dataset files (template; zealgt tests use tests/fixtures)",
+                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+                    "hidden": true
                 }
             }
         },

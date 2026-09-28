@@ -1,7 +1,9 @@
 // PROVENANCE — one JSON record per stored CRAM (PLAN §3 "CRAM workflow stop point": source, demux tool, trimming
-// parameters, aligner and version, markdup settings, code version). The workflow builds the settings part (meta +
-// params, single-line JSON in `record`); this module adds the tool versions of the steps that made the CRAM and its size
-// (resources/usr/bin/provenance.py). storeDir <store>/cram (or <store>/cram_import), next to the CRAM (conf/modules.config).
+// parameters, aligner and version, markdup settings, code version). The pipeline builds the settings part
+// (zgProvenanceRecord in subworkflows/local/utils_nfcore_zealgt_pipeline; single-line JSON in `record`); this module adds the
+// versions.yml files of the steps that made the CRAM and its size (templates/write_provenance.py, a module template: hashed
+// by content). storeDir <store>/cram (or <store>/cram_import), next to the CRAM (conf/modules.config). The template has no
+// options, so there is no task.ext.args; storeDir forbids `eval` outputs, so the python version goes into a versions.yml.
 process PROVENANCE {
     tag "${meta.id}"
     label 'process_single'
@@ -12,33 +14,17 @@ process PROVENANCE {
     tuple val(meta), path(cram), path(versions, stageAs: 'versions/*'), val(record)
 
     output:
-    tuple val(meta), path("${meta.id}.provenance.json"), emit: json
-    path "${meta.id}.provenance.versions.yml"           , emit: versions, topic: versions
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.provenance.json"), emit: json
+    path "${task.ext.prefix ?: meta.id}.provenance.versions.yml"           , emit: versions, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def prefix = "${meta.id}"
-    """
-    cat <<'ZG_EOF' > record.json
-    ${record}
-    ZG_EOF
-
-    python3 "${moduleDir}/resources/usr/bin/provenance.py" \\
-        --record record.json \\
-        --cram ${cram} \\
-        --versions versions/* \\
-        --out ${prefix}.provenance.json
-
-    cat <<-END_VERSIONS > ${prefix}.provenance.versions.yml
-    "${task.process}":
-        python: \$(python3 --version | sed 's/Python //')
-    END_VERSIONS
-    """
+    template 'write_provenance.py'
 
     stub:
-    def prefix = "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     cat <<'ZG_EOF' > ${prefix}.provenance.json
     ${record}
@@ -46,7 +32,7 @@ process PROVENANCE {
 
     cat <<-END_VERSIONS > ${prefix}.provenance.versions.yml
     "${task.process}":
-        python: stub
+        python: 3.12.14
     END_VERSIONS
     """
 }

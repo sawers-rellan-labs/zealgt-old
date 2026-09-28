@@ -83,6 +83,13 @@ for key, name in ((('library', 'barcode_r1', 'barcode_r2'), 'barcode within libr
     c = collections.Counter(tuple(r[k] for k in key) for r in rows)
     bad = [k for k, v in c.items() if v > 1]
     if bad: fail.append(f'duplicate {name}: {bad[:5]}')
+# One DEMUX task per library reads these from the library's first row: every sample of a library must agree on them
+# (the pipeline checks it again when it reads the library, zgDemuxInputs).
+for k in ('source', 'barcode_layout', 'raw_location', 'raw_r1', 'raw_r2'):
+    per_lib = collections.defaultdict(set)
+    for r in rows: per_lib[r['library']].add(r[k])
+    bad = sorted(lib for lib, v in per_lib.items() if len(v) > 1)
+    if bad: fail.append(f'samples of a library disagree on {k}: {bad[:5]}')
 for r in rows:
     if not r['raw_location'] or not r['barcode_r1']: fail.append(f"missing raw location or barcode: {r['sample_id']}")
     if r['source'] == 'bc2s3_batch1' and (not r['raw_r1'] or not r['raw_r2']): fail.append(f"no tar members: {r['sample_id']}")

@@ -24,11 +24,11 @@ process PICARD_COLLECTWGSMETRICS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def interval = intervallist ? "--INTERVALS ${intervallist}" : ''
-    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/slurm_resources.sh at run
+    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/export_slurm_resources.sh at run
     // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
     // -Xmx = ZG_MEM_MB minus the helper's fixed 2048 MB headroom (was task.memory * 0.8).
     """
-    source "${projectDir}/bin/slurm_resources.sh"
+    source export_slurm_resources.sh
     picard \\
         -Xmx\${ZG_JAVA_MEM_MB}M \\
         CollectWgsMetrics \\

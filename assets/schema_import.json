@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_import.json",
-    "title": "sawers-rellan-labs/zealgt - params.input schema for --entry markdup_import (meta/dev_import.csv)",
+    "title": "sawers-rellan-labs/zealgt - params.import_sheet schema for --entry markdup_import (meta/dev_import.csv)",
     "description": "Existing CRAMs / BAMs made by zealbc1 / nilhmm without duplicate marking, imported through the MARK_DUPLICATES + read-group pass",
     "type": "array",
     "items": {
@@ -96,5 +96,8 @@
             "index",
             "include"
         ]
-    }
+    },
+    "uniqueEntries": [
+        "sample_id"
+    ]
 }

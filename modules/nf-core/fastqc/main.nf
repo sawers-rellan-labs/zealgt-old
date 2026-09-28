@@ -28,11 +28,11 @@ process FASTQC {
 
     // The total amount of allocated RAM by FastQC is equal to the number of threads defined (--threads) time the amount of RAM defined (--memory)
     // https://github.com/s-andrews/FastQC/blob/1faeea0412093224d7f6a07f777fad60a5650795/fastqc#L211-L222
-    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/slurm_resources.sh at run
+    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/export_slurm_resources.sh at run
     // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
     // --memory = JVM heap / threads, clamped to FastQC's allowed range (100 - 10000) in bash.
     """
-    source "${projectDir}/bin/slurm_resources.sh"
+    source export_slurm_resources.sh
     fastqc_memory=\$(( ZG_JAVA_MEM_MB / ZG_CPUS ))
     [ "\$fastqc_memory" -le 10000 ] || fastqc_memory=10000
     [ "\$fastqc_memory" -ge 100 ] || fastqc_memory=100

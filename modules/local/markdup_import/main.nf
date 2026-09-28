@@ -4,13 +4,14 @@
 //   samtools addreplacerg -m overwrite_all (RG on every record) -> collate -> fixmate -m -> sort -> markdup -d 2500 -> CRAM + .crai
 // Read group, decided from the input HEADER (meta/dev_import.csv's read_groups column is wrong for the bc2s3_realign rows):
 //   exactly one @RG line whose SM is the sample -> that line is kept (ID/SM/LB as written) and applied to every record;
-//   none or several       -> the sample-sheet read group (meta.read_group) replaces them (merged pools keep one RG, §4 #1b);
+//   none or several       -> the sample-sheet read group (input read_group) replaces them (merged pools keep one RG, §4 #1b);
 //                            whenever the sheet RG is used, the input's @RG header lines are dropped first (gawk), so no stale
 //                            sample remains in the header.
 // The inputs keep their zealbc1 MAPQ 20 / -F 0x904 filter (the provenance record says so); reads whose mate was filtered are
 // marked as single-end by markdup. storeDir <store>/cram_import (conf/modules.config), separate from new CRAMs (<store>/cram).
-// Threads / memory from bin/slurm_resources.sh; sort memory (ZG_MEM_MB - 2 GB) split over up to 4 threads, >= 768 MB each.
-// ext.args = markdup flags (-d 2500).
+// Threads / memory from bin/export_slurm_resources.sh; sort memory (ZG_MEM_MB - 2 GB) split over up to 4 threads, >= 768 MB
+// each. storeDir forbids `eval` outputs, so the versions go into one versions.yml (samtools, gawk).
+// ext.args = markdup flags (-d 2500), ext.args2 = fixmate, ext.args3 = sort.
 process MARKDUP_IMPORT {
     tag "${meta.id}"
     label 'process_medium'
@@ -18,27 +19,29 @@ process MARKDUP_IMPORT {
     conda "${moduleDir}/environment.yml"
 
     input:
-    tuple val(meta), path(input, stageAs: 'input/*'), path(index, stageAs: 'input/*')
+    tuple val(meta), path(input, stageAs: 'input/*'), path(index, stageAs: 'input/*'), val(read_group)
     tuple val(meta2), path(fasta), path(fai)
 
     output:
-    tuple val(meta), path("${meta.id}.cram"), path("${meta.id}.cram.crai"), emit: cram
-    tuple val(meta), path("${meta.id}.markdup.stats")                     , emit: markdup_stats
-    tuple val(meta), path("${meta.id}.read_group.txt")                    , emit: read_group
-    path "${meta.id}.markdup_import.versions.yml"                         , emit: versions, topic: versions
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.cram"), path("${task.ext.prefix ?: meta.id}.cram.crai"), emit: cram
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.markdup.stats")                                       , emit: markdup_stats
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.read_group.txt")                                      , emit: read_group
+    path "${task.ext.prefix ?: meta.id}.markdup_import.versions.yml"                                           , emit: versions, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args   = task.ext.args ?: ''
-    def prefix = "${meta.id}"
-    def rg     = meta.read_group
+    def args2  = task.ext.args2 ?: ''
+    def args3  = task.ext.args3 ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def rg     = read_group
     if (!rg || !rg.startsWith('@RG\\tID:')) {
-        error("MARKDUP_IMPORT ${prefix}: meta.read_group must be an escaped @RG line ('@RG\\\\tID:...'), got '${rg}'")
+        error("MARKDUP_IMPORT ${prefix}: read_group must be an escaped @RG line ('@RG\\\\tID:...'), got '${rg}'")
     }
     """
-    source "${projectDir}/bin/slurm_resources.sh"
+    source export_slurm_resources.sh
 
     threads=\$(( ZG_CPUS < 4 ? ZG_CPUS : 4 ))
     sort_mem_mb=\$(( (ZG_MEM_MB - 2048) / threads ))
@@ -85,8 +88,8 @@ process MARKDUP_IMPORT {
 
     add_rg \\
     | samtools collate -@ "\$threads" -O -u - "\$tmp/collate" \\
-    | samtools fixmate -@ "\$threads" -m -u - - \\
-    | samtools sort -@ "\$threads" -m "\${sort_mem_mb}M" -u -T "\$tmp/sort" - \\
+    | samtools fixmate -@ "\$threads" -m -u ${args2} - - \\
+    | samtools sort -@ "\$threads" -m "\${sort_mem_mb}M" -u -T "\$tmp/sort" ${args3} - \\
     | samtools markdup \\
         -@ "\$threads" \\
         ${args} \\
@@ -103,17 +106,20 @@ process MARKDUP_IMPORT {
     cat <<-END_VERSIONS > ${prefix}.markdup_import.versions.yml
     "${task.process}":
         samtools: \$(samtools version | sed '1!d; s/.* //')
+        gawk: \$(gawk --version | sed '1!d; s/GNU Awk //; s/,.*//')
     END_VERSIONS
     """
 
     stub:
-    def prefix = "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    // Stub versions are the environment.yml pins (the tools are not run in a stub).
     """
     touch ${prefix}.cram ${prefix}.cram.crai ${prefix}.markdup.stats ${prefix}.read_group.txt
 
     cat <<-END_VERSIONS > ${prefix}.markdup_import.versions.yml
     "${task.process}":
-        samtools: stub
+        samtools: 1.21
+        gawk: 5.4.1
     END_VERSIONS
     """
 }
