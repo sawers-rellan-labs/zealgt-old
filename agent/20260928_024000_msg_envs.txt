@@ -1,0 +1,14 @@
+Env framework: bin/build_envs.sh + xfer wrapper, Nextflow launcher env, generated withName -> prefix config
+
+bin/build_envs.sh builds every env dir (envs/nextflow first, then modules/{nf-core,local}/**/environment.yml) with
+conda env create -p /share/maize/frodrig4/conda/zealgt/<id>-<sha8 of environment.yml+build.sh>, runs build.sh inside the
+env if present, verifies every pinned package/build, runs the smoke test from envs/smoke_tests.tsv, skips prefixes with
+a success record, never deletes (a failed prefix is reported), writes manifest.tsv (env root + envs/manifest.tsv, ignored).
+CONDA_PKGS_DIRS=/share/maize/frodrig4/conda/pkgs, strict channel priority, conda 26.3.2 from /usr/local/apps; /rsstu refused.
+--list / --write-config / --check-config work on the laptop; conf/env_prefixes.config is generated and checked before a build.
+bin/build_envs.sbatch: --account=maize_cpu --partition=xfer --mem=8G.
+envs/nextflow: nextflow 26.04.6 h2a3209d_1 + openjdk 25.0.2 h1602c4f_26 (as zealbc1); build.sh installs nf-schema@2.5.1
+into the prefix for the offline head job (NXF_PLUGINS_DIR=<prefix>/share/nextflow/plugins).
+Dry-tested with a fake conda: agent/20260928_023000_fake_conda_test.sh.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
