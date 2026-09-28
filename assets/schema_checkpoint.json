@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_checkpoint.json",
     "title": "sawers-rellan-labs/zealgt - FASTQ checkpoint samplesheet (<fastq_checkpoint>/<library>/samplesheet.csv)",
-    "description": "Written by --entry read_demultiplexing once every sample of a library is trimmed (subworkflows/local/utils_nfcore_zealgt_pipeline zgWriteCheckpointSheet); read by --entry read_alignment. One row per sample with everything stage 2 needs: the trimmed pair (hardlinks in the checkpoint directory), the stage-2 meta fields, the registry row's identity and biology columns (source, role, donor, taxon, plate, well, nil_id, pedigree, is_check, and registry_file; the provenance record's registry snapshot, meta/PROVENANCE.md 'Identifiers'), the read group, and the stage-1 settings and run recorded in every provenance record. The read structure's crops are already applied to the FASTQs.",
+    "description": "Written by --entry read_demultiplexing once every sample of a library is trimmed (subworkflows/local/utils_nfcore_zealgt_pipeline zgWriteCheckpointSheet); read by --entry read_alignment. One row per sample with everything stage 2 needs: the trimmed pair (hardlinks in the checkpoint directory), the stage-2 meta fields, the registry snapshot of the provenance record (meta/PROVENANCE.md 'Identifiers': registry_file, registry_note and reg_<column> = the sample's meta/registry.csv row, raw columns plus the *_resolved columns and correction_ids; untyped here, the pipeline reads their text), the read group, and the stage-1 settings and run recorded in every provenance record. The read structure's crops are already applied to the FASTQs.",
     "type": "array",
     "items": {
         "type": "object",
@@ -49,26 +49,142 @@
                 "type": "string",
                 "meta": ["taxon"]
             },
-            "plate": {
-                "meta": ["plate"]
-            },
-            "well": {
-                "meta": ["well"]
-            },
-            "nil_id": {
-                "meta": ["nil_id"]
-            },
-            "pedigree": {
-                "meta": ["pedigree"]
-            },
-            "is_check": {
-                "meta": ["is_check"]
-            },
             "registry_file": {
                 "type": "string",
                 "pattern": "^\\S+$",
                 "meta": ["registry_file"],
-                "errorMessage": "registry_file: the registry (--input) the row was read from, relative to the pipeline directory when inside it"
+                "errorMessage": "registry_file: the registry (--registry) the row was read from, relative to the pipeline directory when inside it"
+            },
+            "registry_note": {
+                "type": "string",
+                "meta": ["registry_note"],
+                "errorMessage": "registry_note: empty, or 'sample_id not in the registry' (then every reg_* cell is empty)"
+            },
+            "reg_sample_id": {
+                "meta": ["reg_sample_id"]
+            },
+            "reg_source": {
+                "meta": ["reg_source"]
+            },
+            "reg_role": {
+                "meta": ["reg_role"]
+            },
+            "reg_library": {
+                "meta": ["reg_library"]
+            },
+            "reg_plate": {
+                "meta": ["reg_plate"]
+            },
+            "reg_well": {
+                "meta": ["reg_well"]
+            },
+            "reg_lab_seq_id": {
+                "meta": ["reg_lab_seq_id"]
+            },
+            "reg_delivered_name": {
+                "meta": ["reg_delivered_name"]
+            },
+            "reg_accession": {
+                "meta": ["reg_accession"]
+            },
+            "reg_taxa_code": {
+                "meta": ["reg_taxa_code"]
+            },
+            "reg_taxon": {
+                "meta": ["reg_taxon"]
+            },
+            "reg_donor": {
+                "meta": ["reg_donor"]
+            },
+            "reg_line_id": {
+                "meta": ["reg_line_id"]
+            },
+            "reg_old_line_id": {
+                "meta": ["reg_old_line_id"]
+            },
+            "reg_pedigree": {
+                "meta": ["reg_pedigree"]
+            },
+            "reg_nil_id": {
+                "meta": ["reg_nil_id"]
+            },
+            "reg_nil_id_in_register": {
+                "meta": ["reg_nil_id_in_register"]
+            },
+            "reg_is_check": {
+                "meta": ["reg_is_check"]
+            },
+            "reg_gen": {
+                "meta": ["reg_gen"]
+            },
+            "reg_F1": {
+                "meta": ["reg_F1"]
+            },
+            "reg_BC1": {
+                "meta": ["reg_BC1"]
+            },
+            "reg_BC2": {
+                "meta": ["reg_BC2"]
+            },
+            "reg_S1": {
+                "meta": ["reg_S1"]
+            },
+            "reg_S2": {
+                "meta": ["reg_S2"]
+            },
+            "reg_S3": {
+                "meta": ["reg_S3"]
+            },
+            "reg_S4": {
+                "meta": ["reg_S4"]
+            },
+            "reg_blk": {
+                "meta": ["reg_blk"]
+            },
+            "reg_TC": {
+                "meta": ["reg_TC"]
+            },
+            "reg_j2teo_batch": {
+                "meta": ["reg_j2teo_batch"]
+            },
+            "reg_j2teo_seed_origin": {
+                "meta": ["reg_j2teo_seed_origin"]
+            },
+            "reg_field": {
+                "meta": ["reg_field"]
+            },
+            "reg_field_plot": {
+                "meta": ["reg_field_plot"]
+            },
+            "reg_seed_packet": {
+                "meta": ["reg_seed_packet"]
+            },
+            "reg_mother_plant": {
+                "meta": ["reg_mother_plant"]
+            },
+            "reg_replicate_of": {
+                "meta": ["reg_replicate_of"]
+            },
+            "reg_exclude": {
+                "meta": ["reg_exclude"]
+            },
+            "reg_exclude_reason": {
+                "meta": ["reg_exclude_reason"]
+            },
+            "reg_flags": {
+                "meta": ["reg_flags"]
+            },
+            "reg_pedigree_resolved": {
+                "meta": ["reg_pedigree_resolved"]
+            },
+            "reg_nil_id_resolved": {
+                "meta": ["reg_nil_id_resolved"]
+            },
+            "reg_donor_resolved": {
+                "meta": ["reg_donor_resolved"]
+            },
+            "reg_correction_ids": {
+                "meta": ["reg_correction_ids"]
             },
             "read_group": {
                 "type": "string",
@@ -157,29 +273,7 @@
                 "errorMessage": "stage1_tool_versions: tool=version;tool=version"
             }
         },
-        "required": [
-            "sample",
-            "library",
-            "fastq_1",
-            "fastq_2",
-            "source",
-            "registry_file",
-            "read_group",
-            "read_structure",
-            "layout",
-            "barcode_r1",
-            "demux_args",
-            "trim_illuminaclip",
-            "trim_args",
-            "trim_adapters",
-            "raw_location",
-            "raw_files_r1",
-            "raw_files_r2",
-            "subsample",
-            "stage1_session_id",
-            "stage1_code_version",
-            "stage1_tool_versions"
-        ]
+        "required": ["sample", "library", "fastq_1", "fastq_2", "source", "registry_file", "read_group", "read_structure", "layout", "barcode_r1", "demux_args", "trim_illuminaclip", "trim_args", "trim_adapters", "raw_location", "raw_files_r1", "raw_files_r2", "subsample", "stage1_session_id", "stage1_code_version", "stage1_tool_versions"]
     },
     "uniqueEntries": ["sample"]
 }

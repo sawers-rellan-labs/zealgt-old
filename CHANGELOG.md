@@ -31,11 +31,26 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
   compute_partners / short QOS, else compute / normal) and has queueSize 160; `scripts/check_resources.sh` adds a size probe
   (sparse 100 M / 310 M pair inputs). Head job: documented `--qos=normal --partition=compute --time=3-00:00:00` for multi-library runs.
 - Head job: repository and commit printed first, timestamp on every Nextflow console line.
-- Provenance record: `registry` snapshot of the sample's `meta/samples.csv` row (`sample_id`, `source`, `role`, `library`,
-  `plate`, `well`, `donor`, `taxon`, `nil_id`, `pedigree`, `is_check`) with the registry file and the commit it was read at
-  (meta/PROVENANCE.md "Identifiers"); the checkpoint samplesheet carries these columns (+ `registry_file`), so `read_alignment`
-  rebuilds the same snapshot; `markdup_import` records look the sample up in the registry and keep the import sheet's row
-  (`origin.import_sheet_row`). CRAM headers unchanged (RG `ID` = `SM` = `sample_id`, one per sample).
+- Provenance record: `registry` snapshot of the sample's row of the sample-identity registry (`--registry`, default
+  `meta/registry.csv`; meta/PROVENANCE.md "Identifiers"): `row` = the raw identity and biology columns as the sources give them
+  (38 columns, the registry's spelling, e.g. `FALSE`), `resolved` = `pedigree_resolved`, `nil_id_resolved`, `donor_resolved`,
+  `correction_ids` recorded separately (never replacing a raw value), with the registry file and the commit it was read at. The
+  checkpoint samplesheet carries the row as `reg_<column>` (+ `registry_file`, `registry_note`), so `read_alignment` rebuilds the
+  same snapshot; `markdup_import` records look the sample up in the registry and keep the import sheet's row
+  (`origin.import_sheet_row`). A registry row must agree with `--input` on source and library. CRAM headers unchanged (RG `ID` =
+  `SM` = `sample_id`, one per sample).
+- Every run with stage 2 writes `<outdir>/pipeline_info/cleanup_<run_id or session>.sh` (also printed in the log) with, per
+  library whose CRAMs are all stored and verified, listing commands and commented consent-marked removal lines for its
+  checkpoint dir and the run's DEMUX / MERGE_LANES / TRIMMOMATIC / FASTQC work dirs (sizes and file counts measured at the end
+  of the run). It also gives a `nextflow clean` alternative when every library is removable. The pipeline never runs it. Gate 3
+  runs as waves of <= `--max_libraries` libraries with a consented cleanup between waves (PLAN §5, §6; docs/usage.md).
+- Batch-1 read-group PU: `rg_pu` column in `meta/samples.csv` / `meta/registry.csv` (`meta/build_samples.py`: flowcell
+  `H7HYFDSX7` from the read headers, lanes from the tar member names, e.g. `H7HYFDSX7.1,H7HYFDSX7.2`; empty for BC1 / batch 2,
+  whose PU still comes from the Novogene lane file names); `assets/schema_input.json` validates it; all samples of a library
+  must agree on it.
+- Batch-1 test fixture `tests/fixtures/raw/LIBB1/R{1,2}.tar` (one plate pool, 2 lane members per read, R1-only 8-bp barcodes,
+  `8B12S+T 8S+T`, one empty well) with `tests/fixtures/registry_test.csv`; DEMUX nf-tests (stub, and `demux_real` tests that check
+  R1 = raw[20:], R2 = raw[8:], per-well counts and the subsample path) and a pipeline stub test for `--libraries LIBB1`.
 
 ### `Changed`
 
@@ -51,6 +66,15 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
   sufficient.
 - PROVENANCE reran on every `-resume`: its hashed record carried `workflow.runName`; `run_name` is dropped from the record
   (session id, run id and code version identify the run).
+- TRIMMOMATIC exited 1 on a sample with no reads ("Unable to detect quality encoding"): the functional patch adds
+  `ext.args3` before the inputs, set to `-phred33` (conf/modules.config); the provenance record's `trimming.phred` is `phred33`.
+- DEMUX `--subsample` read plain FASTQ while the full run reads gz: the head of each lane is now re-compressed (`pigz -1`), so
+  Gate 1 takes the full run's I/O path for tar and plain-FASTQ libraries alike; task-dir copies (tar members, heads) are removed
+  by an EXIT trap, also when cutadapt fails.
+- Batch-1 lane names kept Illumina's `_R1_001` (`BZea5_S5_L001_R1_001`): now `BZea5_S5_L001`; R1 / R2 tar members are checked to
+  be the two reads of one lane (`_R1_<nnn>` / `_R2_<nnn>`) instead of pairing by position only.
+- `read_alignment` read the registry columns of the checkpoint samplesheet through nf-schema's type inference (`FALSE` →
+  `false`); the samplesheet's text is now used, so both entries record the registry's own spelling.
 
 ### `Dependencies`
 

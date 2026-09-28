@@ -5,7 +5,7 @@ Outputs (all rebuilt together, never hand-edited):
   meta/registry.csv    one row per sequenced sample of every experiment (BC1, BC2S3 batch 1 incl. the wells of the other project,
                        BC2S3 batch 2, BRB-seq), key sample_id
   meta/samples.csv     the sample sheet of workflow 1 (read processing): the registry rows of bc1 / bc2s3_batch1 / bc2s3_batch2
-                       that are not excluded, with the first 20 registry columns (assets/schema_input.json validates it)
+                       that are not excluded, with the first 21 registry columns (up to rg_pu) (assets/schema_input.json validates it)
   meta/accessions.csv  donor passport data (J2Teo metadata), with the resolved longitude
 
 Rules (meta/PROVENANCE.md "Sources" and "Joins"):
@@ -29,11 +29,16 @@ BZEA = '/rsstu/users/r/rrellan/BZea'
 RAW_BC1 = f'{BZEA}/BC1_dna_raw/01.RawData'
 RAW_B2 = f'{BZEA}/BC2S3_batch_2_dna_raw/01.RawData'
 RAW_B1 = '/rsstu/users/r/rrellan/sara/DNA_Sequencing_raw/BZea'
+# rg_pu = the read group's PU (flowcell.lane[,flowcell.lane]). Batch 1: the tar member names carry the lane (_L00n_) but not
+# the flowcell; every read header read on hazel is @A00600:293:H7HYFDSX7:<lane>:... (plates 8 L2, 10 L4, 14 L3/L4, i.e. all four lanes;
+# batch-1 audit 2026-09-28, G3), one flowcell for the whole NVS188B delivery. BC1 / batch 2: empty, the pipeline derives PU
+# from the Novogene lane file names (<...>_<flowcell>_L<lane>_1.fq.gz, zgPlatformUnit).
+FLOWCELL_B1 = 'H7HYFDSX7'
 TAXON = {'Zd': 'diploperennis', 'Zx': 'mexicana', 'Zv': 'parviglumis', 'Zl': 'luxurians', 'Zh': 'huehuetenangensis'}
 WF_SOURCES = ('bc1', 'bc2s3_batch1', 'bc2s3_batch2')
 COLS = ['sample_id', 'source', 'role', 'library', 'library_index', 'raw_location', 'raw_r1', 'raw_r2',
         'barcode_r1', 'barcode_r2', 'barcode_layout', 'plate', 'well', 'donor', 'taxon', 'nil_id', 'pedigree', 'is_check',
-        'rg_lb', 'rg_pl',
+        'rg_lb', 'rg_pl', 'rg_pu',
         # identity (raw, from the sources)
         'lab_seq_id', 'delivered_name', 'accession', 'taxa_code', 'line_id', 'old_line_id', 'gen', 'F1', 'BC1', 'BC2',
         'S1', 'S2', 'S3', 'S4', 'blk', 'TC', 'j2teo_batch', 'j2teo_seed_origin', 'field', 'field_plot', 'seed_packet',
@@ -41,7 +46,7 @@ COLS = ['sample_id', 'source', 'role', 'library', 'library_index', 'raw_location
         # corrections applied (meta/corrections.csv)
         'pedigree_resolved', 'nil_id_resolved', 'donor_resolved', 'correction_ids',
         'exclude', 'exclude_reason', 'flags']
-WF_COLS = COLS[:COLS.index('rg_pl') + 1]    # samples.csv keeps the workflow-1 columns (assets/schema_input.json); the rest is in registry.csv
+WF_COLS = COLS[:COLS.index('rg_pu') + 1]    # samples.csv keeps the workflow-1 columns (assets/schema_input.json); the rest is in registry.csv
 
 # --- sources: SOURCES.tsv + sha256 ------------------------------------------------------------------------------------
 fail, warn = [], []
@@ -221,7 +226,9 @@ for r in rd('bc2s3_batch1_sample_sheet.csv'):
              raw_r1=';'.join(f'NVS188B_Rellan_Alvarez_R1.tar:{x}' for x in sorted(members[plate]['R1'])),
              raw_r2=';'.join(f'NVS188B_Rellan_Alvarez_R2.tar:{x}' for x in sorted(members[plate]['R2'])),
              barcode_r1=r['Sample_Barcode'], barcode_layout='r1_only', plate=str(plate), well=r['Sample_Id'], pedigree=ped,
-             is_check='TRUE' if role == 'check' else 'FALSE', rg_lb=f'BZea{plate}', rg_pl='ILLUMINA', delivered_name=g,
+             is_check='TRUE' if role == 'check' else 'FALSE', rg_lb=f'BZea{plate}', rg_pl='ILLUMINA',
+             rg_pu=','.join(f'{FLOWCELL_B1}.{int(ln)}' for ln in sorted({re.search(r'_L(\d+)_R1_001\.fastq\.gz$', x).group(1) for x in members[plate]['R1']})),
+             delivered_name=g,
              field='PV23', field_plot=p.get('tissue', ''), seed_packet=p.get('seed', ''), mother_plant=s12.get(p.get('seed', ''), ''),
              exclude='TRUE' if excl else 'FALSE', exclude_reason=excl, flags=';'.join(fl))
     d.update(j2cols(jr)); rows.append(d)
@@ -327,7 +334,7 @@ wf = [d for d in rows if d['source'] in WF_SOURCES and d['exclude'] != 'TRUE']
 c = collections.Counter((d['library'], d['barcode_r1'], d['barcode_r2']) for d in wf)
 bad = [k for k, v in c.items() if v > 1]
 if bad: fail.append(f'duplicate barcode within library: {bad[:5]}')
-for k in ('source', 'barcode_layout', 'raw_location', 'raw_r1', 'raw_r2'):
+for k in ('source', 'barcode_layout', 'raw_location', 'raw_r1', 'raw_r2', 'rg_pu'):
     per_lib = collections.defaultdict(set)
     for d in wf: per_lib[d['library']].add(d[k])
     bad = sorted(lib for lib, v in per_lib.items() if len(v) > 1)

@@ -24,7 +24,7 @@ nextflow_pipeline {
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             // the registry snapshot of every provenance record (the rest of the record holds run fields; .nftignore)
             def registry = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
-                .collect { f -> def r = new groovy.json.JsonSlurper().parse(f).registry; [f.name, "registry file: ${r.file}", r.row, r.note] }
+                .collect { f -> def r = new groovy.json.JsonSlurper().parse(f).registry; [f.name, "registry file: ${r.file}", r.row, r.resolved, r.note] }
             // end-of-run cleanup commands (name has the session id: path and content outside the snapshot)
             def cleanup = new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }
             def cl = cleanup ? cleanup[0].readLines() : []
@@ -53,6 +53,46 @@ nextflow_pipeline {
                     // registry snapshots of the provenance records
                     registry
                 ).match() }
+            )
+        }
+    }
+
+    // Batch-1 path (audit G8): the fixture plate LIBB1 (tests/fixtures/raw/LIBB1/R{1,2}.tar, 2 lane members per read, R1-only
+    // 8-bp barcodes, one empty well), PU from the sheet's rg_pu, tar members named in the provenance records
+    test("-profile test, --entry read_demultiplexing, batch-1 library LIBB1 (tar members, r1_only) - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                libraries        = 'LIBB1'
+            }
+        }
+
+        then {
+            def records = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+                .collect { f -> new groovy.json.JsonSlurper().parse(f) }
+            def registry = records.collect { r -> [r.sample, "registry file: ${r.registry.file}", r.registry.row, r.registry.resolved, r.registry.note] }
+            def demux = workflow.trace.tasks().collect { t -> t.name }.findAll { n -> n.contains(':DEMUX (') }.sort()
+            def sheet = file("$outputDir/checkpoint_stub/LIBB1/samplesheet.csv").readLines()
+            assertAll(
+                { assert workflow.success },
+                // DEMUX x 2 lanes, MERGE_LANES, DEMUX_QC, 4 x 6 per-sample tasks, REGISTRY, MULTIQC
+                { assert workflow.trace.succeeded().size() == 30 },
+                // one DEMUX task per tar member pair, lane named without _R1_001
+                { assert demux.collect { n -> n.replaceAll(/.*\(|\)/, '') } == ['LIBB1.LIBB1_S1_L001', 'LIBB1.LIBB1_S1_L002'] },
+                { assert sheet.size() == 5 },
+                { assert records.size() == 4 },
+                { assert records.every { r -> r.read_group == '@RG\\tID:' + r.sample + '\\tSM:' + r.sample + '\\tLB:LIBB1\\tPL:ILLUMINA\\tPU:TESTFCB1.1,TESTFCB1.2' } },
+                { assert records.every { r -> r.origin.tar_members_r1 == ['LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz', 'LIBB1_R1/LIBB1_S1_L002_R1_001.fastq.gz'] && r.origin.raw_files_r1 == ['R1.tar'] } },
+                { assert records.every { r -> r.origin.read_structure == '8B12S+T 8S+T' && r.origin.layout == 'r1_only' && r.trimming.phred == 'phred33' } },
+                // raw registry values (the registry's spelling) and the resolved ones apart: PB1_SID3 carries a correction
+                { assert records[2].registry.row.pedigree == 'Zx.TEST_P2_P1_P3.1.1.1' && records[2].registry.resolved.pedigree_resolved == 'Zx.TEST_P3_P1_P3.1.1.1' },
+                { assert records[3].registry.row.is_check == 'TRUE' && records[3].registry.row.role == 'check' },
+                { assert snapshot(registry).match() }
             )
         }
     }
@@ -100,8 +140,8 @@ nextflow_pipeline {
                 def sheet = new File("$outputDir/samples_two_libs.csv")
                 def fx = new File("${baseDir}/tests/fixtures/samples_test.csv").readLines()
                 sheet.text = (fx + [
-                    'LY_1,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,GCCATA,GCCATA,symmetric,,1,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P1,FALSE,LIBY,ILLUMINA',
-                    'LY_2,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,TCTGGT,TCTGGT,symmetric,,2,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P2,FALSE,LIBY,ILLUMINA',
+                    'LY_1,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,GCCATA,GCCATA,symmetric,,1,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P1,FALSE,LIBY,ILLUMINA,',
+                    'LY_2,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,TCTGGT,TCTGGT,symmetric,,2,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P2,FALSE,LIBY,ILLUMINA,',
                 ]).join('\n') + '\n'
                 input = sheet.toString()
             }
@@ -138,19 +178,40 @@ nextflow_pipeline {
                 // a checkpoint of two samples (touch-file FASTQs) as stage 1 writes it, and the library's demux QC table
                 def ck = new File("$outputDir/checkpoint_stub/LIBX")
                 ck.mkdirs()
-                def cols = 'sample,library,fastq_1,fastq_2,source,role,donor,taxon,plate,well,nil_id,pedigree,is_check,registry_file,read_group,read_structure,layout,barcode_r1,barcode_r2,demux_args,trim_illuminaclip,trim_args,trim_adapters,raw_location,raw_files_r1,raw_files_r2,tar_members_r1,tar_members_r2,subsample,stage1_run_id,stage1_session_id,stage1_code_version,stage1_tool_versions'
-                // registry columns: LX_1 with a nil_id, LX_2 without one (as BC1 samples)
-                def reg = [LX_1: ['', '1', 'Zx9000001', 'Zx.TEST_P1_P1', 'FALSE'], LX_2: ['', '2', '', 'Zx.TEST_P1_P2', 'FALSE']]
+                // registry snapshot columns (zgRegistryFields + zgRegistryResolvedFields, as reg_<column>)
+                def reg_fields = ['sample_id', 'source', 'role', 'library', 'plate', 'well', 'lab_seq_id', 'delivered_name', 'accession', 'taxa_code',
+                                  'taxon', 'donor', 'line_id', 'old_line_id', 'pedigree', 'nil_id', 'nil_id_in_register', 'is_check',
+                                  'gen', 'F1', 'BC1', 'BC2', 'S1', 'S2', 'S3', 'S4', 'blk', 'TC', 'j2teo_batch', 'j2teo_seed_origin',
+                                  'field', 'field_plot', 'seed_packet', 'mother_plant', 'replicate_of', 'exclude', 'exclude_reason', 'flags',
+                                  'pedigree_resolved', 'nil_id_resolved', 'donor_resolved', 'correction_ids']
+                def cols = ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'registry_file', 'registry_note'] +
+                           reg_fields.collect { f -> "reg_${f}".toString() } +
+                           ['read_group', 'read_structure', 'layout', 'barcode_r1', 'barcode_r2', 'demux_args', 'trim_illuminaclip', 'trim_args',
+                            'trim_adapters', 'raw_location', 'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample',
+                            'stage1_run_id', 'stage1_session_id', 'stage1_code_version', 'stage1_tool_versions']
+                // LX_1: a registry row with a nil_id and a correction (resolved values differ); LX_2: not in the registry
+                def reg = [LX_1: [sample_id: 'LX_1', source: 'bc1', role: 'bc1_sample', library: 'LIBX', well: '1', donor: 'Zx.TEST_P1',
+                                  taxon: 'mexicana', pedigree: 'Zx.TEST_P1_P1', nil_id: 'Zx9000001', is_check: 'FALSE', S1: '1', exclude: 'FALSE',
+                                  flags: 'a=1;b', pedigree_resolved: 'Zx.TEST_P9_P1', nil_id_resolved: 'Zx9000009', donor_resolved: 'Zx.TEST_P9',
+                                  correction_ids: 'C9001'],
+                           LX_2: null]
                 def rows = [['LX_1', 'GCCATA'], ['LX_2', 'TCTGGT']].collect { s, bc ->
                     [1, 2].each { r -> new File(ck, "${s}.paired.trim_${r}.fastq.gz").text = '' }
-                    [s, 'LIBX', "${ck}/${s}.paired.trim_1.fastq.gz", "${ck}/${s}.paired.trim_2.fastq.gz", 'bc1', 'bc1_sample', 'Zx.TEST_P1', 'mexicana',
-                     *reg[s], 'tests/fixtures/samples_test.csv',
-                     "\"@RG\\tID:${s}\\tSM:${s}\\tLB:LIBX\\tPL:ILLUMINA\\tPU:TESTFC01.1,TESTFC01.2\"", '6B2S+T 6B2S+T', 'symmetric', bc, bc,
-                     '-e 0 --no-indels --discard-untrimmed -Z', '2:30:10', 'LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36', '/adapters/TruSeq3-PE-2.fa',
-                     '/raw/LIBX', 'LIBX_TESTFC01_L1_1.fq.gz;LIBX_TESTFC01_L2_1.fq.gz', 'LIBX_TESTFC01_L1_2.fq.gz;LIBX_TESTFC01_L2_2.fq.gz', '', '', '0', '',
-                     '00000000-0000-0000-0000-000000000000', 'test', 'cutadapt=4.9;pigz=2.8;tar=1.35;trimmomatic=0.39'].join(',')
+                    def row = [sample: s, library: 'LIBX', fastq_1: "${ck}/${s}.paired.trim_1.fastq.gz", fastq_2: "${ck}/${s}.paired.trim_2.fastq.gz",
+                               source: 'bc1', role: 'bc1_sample', donor: 'Zx.TEST_P1', taxon: 'mexicana', registry_file: 'tests/fixtures/registry_test.csv',
+                               registry_note: reg[s] ? '' : 'sample_id not in the registry'] +
+                              reg_fields.collectEntries { f -> ["reg_${f}".toString(), reg[s]?.get(f) ?: ''] } +
+                              [read_group: "\"@RG\\tID:${s}\\tSM:${s}\\tLB:LIBX\\tPL:ILLUMINA\\tPU:TESTFC01.1,TESTFC01.2\"", read_structure: '6B2S+T 6B2S+T',
+                               layout: 'symmetric', barcode_r1: bc, barcode_r2: bc, demux_args: '-e 0 --no-indels --discard-untrimmed -Z',
+                               trim_illuminaclip: '2:30:10', trim_args: 'LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36',
+                               trim_adapters: '/adapters/TruSeq3-PE-2.fa', raw_location: '/raw/LIBX',
+                               raw_files_r1: 'LIBX_TESTFC01_L1_1.fq.gz;LIBX_TESTFC01_L2_1.fq.gz', raw_files_r2: 'LIBX_TESTFC01_L1_2.fq.gz;LIBX_TESTFC01_L2_2.fq.gz',
+                               tar_members_r1: '', tar_members_r2: '', subsample: '0', stage1_run_id: '',
+                               stage1_session_id: '00000000-0000-0000-0000-000000000000', stage1_code_version: 'test',
+                               stage1_tool_versions: 'cutadapt=4.9;pigz=2.8;tar=1.35;trimmomatic=0.39']
+                    cols.collect { c -> row[c] }.join(',')
                 }
-                new File(ck, 'samplesheet.csv').text = ([cols] + rows).join('\n') + '\n'
+                new File(ck, 'samplesheet.csv').text = ([cols.join(',')] + rows).join('\n') + '\n'
                 def dq = new File("$outputDir/store_stub/demux_qc")
                 dq.mkdirs()
                 new File(dq, 'LIBX.tsv').text = 'sample_id\tread_pairs\nLX_1\t10\nLX_2\t10\n'
@@ -175,7 +236,10 @@ nextflow_pipeline {
                 { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.every { cl ->
                     cl.any { l -> l.startsWith('# work/: this run used no stage-1 task of LIBX') } && cl.count { l -> l.startsWith('# rm -r -- ') } == 1 } },
                 { assert records.size() == 2 && records.every { r -> r.registry.code_version == 'test' } },
-                { assert records[0].registry.row.nil_id == 'Zx9000001' && records[1].registry.row.nil_id == '' },
+                // raw values as written (text: FALSE, 1), resolved values separately; LX_2 has no registry row
+                { assert records[0].registry.row.nil_id == 'Zx9000001' && records[0].registry.row.is_check == 'FALSE' && records[0].registry.row.flags == 'a=1;b' },
+                { assert records[0].registry.resolved == [pedigree_resolved: 'Zx.TEST_P9_P1', nil_id_resolved: 'Zx9000009', donor_resolved: 'Zx.TEST_P9', correction_ids: 'C9001'] },
+                { assert records[1].registry.row == null && records[1].registry.resolved == null && records[1].registry.note == 'sample_id not in the registry' },
                 { assert snapshot(
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
                     stable_path,

@@ -5,7 +5,7 @@
 | output | what |
 |---|---|
 | `meta/registry.csv` | one row per sequenced sample of every experiment, key `sample_id`; raw identity columns from the sources, `*_resolved` columns with `meta/corrections.csv` applied |
-| `meta/samples.csv` | the sample sheet of workflow 1 (read processing): the non-excluded `bc1` / `bc2s3_batch1` / `bc2s3_batch2` rows of the registry, first 20 columns (validated by `assets/schema_input.json`) |
+| `meta/samples.csv` | the sample sheet of workflow 1 (read processing): the non-excluded `bc1` / `bc2s3_batch1` / `bc2s3_batch2` rows of the registry, first 21 columns, up to `rg_pu` (validated by `assets/schema_input.json`) |
 | `meta/accessions.csv` | donor passport data of the 227 accessions (J2Teo `metadata`), `longitude_resolved` with the corrections applied |
 | `meta/corrections.csv` | append-only identity correction log (hand-maintained; never rewritten) |
 
@@ -183,9 +183,13 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
   flowcell/lane/tile from the read names. Per-lane read groups only if lane QC ever shows a lane effect.
 - **Status (2026-09-28):**
   - The CRAM workflow already follows the key and read-group rules.
-  - On branch `simplify` the provenance record holds the registry snapshot (`registry`: file, code_version and the row's raw
-    values, the same for the chained run and `read_alignment` via the checkpoint samplesheet; docs/output.md); the
-    `*_resolved` columns are recorded separately and never replace the raw values.
+  - On branch `simplify` the provenance record holds the registry snapshot from `meta/registry.csv` (`--registry`): `registry`
+    = file, code_version, `row` (the raw identity and biology columns, text as in the registry) and `resolved` (the
+    `*_resolved` columns and `correction_ids`, recorded separately, never replacing a raw value); the same for the chained run
+    and `read_alignment` via the checkpoint samplesheet's `reg_<column>` cells (docs/output.md).
+  - Batch-1 `PU`: `rg_pu` = `H7HYFDSX7.<lane>` per plate (the flowcell of every read header read on hazel, the lanes of the tar
+    members; `meta/build_samples.py`). BC1 / batch 2 leave `rg_pu` empty and the pipeline reads PU from the Novogene lane file
+    names.
   - The edge translation is a rule for the genotype workflow (branch `genotype`); column note:
     `agent/20260928_182000_samples_csv_change_note.md`.
 

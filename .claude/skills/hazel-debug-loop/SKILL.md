@@ -125,3 +125,10 @@ With the slurm executor each process is its own Slurm job next to the head; `sca
   turns it into `rm -rf /dev/null`-style mistakes — seen 2026-09-28, refused by the permission rules).
 - **Cleanup and any multi-line command only as a script in `agent/`**, never typed inline, so every removal is visible, reviewable and
   kept; print the exact paths (`ls`) before the removal line.
+- **End-of-run cleanup file:** every run with stage 2 writes `<outdir>/pipeline_info/cleanup_<run_id or session>.sh` (also printed at
+  the end of the log): per library whose CRAMs are all stored and verified, `ls` / `du` / `find | wc -l` of its checkpoint dir and of
+  the run's DEMUX / MERGE_LANES / TRIMMOMATIC / FASTQC task dirs, then commented `# rm -r -- '<path>'` lines marked `CONSENT:`, and a
+  `nextflow clean` alternative when every library is removable. The pipeline never runs it. Between Gate 3 waves: copy it to
+  `agent/`, run its listing lines, show the user the sizes, and uncomment a removal line only after the user approved that path
+  (docs/usage.md "Waves of libraries"; PLAN §5 rule 4). Failed / retried attempts are not listed (`nextflow log <run> -f
+  name,status,workdir`).

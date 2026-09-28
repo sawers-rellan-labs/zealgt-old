@@ -117,16 +117,22 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
 | PICARD_COLLECTWGSMETRICS | 12 | 2 → 1.0 | 2.3–3.1 GB | 15–47 min | single-threaded |
 | PROVENANCE, REGISTRY, MULTIQC | 12, 1, 1 | 1 | < 0.6 GB | < 2 min | |
 
-**ALIGN_MARKDUP memory (Gate 2).** Slurm enforces 95 % of the allocation (`AllowedRAMSpace`); every OOM has MaxRSS = 0.95 × ReqMem.
-Peak ≈ M + sort budget (`-m` × 4), sort RSS ≈ 1.0 × its budget. M ≈ 10 GiB (minibwa after the B73 index load, fixmate / markdup a few MB)
-when the sample fits the sort buffer unspilled, **17–22.5 GiB when the sort spills** (every deep BC1 sample at practical allocations; in-memory
-sort data ≈ 0.785 GiB per M pairs): minibwa buffers mapped batches under back-pressure. History: with sort = (A − 12 GiB)/4 (old) all 12 first
-attempts at 24 GB and 8 of 10 second attempts at 48 GB were OOM-killed; with sort = max(768, (A − 16 GiB)·3/4/4) MiB (0a61f9c) 7 of 8 first
-attempts at 24 GB (1.5 GiB × 4 sort) still died (minibwa killed first, pipe `137 1 0 0`), all 7 retries at 48 GB completed (peaks 41.5–46.5 GB,
-M 17.5–22.5 GiB), and S_3A_9 completed at 24 GB at the cap. **Cost:** 37 non-completed task jobs = 145.7 allocated CPU-h of 396.6 for the whole
-run (37 %). Recommendation (calibration note §5, design M = 26 GiB for the deepest BC1 samples): reserve **R = 28 GiB** in
-`sort_mem_mb = (ZG_MEM_MB − R) × 3/4 / sort_threads` and **attempt 1 = 48 GB** (sort 15 GiB, predicted peak 41 GiB = 85 %); R = 16 (main
-today) is at the cap for deep samples at 48 GB, and a 32 GB first attempt is not viable for BC1. Not yet applied.
+**ALIGN_MARKDUP memory model (Gate 2 calibration over all 46 attempts; main checkout `agent/20260928_204500_align_memory_calibration.md`).**
+- **Kill threshold:** hazel kills a job at **95 % of its `--mem`** (`AllowedRAMSpace = 95 %`, swap 0); every OOM has sacct MaxRSS = 0.95 × ReqMem.
+- **Peak ≈ M + 1.0 × the sort budget** (`-m` × sort threads). M (minibwa after the B73 index load, plus fixmate / markdup, a few MB) ≈ 10 GiB
+  while the sample fits the sort buffer unspilled (≈ 0.785 GiB of in-memory sort data per M pairs), **17–22.5 GiB once sort spills** (every
+  full BC1 sample at practical allocations): minibwa buffers mapped batches under back-pressure and grows from ~10 to 12–16 GB over a deep
+  sample (per-process RSS via `srun --overlap ps`, main checkout `agent/20260929_032000_align_rss.tsv`). Depth explains ~5 % of M (80–112 M
+  pairs). Design M = **26 GiB**; ceiling ~35 GiB at 4E's ~311 M pairs.
+- **History (3A):** sort = (A − 12 GiB) / 4 → all 12 first attempts at 24 GB and 8 of 10 second attempts at 48 GB OOM-killed (the budget grows
+  with the attempt and sort fills it). sort = max(768, (A − 16 GiB) · 3/4 / 4) MiB (main 0a61f9c) → 7 of 8 first attempts at 24 GB (1.5 GiB × 4
+  sort) still died (minibwa killed first, pipe `137 1 0 0`); all 7 retries at 48 GB completed (peaks 41.5–46.5 GB, M 17.5–22.5 GiB); S_3A_9
+  completed at 24 GB at the cap. **Cost:** 37 non-completed task jobs = 145.7 of the run's 396.6 allocated CPU-h (37 %).
+- **Rule (branch `simplify`, applied):** first attempt **48 GB** × attempt (`params.align_memory_gb`); sort threads = min(4, cpus); sort `-m` =
+  max(768 MB, (task.memory − **28 GiB**) × 0.75 / threads) (`align_mem_reserve_gb` 28, `align_sort_mem_share` 0.75). At 48 GB: 3840 MB × 4
+  = 15 GiB of sort, predicted peak ≈ 26 + 15 = 41 of the 45.6 GiB cap (85 %); retries 96 GB, then 120 GB (resourceLimits). A reserve of 16 GiB
+  is at the cap for deep samples at 48 GB, and a 32 GB first attempt is not viable for BC1. The zealbc1 ALIGN row above (14–22 GB peak) had
+  another sort setting and does not carry over.
 
 Disk / files (Gate 2): `work/` **332 GB, 1,310 files** at the end (peak ≈ the end state: lane FASTQs 124.7 GB + merged copies 124.7 GB + trimmed
 99.4 GB; no trimlog since 98f8bae), plus `tmp/` 0.5 GB / 3 files (sort temps of stopped attempts). Store: 12 × 8 files, CRAMs 0.74–5.32 GB,
@@ -135,24 +141,10 @@ Disk / files (Gate 2): `work/` **332 GB, 1,310 files** at the end (peak ≈ the 
 the lane task dirs are cleaned).
 
 **Notes from Gate 2 (BC1 3A, full library, `-profile hazel,normal`, 2026-09-28; they supersede the estimates above where they differ).**
-- **ALIGN_MARKDUP memory.** All 12 first attempts were OOM-killed at 24 GB, and retries at 48 / 72 GB too, with the old sort budget
-  `-m` = (mem − 12 GiB) / 4 threads: the budget grows with the attempt, and sort fills it. Sampled RSS (main checkout
-  `agent/20260929_032000_align_rss.tsv`): minibwa ≈ 9–10.5 GB, flat; `samtools sort` grows to its full `-m` × threads budget + 5–10 %
-  for samples above ~20 M pairs, so a 12 GiB reserve was too little. With a 16 GiB reserve (main 0a61f9c, Gate 2 relaunch) sort stays
-  at ~1.09 × its budget, but 6 of 8 first attempts at 24 GB still OOM'd: minibwa grows from ~10 GB to 12–16 GB over a deep sample
-  (per-process RSS via `srun --overlap ps`).
-  **Calibration over all 46 attempts** (main checkout `agent/20260928_204500_align_memory_calibration.md`): hazel kills a job at
-  **95 % of its `--mem`** (`AllowedRAMSpace = 95 %`, swap 0; every OOM has sacct MaxRSS = 0.95 × ReqMem). Peak = M + 1.0 × sort
-  budget; M (minibwa + fixmate) ≈ 10 GiB while the sample fits the sort buffer (0.785 GiB of sort data per M pairs), 17–22.5 GiB once
-  sort spills (every full BC1 sample), with depth explaining ~5 % of it (80–112 M pairs); design M = 26 GiB, ceiling ~35 GiB at 4E's
-  ~311 M pairs. Rule on branch `simplify`: first attempt **48 GB** × attempt (`params.align_memory_gb`), sort threads = min(4, cpus),
-  sort `-m` = max(768 MB, (task.memory − **28 GiB**) × 0.75 / threads) (`align_mem_reserve_gb` 28, `align_sort_mem_share` 0.75) → at
-  48 GB: 3840 MB × 4 = 15 GiB sort, peak ≈ 26 + 15 = 41 of the 45.6 GiB cap; retries 96 GB, then 120 GB (resourceLimits).
+- **ALIGN_MARKDUP memory:** the model and rule above.
   **Time:** 21 min (18.8 M pairs) to 2 h 57 (S_3A_8, 112 M pairs) at 48 GB, linear in the trimmed input (0.215 h per GiB,
   ~0.0995 GiB per M pairs; the attempts at 24 and 72 GB ran 14–19 % under the 48 GB fit, so memory barely moves it). Request (branch
   `simplify`): 0.25 + 0.323 h per GiB × attempt → 3 h 28 for 100 M pairs, 10 h 13 for ~310 M (retry 20 h 26, under the 24 h limit).
-  Memory test on branch `simplify`: see its handover.
-  The zealbc1 ALIGN row above (14–22 GB peak) had another sort setting and does not carry over.
 - **MARKDUP_IMPORT memory:** the same bounded share with its own reserve, sort `-m` = (task.memory − 2 GiB) × 0.75 / threads
   (`import_mem_reserve_gb` 2; was half of the memory) → 7.5 GB of sort at the 12 GB first attempt.
 - **TRIMMOMATIC:** 25–31 k pairs/s on full samples (Gate 1's ~10 k pairs/s was start-up on tiny inputs): 10 min – 1 h 15, linear in

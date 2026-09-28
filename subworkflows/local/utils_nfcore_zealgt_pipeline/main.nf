@@ -407,6 +407,7 @@ def zgDemuxInputs() {
     def rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json").collect { row -> (row instanceof List ? row[0] : row) as Map }
     def settings = zgRunSettings()
     def registry_file = zgRegistryFile()
+    def registry_rows = zgRegistryRows()
     def out = [libraries: [], checkpoint: [], imports: [], records: []]
     libs.each { lib ->
         def lrows = rows.findAll { r -> r.library == lib }
@@ -415,12 +416,14 @@ def zgDemuxInputs() {
         }
         def first = lrows[0]
         // a cross-row rule nf-schema cannot express; meta/build_samples.py checks it too
-        ['source', 'barcode_layout', 'raw_location', 'raw_r1', 'raw_r2'].findAll { k -> lrows*.get(k).unique().size() != 1 }.each { k ->
+        ['source', 'barcode_layout', 'raw_location', 'raw_r1', 'raw_r2', 'rg_pu'].findAll { k -> lrows.collect { r -> zgCell(r[k]) }.unique().size() != 1 }.each { k ->
             error("library ${lib}: samples disagree on ${k} in ${params.input}")
         }
         def structures = (first.barcode_layout == 'symmetric' ? params.read_structure_symmetric : params.read_structure_r1_only).tokenize(' ')
         def raw = zgRawFiles(lib, first)
-        def pu = zgPlatformUnit(raw.r1*.name)
+        // PU: the sheet's rg_pu (batch 1: flowcell from the read headers, lanes from the tar members; meta/build_samples.py),
+        // else from the Novogene lane file names
+        def pu = zgCell(first.rg_pu) ?: zgPlatformUnit(raw.r1*.name)
         def lmeta = [id: lib, library: lib, source: first.source, layout: first.barcode_layout, n_samples: lrows.size(), pu: pu]
         out.libraries << [lmeta, raw.r1, raw.r2, lrows.collect { r -> [r.sample_id, r.barcode_r1, r.barcode_r2 ?: ''] }, structures, [raw.members_r1, raw.members_r2]]
         def ckpt = zgCheckpointDir(lib)
@@ -430,7 +433,7 @@ def zgDemuxInputs() {
                 sample: r.sample_id, library: lib,
                 fastq_1: ckpt.resolve("${r.sample_id}.paired.trim_1.fastq.gz"), fastq_2: ckpt.resolve("${r.sample_id}.paired.trim_2.fastq.gz"),
                 source: r.source, role: r.role, donor: r.donor, taxon: r.taxon,
-                plate: r.plate, well: r.well, nil_id: r.nil_id, pedigree: r.pedigree, is_check: r.is_check, registry_file: registry_file,
+                registry_file: registry_file] + zgRegistryColumnsOf(registry_rows[r.sample_id], r) + [
                 read_group: zgReadGroup(r.sample_id, r.rg_lb ?: r.library, r.rg_pl, pu),
                 read_structure: structures.join(' '), layout: first.barcode_layout, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2,
                 demux_args: params.demux_args, trim_illuminaclip: params.trim_illuminaclip, trim_args: params.trim_args,
@@ -492,10 +495,13 @@ def zgAlignmentInputs() {
     every run with stage 2, cleanup_status.tsv (zgCheckpointCleanupReport). Nothing here removes a file.
 */
 
-// Checkpoint samplesheet columns, in file order (assets/schema_checkpoint.json)
+// Checkpoint samplesheet columns, in file order (assets/schema_checkpoint.json): the stage-2 fields, then the registry
+// snapshot (registry_file, registry_note and reg_<column> for every zgRegistryFields / zgRegistryResolvedFields column), then
+// the stage-1 settings
 def zgCheckpointColumns() {
-    return ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'plate', 'well', 'nil_id', 'pedigree',
-            'is_check', 'registry_file', 'read_group', 'read_structure', 'layout',
+    return ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'registry_file', 'registry_note'] +
+           (zgRegistryFields() + zgRegistryResolvedFields()).collect { f -> "reg_${f}".toString() } +
+           ['read_group', 'read_structure', 'layout',
             'barcode_r1', 'barcode_r2', 'demux_args', 'trim_illuminaclip', 'trim_args', 'trim_adapters', 'raw_location',
             'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample', 'stage1_run_id', 'stage1_session_id',
             'stage1_code_version', 'stage1_tool_versions']
@@ -519,11 +525,62 @@ def zgCheckpointRow(Map m) {
     return zgCheckpointColumns().collectEntries { c -> [c, c == 'subsample' ? zgCell(m[c] ?: 0).toInteger() : zgCell(m[c])] }
 }
 
-// The rows of a checkpoint samplesheet, validated by nf-schema (FASTQs must exist)
+// The rows of a checkpoint samplesheet: validated by nf-schema (FASTQs must exist), values read as the text stage 1 wrote
+// (nf-schema infers types of untyped cells, e.g. FALSE -> false, 1 -> 1; the registry snapshot keeps the registry's spelling)
 def zgReadCheckpointSheet(sheet) {
-    return samplesheetToList(sheet.toString(), "${projectDir}/assets/schema_checkpoint.json").collect { r ->
-        zgCheckpointRow(r[0] + [fastq_1: r[1], fastq_2: r[2]])
+    def n = samplesheetToList(sheet.toString(), "${projectDir}/assets/schema_checkpoint.json").size()
+    def rows = zgReadCsv(sheet)
+    if (rows.size() != n) {
+        error("${sheet}: ${rows.size()} rows read as text, ${n} validated")
     }
+    return rows.collect { r -> zgCheckpointRow(r) }
+}
+
+//
+// A CSV file as a list of maps (header -> cell), all strings. Cells may be "..."-quoted (commas inside; "" = one quote),
+// no newline inside a cell; \r\n or \n line ends. Used for meta/registry.csv (--registry) and the checkpoint samplesheet.
+//
+def zgReadCsv(path) {
+    def lines = file(path.toString()).text.split(/\r?\n/).findAll { l -> l }
+    if (!lines) {
+        return []
+    }
+    def header = zgCsvSplit(lines[0], path)
+    return lines.drop(1).withIndex().collect { l, i ->
+        def cells = zgCsvSplit(l, path)
+        if (cells.size() != header.size()) {
+            error("${path}: line ${i + 2} has ${cells.size()} cells, the header ${header.size()}")
+        }
+        [header, cells].transpose().collectEntries { h, c -> [h, c] }
+    }
+}
+
+def zgCsvSplit(String line, path) {
+    def cells = []
+    def cur = new StringBuilder()
+    def quoted = false
+    def skip = false
+    def chars = line.toList()
+    chars.eachWithIndex { ch, i ->
+        if (skip) {
+            skip = false
+        } else if (quoted && ch == '"' && i + 1 < chars.size() && chars[i + 1] == '"') {
+            cur.append('"')
+            skip = true
+        } else if (ch == '"') {
+            quoted = !quoted
+        } else if (ch == ',' && !quoted) {
+            cells << cur.toString()
+            cur.setLength(0)
+        } else {
+            cur.append(ch)
+        }
+    }
+    if (quoted) {
+        error("${path}: unbalanced quote in line: ${line}")
+    }
+    cells << cur.toString()
+    return cells
 }
 
 // One CSV line; nf-schema reads "..."-quoted cells (commas inside) but not escaped quotes, so a quote or newline is refused
@@ -571,10 +628,12 @@ def zgCheckpointRecord(Map settings, Map row) {
                   fastq_checkpoint: [row.fastq_1, row.fastq_2], stage1_run_id: row.stage1_run_id,
                   stage1_session_id: row.stage1_session_id, stage1_code_version: row.stage1_code_version,
                   stage1_tool_versions: zgParseToolVersions(row.stage1_tool_versions)]
-    def registry = zgRegistrySnapshot(row.registry_file, row.stage1_code_version, row + [sample_id: row.sample])
+    def reg = row.registry_note ? null : (zgRegistryFields() + zgRegistryResolvedFields()).collectEntries { f -> [f, row["reg_${f}".toString()]] }
+    def registry = zgRegistrySnapshot(row.registry_file, row.stage1_code_version, reg)
     return zgProvenanceRecord(settings, meta, "${params.store}/cram", origin, row.read_group, registry) + [
+        // phred: -phred33, TRIMMOMATIC ext.args3 (conf/modules.config; the zealgt patch puts it before the inputs)
         trimming : [tool: 'trimmomatic', illuminaclip: row.trim_illuminaclip, args: row.trim_args,
-                    adapters: row.trim_adapters, phred: 'auto-detected'], // no -phred33: nf-core TRIMMOMATIC appends ext.args after the outputs
+                    adapters: row.trim_adapters, phred: 'phred33'],
         alignment: [tool: 'minibwa map', args: params.align_args, read_group: row.read_group],
     ]
 }
@@ -958,35 +1017,67 @@ def zgProvenanceRecord(Map settings, Map meta, String store_dir, Map origin, Str
 }
 
 //
-// Registry snapshot (meta/PROVENANCE.md "Identifiers"): the sample's identity and biology columns of the registry
-// (--input, meta/samples.csv), named as there, as strings, with the registry file and the code version (git commit) the row
-// was read at; a later registry change shows as a difference from the current row. The technical columns (raw files,
-// barcodes, rg_*) are in origin / read_group. Line and nil ids go only here, never into a CRAM header. The chained run reads
-// the row from --input; --entry read_alignment from the checkpoint samplesheet (the same columns, written by stage 1), so
-// both records hold the same snapshot; nothing in it changes between launches (the record is a hashed PROVENANCE input).
+// Registry snapshot (meta/PROVENANCE.md "Identifiers"): the sample's row of the sample-identity registry (--registry,
+// meta/registry.csv), with the registry file and the code version (git commit) it was read at; a later registry change
+// shows as a difference from the current row.
+//   row      = the raw identity and biology columns (zgRegistryFields), as the sources give them (text, the registry's spelling)
+//   resolved = the *_resolved columns and correction_ids (meta/corrections.csv applied), recorded separately: they never
+//              replace a raw value
+// The technical columns (raw files, barcodes, library_index, rg_*) are in origin / read_group. Line and nil ids go only here,
+// never into a CRAM header. The chained run reads the row from --registry; --entry read_alignment from the checkpoint
+// samplesheet (reg_<column>, written by stage 1 from the same row), so both records hold the same snapshot; nothing in it
+// changes between launches (the record is a hashed PROVENANCE input).
 //
 def zgRegistryFields() {
-    return ['sample_id', 'source', 'role', 'library', 'plate', 'well', 'donor', 'taxon', 'nil_id', 'pedigree', 'is_check']
+    return ['sample_id', 'source', 'role', 'library', 'plate', 'well', 'lab_seq_id', 'delivered_name', 'accession', 'taxa_code',
+            'taxon', 'donor', 'line_id', 'old_line_id', 'pedigree', 'nil_id', 'nil_id_in_register', 'is_check',
+            'gen', 'F1', 'BC1', 'BC2', 'S1', 'S2', 'S3', 'S4', 'blk', 'TC', 'j2teo_batch', 'j2teo_seed_origin',
+            'field', 'field_plot', 'seed_packet', 'mother_plant', 'replicate_of', 'exclude', 'exclude_reason', 'flags']
 }
 
-// --input as recorded: relative to the pipeline directory when inside it (meta/samples.csv: code_version pins its content)
+def zgRegistryResolvedFields() {
+    return ['pedigree_resolved', 'nil_id_resolved', 'donor_resolved', 'correction_ids']
+}
+
+// --registry as recorded: relative to the pipeline directory when inside it (meta/registry.csv: code_version pins its content)
 def zgRegistryFile() {
-    def p = file(params.input).toAbsolutePath().normalize()
+    def p = file(params.registry).toAbsolutePath().normalize()
     def root = projectDir.toAbsolutePath().normalize()
     return p.startsWith(root) ? root.relativize(p).toString() : p.toString()
 }
 
-// The registry rows by sample_id (markdup_import: imported samples are looked up there)
+// The registry rows by sample_id, as text (every snapshot column must be in the header)
 def zgRegistryRows() {
-    return samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
-        .collect { r -> (r instanceof List ? r[0] : r) as Map }
-        .collectEntries { r -> [r.sample_id, r] }
+    def rows = zgReadCsv(file(params.registry, checkIfExists: true))
+    def missing = rows ? (zgRegistryFields() + zgRegistryResolvedFields()) - rows[0].keySet() : []
+    if (missing) {
+        error("--registry ${params.registry} lacks the columns ${missing} (meta/build_samples.py writes them)")
+    }
+    def ids = rows*.sample_id
+    if (ids.unique(false).size() != ids.size()) {
+        error("--registry ${params.registry}: sample_id is not unique")
+    }
+    return rows.collectEntries { r -> [r.sample_id, r] }
+}
+
+//
+// The checkpoint's registry columns of one sample (read_demultiplexing): reg_<column> from its registry row. The row must
+// agree with the --input row on source and library (a registry that does not belong to the sample sheet is refused); a
+// sample without a registry row gets empty columns and registry_note.
+//
+def zgRegistryColumnsOf(Map reg, Map input_row) {
+    if (reg != null && (reg.source != input_row.source || reg.library != input_row.library)) {
+        error("sample ${input_row.sample_id}: --registry ${params.registry} says source ${reg.source} / library ${reg.library}, --input ${params.input} says ${input_row.source} / ${input_row.library}")
+    }
+    return [registry_note: reg == null ? 'sample_id not in the registry' : ''] +
+           (zgRegistryFields() + zgRegistryResolvedFields()).collectEntries { f -> ["reg_${f}".toString(), reg == null ? '' : reg[f]] }
 }
 
 def zgRegistrySnapshot(String registry_file, String code_version, Map row) {
-    return [file: registry_file, code_version: code_version,
-            row : row == null ? null : zgRegistryFields().collectEntries { f -> [f, zgCell(row[f])] },
-            note: row == null ? 'sample_id not in the registry' : '']
+    return [file    : registry_file, code_version: code_version,
+            row     : row == null ? null : zgRegistryFields().collectEntries { f -> [f, zgCell(row[f])] },
+            resolved: row == null ? null : zgRegistryResolvedFields().collectEntries { f -> [f, zgCell(row[f])] },
+            note    : row == null ? 'sample_id not in the registry' : '']
 }
 
 // The import sheet's row as recorded (markdup_import), strings, path and index as given

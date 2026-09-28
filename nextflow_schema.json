@@ -26,6 +26,17 @@
                     "help_text": "Validated against assets/schema_input.json at parameter validation and parsed with samplesheetToList.",
                     "fa_icon": "fas fa-file-csv"
                 },
+                "registry": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "default": "${projectDir}/meta/registry.csv",
+                    "description": "The sample-identity registry (meta/registry.csv, built by meta/build_samples.py): each provenance record holds a snapshot of its sample's row (raw columns, and the *_resolved columns and correction_ids separately).",
+                    "help_text": "Read as text (every row, all columns as strings). Its rows must agree with --input on source and library.",
+                    "fa_icon": "fas fa-id-card"
+                },
                 "import_sheet": {
                     "type": "string",
                     "format": "file-path",

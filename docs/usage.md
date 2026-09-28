@@ -30,9 +30,9 @@ entries end at the CRAM stop point and write one MultiQC report per library (per
   `work/` (`/share` on hazel); a failed link fails the run.
 - Once every sample of the library is trimmed, the run writes `<lib>/samplesheet.csv` (assets/schema_checkpoint.json), one row per
   sample with everything stage 2 needs: `sample`, `library`, `fastq_1`, `fastq_2`, `source`, `role`, `donor`, `taxon`,
-  `plate`, `well`, `nil_id`, `pedigree`, `is_check` (with `source` … `taxon`: the registry row's identity and biology columns,
-  named as in `meta/samples.csv`, for the provenance record's registry snapshot), `registry_file` (the `--input` they were read
-  from), `read_group`, `read_structure` (crops already applied), `layout`, `barcode_r1`, `barcode_r2`, `demux_args`,
+  `registry_file` (the `--registry` the snapshot was read from), `registry_note` (empty, or `sample_id not in the registry`),
+  `reg_<column>` (the sample's `meta/registry.csv` row for the provenance record's registry snapshot: 38 raw identity and biology
+  columns plus `pedigree_resolved`, `nil_id_resolved`, `donor_resolved`, `correction_ids`; read back as text), `read_group`, `read_structure` (crops already applied), `layout`, `barcode_r1`, `barcode_r2`, `demux_args`,
   `trim_illuminaclip`, `trim_args`, `trim_adapters`, `raw_location`, `raw_files_r1`, `raw_files_r2`, `tar_members_r1`,
   `tar_members_r2` (`;`-joined lists), `subsample`, `stage1_run_id`, `stage1_session_id`, `stage1_code_version`,
   `stage1_tool_versions` (`tool=version;...` of DEMUX and TRIMMOMATIC). Both stage-2 entries build meta, read group and the
@@ -68,9 +68,17 @@ The single sample sheet of the project, one row per sequenced well, built by `py
 | `barcode_r1`, `barcode_r2` | inline barcodes (`[ACGT]+`; `barcode_r2` empty for R1-only layouts) |
 | `barcode_layout` | `symmetric` (BC1, batch 2: `--read_structure_symmetric`) or `r1_only` (batch 1: `--read_structure_r1_only`) |
 | `rg_lb`, `rg_pl` | read-group LB / PL (default the library, ILLUMINA) |
+| `rg_pu` | read-group PU, `flowcell.lane[,flowcell.lane...]`; batch 1: `H7HYFDSX7.<lane>` from the read headers and tar member names; empty = derived from the Novogene lane file names (`<...>_<flowcell>_L<lane>_1.fq.gz`) |
 
-All samples of one library must agree on `source`, `barcode_layout`, `raw_location`, `raw_r1` and `raw_r2` (checked by
-build_samples.py and again when the library is read).
+All samples of one library must agree on `source`, `barcode_layout`, `raw_location`, `raw_r1`, `raw_r2` and `rg_pu` (checked by
+build_samples.py and again when the library is read). Batch-1 tar members must pair as the R1 / R2 of one lane
+(`<name>_R1_<nnn>.fastq.gz` / `<name>_R2_<nnn>.fastq.gz`, in the same order); the lane is named `<name>` (e.g. `BZea5_S5_L001`).
+
+### `--registry`: meta/registry.csv
+
+The sample-identity registry (every sequenced sample of every experiment, 52 columns; `meta/PROVENANCE.md`), built by the same
+`meta/build_samples.py`. Read as text for the provenance record's registry snapshot (docs/output.md); its row of a sample must
+agree with `--input` on `source` and `library`. A sample without a registry row gets `row` null and a note.
 
 ### `--import_sheet`: meta/dev_import.csv (assets/schema_import.json)
 

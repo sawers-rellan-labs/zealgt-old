@@ -34,11 +34,16 @@ process TRIMMOMATIC {
     // zealgt patch (user, 2026-09-28): no per-read -trimlog. It is ~160 B per read pair, uncompressed (~282 GB of work/ for a
     // 1A-size library, Gate 1), and nothing downstream reads it; MultiQC parses the stdout/stderr log (*_out.log) and the
     // -summary file, both kept. The trim_log output stays declared, as optional, so the module interface is unchanged.
+    // zealgt patch (batch-1 audit G1, 2026-09-28): ext.args3 = options placed before the inputs, where Trimmomatic reads
+    // them (ext.args / args2 come after the outputs, as trimming steps). zealgt sets '-phred33': without it Trimmomatic
+    // auto-detects the quality encoding and exits 1 ("Unable to detect quality encoding") on a sample with no reads.
+    def pre_args = task.ext.args3 ?: ''
     """
     trimmomatic \\
         $trimmed \\
         -threads $task.cpus \\
         -summary ${prefix}.summary \\
+        $pre_args \\
         $reads \\
         $output \\
         $qual_trim \\

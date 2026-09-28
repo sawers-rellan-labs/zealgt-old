@@ -30,7 +30,7 @@ Changes in 'trimmomatic/main.nf':
      tuple val(meta), path("*_out.log")                 , emit: out_log
      tuple val(meta), path("*.summary")                 , emit: summary
      tuple val("${task.process}"), val('trimmomatic'), eval("trimmomatic -version"), topic: versions, emit: versions_trimmomatic
-@@ -29,11 +30,14 @@
+@@ -29,12 +30,20 @@
          "${prefix}.SE.paired.trim.fastq.gz" // HACK to avoid unpaired and paired in the trimmed_reads output
          : "${prefix}.paired.trim_1.fastq.gz ${prefix}.unpaired.trim_1.fastq.gz ${prefix}.paired.trim_2.fastq.gz ${prefix}.unpaired.trim_2.fastq.gz"
      def qual_trim = task.ext.args2 ?: ''
@@ -38,15 +38,21 @@ Changes in 'trimmomatic/main.nf':
 +    // zealgt patch (user, 2026-09-28): no per-read -trimlog. It is ~160 B per read pair, uncompressed (~282 GB of work/ for a
 +    // 1A-size library, Gate 1), and nothing downstream reads it; MultiQC parses the stdout/stderr log (*_out.log) and the
 +    // -summary file, both kept. The trim_log output stays declared, as optional, so the module interface is unchanged.
++    // zealgt patch (batch-1 audit G1, 2026-09-28): ext.args3 = options placed before the inputs, where Trimmomatic reads
++    // them (ext.args / args2 come after the outputs, as trimming steps). zealgt sets '-phred33': without it Trimmomatic
++    // auto-detects the quality encoding and exits 1 ("Unable to detect quality encoding") on a sample with no reads.
++    def pre_args = task.ext.args3 ?: ''
      """
      trimmomatic \\
          $trimmed \\
          -threads $task.cpus \\
 -        -trimlog ${prefix}_trim.log \\
          -summary ${prefix}.summary \\
++        $pre_args \\
          $reads \\
          $output \\
-@@ -56,7 +60,6 @@
+         $qual_trim \\
+@@ -56,7 +65,6 @@
      """
      $output_command
      touch ${prefix}.summary

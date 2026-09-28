@@ -58,15 +58,24 @@ workflow READ_DEMULTIPLEXING {
 // [ R1 member, R2 member ], n_lanes ]. meta.library keeps the library id (lane outputs are regrouped on it); DEMUX itself
 // reads only meta.id (its prefix) and the n_lanes input.
 // Lane FASTQs pair by position (sorted and name-checked in zgRawFiles); lane = the R1 file name without _1.f(ast)q.gz.
-// Batch-1: one tar per read, one lane per member pair; lane = the R1 member's base name without _1 / _R1 and .f(ast)q.gz.
+// Batch-1: one tar per read, one lane per member pair (in the sheet's order); the R2 member's base name must be the R1
+// member's with _R1_<nnn>. -> _R2_<nnn>. (Illumina bcl2fastq names), else the library is refused; lane = the R1 member's base
+// name without _R1_<nnn> / _R1 / _1 and .f(ast)q.gz (BZea5_S5_L001_R1_001.fastq.gz -> BZea5_S5_L001).
 // Lane names are reduced to [A-Za-z0-9._-] and must be unique within the library.
 //
 def zgLibraryLanes(Map meta, List r1, List r2, List barcodes, List structures, List members) {
     def (m1, m2) = members
+    [m1 ?: [], m2 ?: []].transpose().each { a, b ->
+        def n1 = a.tokenize('/')[-1]
+        def n2 = b.tokenize('/')[-1]
+        if (!(n1 ==~ /.*_R1_\d{3}\.f(ast)?q\.gz/) || n1.replaceFirst(/_R1_(\d{3})\./, '_R2_$1.') != n2) {
+            error("library ${meta.id}: tar members do not pair as R1/R2 of one lane (<name>_R1_<nnn>.fastq.gz / <name>_R2_<nnn>.fastq.gz): ${a} ${b}")
+        }
+    }
     def pairs = m1 ? [m1, m2].transpose().collect { a, b -> [r1[0], r2[0], a, b, a.tokenize('/')[-1]] }
                    : [r1, r2].transpose().collect { a, b -> [a, b, '', '', a.name] }
     def lanes = pairs.collect { a, b, ma, mb, name ->
-        def lane = name.replaceFirst(/(_R?1)?\.f(ast)?q\.gz$/, '').replaceAll(/[^A-Za-z0-9._-]/, '_')
+        def lane = name.replaceFirst(/(_R?1(_\d{3})?)?\.f(ast)?q\.gz$/, '').replaceAll(/[^A-Za-z0-9._-]/, '_')
         [lane, a, b, ma, mb]
     }
     if (lanes*.getAt(0).unique().size() != lanes.size()) {

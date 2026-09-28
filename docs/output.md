@@ -24,11 +24,15 @@ layout into its own store named `subsample_<N>`; a stub run into `store_stub*`.
 Run settings (`reference`, `code_version` = git commit of the checkout, `-dirty` if modified; `pipeline`, `entry`, `run_id`,
 `session_id`, `profile`, `mapq_filter`, `markdup`; no Nextflow run name: the record is a hashed task input, and a name that
 changes per launch would rerun PROVENANCE on every `-resume`), the sample (`sample`, `library`, `source`, `role`, `donor`,
-`store_dir`, `read_group`), the registry snapshot `registry` (meta/PROVENANCE.md "Identifiers": `file` = the `--input` registry,
-relative to the pipeline directory when inside it, e.g. `meta/samples.csv`; `code_version` = the commit at which the row was read,
-for demultiplexed samples the stage-1 commit; `row` = the sample's `sample_id`, `source`, `role`, `library`, `plate`, `well`,
-`donor`, `taxon`, `nil_id`, `pedigree`, `is_check` as strings, named as in `meta/samples.csv`, `is_check` as `true`/`false`;
-`note`; an imported sample not in the registry has `row` null and a note), its `origin` (demux: raw location and files, tar
+`store_dir`, `read_group`), the registry snapshot `registry` (meta/PROVENANCE.md "Identifiers": `file` = the `--registry`,
+relative to the pipeline directory when inside it, e.g. `meta/registry.csv`; `code_version` = the commit at which the row was read,
+for demultiplexed samples the stage-1 commit; `row` = the sample's raw identity and biology columns as the sources give them, as
+strings in the registry's spelling (`sample_id`, `source`, `role`, `library`, `plate`, `well`, `lab_seq_id`, `delivered_name`,
+`accession`, `taxa_code`, `taxon`, `donor`, `line_id`, `old_line_id`, `pedigree`, `nil_id`, `nil_id_in_register`, `is_check`, the
+J2Teo generation columns `gen` … `TC`, `j2teo_batch`, `j2teo_seed_origin`, `field`, `field_plot`, `seed_packet`, `mother_plant`,
+`replicate_of`, `exclude`, `exclude_reason`, `flags`); `resolved` = `pedigree_resolved`, `nil_id_resolved`, `donor_resolved`,
+`correction_ids` (meta/corrections.csv applied), kept apart so they never replace a raw value; `note`; a sample not in the registry
+has `row` and `resolved` null and a note), its `origin` (demux: raw location and files, tar
 members, cutadapt args, read structure, layout, barcodes, subsample, the checkpoint FASTQs `fastq_checkpoint`, and the stage-1
 run `stage1_run_id`, `stage1_session_id`, `stage1_code_version`, `stage1_tool_versions` (DEMUX and TRIMMOMATIC tool versions);
 import: input path, maker, input filters, and `import_sheet_row`, the import sheet's row as strings), for demultiplexed samples `trimming` and `alignment` settings, and, added by the module, `cram_file`, `cram_bytes`,
