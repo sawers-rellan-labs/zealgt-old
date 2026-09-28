@@ -101,7 +101,7 @@
                     ],
                     "pattern": "^\\d+$",
                     "default": 0,
-                    "description": "Read pairs per library for Gate 1 (0 = all). With N > 0, --store must be a directory named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs go.",
+                    "description": "Read pairs per library for Gate 1 (0 = all); each lane gives its first ceil(N / lanes) pairs. With N > 0, --store must be a directory named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs go.",
                     "minimum": 0
                 },
                 "import_samples": {

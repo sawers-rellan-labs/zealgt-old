@@ -70,6 +70,8 @@ compute/normal), `hazel,local` (one allocation, explicit resources). The conda p
 - `--store` (default `ZEAL/store`) is the permanent storeDir root. A stored output is never recomputed, whatever changed.
 - `--subsample N` (Gate 1) needs a store directory named `subsample_<N>`, e.g. `--store ZEAL/store/subsample_1000000`, so a
   subset never lands where the real CRAMs go. A store named `subsample_*` without `--subsample` is refused too.
+  N is read pairs per library: DEMUX runs once per library x lane, and each of the library's lanes gives its first
+  ceil(N / lanes) pairs (the total is N rounded up to a multiple of the lane count).
 - Stub runs need a store inside a directory named `store_stub*` and outside `ZEAL/store`; `-profile stub` sets
   `<outdir>/store_stub`.
 - A library in the registry (`assets/registry_seed.csv` or `<store>/registry/<lib>.registry.tsv`) is refused unless named with

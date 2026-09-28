@@ -1,51 +1,54 @@
 {
-    "LIBX, 3 samples, 6B2S+T symmetric - stub": {
+    "LIBX lane L1 of 2, 3 samples, 6B2S+T symmetric - stub": {
         "content": [
             {
                 "0": [
                     [
                         {
-                            "id": "LIBX",
+                            "id": "LIBX.LIBX_TESTFC01_L1",
                             "library": "LIBX",
                             "source": "bc1",
                             "layout": "symmetric",
                             "n_samples": 3,
-                            "pu": "TESTFC01.1,TESTFC01.2"
+                            "pu": "TESTFC01.1,TESTFC01.2",
+                            "n_lanes": 2
                         },
                         [
-                            "LX_1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_2_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_2_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_3_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_3_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                            "LX_1.LIBX.LIBX_TESTFC01_L1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_1.LIBX.LIBX_TESTFC01_L1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2.LIBX.LIBX_TESTFC01_L1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2.LIBX.LIBX_TESTFC01_L1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3.LIBX.LIBX_TESTFC01_L1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3.LIBX.LIBX_TESTFC01_L1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
                         ]
                     ]
                 ],
                 "1": [
                     [
                         {
-                            "id": "LIBX",
+                            "id": "LIBX.LIBX_TESTFC01_L1",
                             "library": "LIBX",
                             "source": "bc1",
                             "layout": "symmetric",
                             "n_samples": 3,
-                            "pu": "TESTFC01.1,TESTFC01.2"
+                            "pu": "TESTFC01.1,TESTFC01.2",
+                            "n_lanes": 2
                         },
-                        "LIBX.cutadapt.json:md5,e34d7ed3a679097fbb16f529db302a88"
+                        "LIBX.LIBX_TESTFC01_L1.cutadapt.json:md5,e34d7ed3a679097fbb16f529db302a88"
                     ]
                 ],
                 "2": [
                     [
                         {
-                            "id": "LIBX",
+                            "id": "LIBX.LIBX_TESTFC01_L1",
                             "library": "LIBX",
                             "source": "bc1",
                             "layout": "symmetric",
                             "n_samples": 3,
-                            "pu": "TESTFC01.1,TESTFC01.2"
+                            "pu": "TESTFC01.1,TESTFC01.2",
+                            "n_lanes": 2
                         },
-                        "LIBX.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "LIBX.LIBX_TESTFC01_L1.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "3": [
@@ -72,46 +75,49 @@
                 "json": [
                     [
                         {
-                            "id": "LIBX",
+                            "id": "LIBX.LIBX_TESTFC01_L1",
                             "library": "LIBX",
                             "source": "bc1",
                             "layout": "symmetric",
                             "n_samples": 3,
-                            "pu": "TESTFC01.1,TESTFC01.2"
+                            "pu": "TESTFC01.1,TESTFC01.2",
+                            "n_lanes": 2
                         },
-                        "LIBX.cutadapt.json:md5,e34d7ed3a679097fbb16f529db302a88"
+                        "LIBX.LIBX_TESTFC01_L1.cutadapt.json:md5,e34d7ed3a679097fbb16f529db302a88"
                     ]
                 ],
                 "log": [
                     [
                         {
-                            "id": "LIBX",
+                            "id": "LIBX.LIBX_TESTFC01_L1",
                             "library": "LIBX",
                             "source": "bc1",
                             "layout": "symmetric",
                             "n_samples": 3,
-                            "pu": "TESTFC01.1,TESTFC01.2"
+                            "pu": "TESTFC01.1,TESTFC01.2",
+                            "n_lanes": 2
                         },
-                        "LIBX.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "LIBX.LIBX_TESTFC01_L1.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "reads": [
                     [
                         {
-                            "id": "LIBX",
+                            "id": "LIBX.LIBX_TESTFC01_L1",
                             "library": "LIBX",
                             "source": "bc1",
                             "layout": "symmetric",
                             "n_samples": 3,
-                            "pu": "TESTFC01.1,TESTFC01.2"
+                            "pu": "TESTFC01.1,TESTFC01.2",
+                            "n_lanes": 2
                         },
                         [
-                            "LX_1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_2_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_2_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_3_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
-                            "LX_3_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                            "LX_1.LIBX.LIBX_TESTFC01_L1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_1.LIBX.LIBX_TESTFC01_L1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2.LIBX.LIBX_TESTFC01_L1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_2.LIBX.LIBX_TESTFC01_L1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3.LIBX.LIBX_TESTFC01_L1_R1.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                            "LX_3.LIBX.LIBX_TESTFC01_L1_R2.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
                         ]
                     ]
                 ],
@@ -138,7 +144,7 @@
                 ]
             }
         ],
-        "timestamp": "2026-09-28T01:36:05.991044",
+        "timestamp": "2026-09-28T07:05:00.293505",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

@@ -9,6 +9,7 @@ nextflow_workflow {
     tag "read_demultiplexing"
     tag "demux"
     tag "demux_qc"
+    tag "merge_lanes"
     tag "stub"
 
     test("LIBX, 3 samples, 6B2S+T symmetric - stub") {

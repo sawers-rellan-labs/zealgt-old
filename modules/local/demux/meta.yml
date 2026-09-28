@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module: a pipeline step named after its step, not its tool (the name keys the hazel conda prefix, so it is kept)
 name: demux
-description: Exact inline-barcode demultiplexing of one library with cutadapt (-e 0 --no-indels); the barcode and the skip bases of the read structure are removed by one anchored 5' pattern per read. Wraps cutadapt; streams lanes or batch-1 tar members in place (pigz, tar, coreutils).
+description: Exact inline-barcode demultiplexing of one lane of one library with cutadapt (-e 0 --no-indels); the barcode and the skip bases of the read structure are removed by one anchored 5' pattern per read. Wraps cutadapt; reads the lane FASTQs in place, extracts a batch-1 tar member per lane (tar), subsamples with pigz / head (coreutils). MERGE_LANES joins the lanes per sample.
 keywords:
   - demultiplexing
   - inline barcode
@@ -21,16 +21,16 @@ input:
   - - meta:
             type: map
             description: |
-              Groovy Map containing library information
-              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+              Groovy Map containing lane information; id = <library>.<lane> (the output prefix)
+              e.g. [ id:'LIBX.LIBX_TESTFC01_L1', library:'LIBX', source:'bc1', layout:'symmetric' ]
     - r1:
         type: file
-        description: R1 lane FASTQs of the library (or one tar holding the R1 members, batch 1)
+        description: R1 FASTQ of this lane (or the tar holding the R1 member, batch 1)
         pattern: "*.{fq.gz,fastq.gz,tar}"
         ontologies: []
     - r2:
         type: file
-        description: R2 lane FASTQs (or one tar holding the R2 members)
+        description: R2 FASTQ of this lane (or the tar holding the R2 member)
         pattern: "*.{fq.gz,fastq.gz,tar}"
         ontologies: []
     - barcodes:
@@ -41,20 +41,23 @@ input:
         description: "[ R1, R2 ] read structures in fgbio notation, e.g. [ '6B2S+T', '6B2S+T' ] or [ '8B12S+T', '8S+T' ]"
     - tar_members:
         type: list
-        description: "[ [ R1 tar members ], [ R2 tar members ] ]; [ [], [] ] for lane FASTQs"
+        description: "[ R1 tar member, R2 tar member ] of this lane; [ '', '' ] for lane FASTQs"
+    - n_lanes:
+        type: integer
+        description: Number of lanes of the library (splits --subsample over the lanes)
   - subsample:
       type: integer
-      description: Read pairs to take from the start of the library (0 = all)
+      description: Read pairs per library to take (0 = all); each lane gives its first ceil(subsample / n_lanes) pairs
 output:
   reads:
     - - meta:
             type: map
             description: |
               Groovy Map containing library information
-              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+              e.g. [ id:'LIBX.LIBX_TESTFC01_L1', library:'LIBX', source:'bc1', layout:'symmetric' ]
       - "demux/*_R{1,2}.fastq.gz":
           type: file
-          description: "Demultiplexed reads, one pair per sample (empty files for a sample without reads)"
+          description: "Demultiplexed reads of this lane, <sample>.<meta.id>_R{1,2}.fastq.gz, one pair per sample (empty files for a sample without reads)"
           pattern: "*_R{1,2}.fastq.gz"
           ontologies: []
   json:
@@ -62,7 +65,7 @@ output:
             type: map
             description: |
               Groovy Map containing library information
-              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+              e.g. [ id:'LIBX.LIBX_TESTFC01_L1', library:'LIBX', source:'bc1', layout:'symmetric' ]
       - "*.cutadapt.json":
           type: file
           description: "cutadapt JSON report (per-barcode matches)"
@@ -73,7 +76,7 @@ output:
             type: map
             description: |
               Groovy Map containing library information
-              e.g. [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric' ]
+              e.g. [ id:'LIBX.LIBX_TESTFC01_L1', library:'LIBX', source:'bc1', layout:'symmetric' ]
       - "*.cutadapt.log":
           type: file
           description: "cutadapt text report"

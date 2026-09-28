@@ -28,11 +28,14 @@
             ],
             [
                 "[READ_DEMULTIPLEXING:DEMUX, cutadapt, 4.9]",
+                "[READ_DEMULTIPLEXING:DEMUX, cutadapt, 4.9]",
                 "[READ_DEMULTIPLEXING:DEMUX, pigz, 2.8]",
+                "[READ_DEMULTIPLEXING:DEMUX, pigz, 2.8]",
+                "[READ_DEMULTIPLEXING:DEMUX, tar, 3.5.3]",
                 "[READ_DEMULTIPLEXING:DEMUX, tar, 3.5.3]"
             ]
         ],
-        "timestamp": "2026-09-28T01:36:42.971541",
+        "timestamp": "2026-09-28T07:05:05.75915",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
