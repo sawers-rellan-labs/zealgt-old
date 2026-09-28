@@ -14,7 +14,7 @@ the two workflows (docs/PLAN_pipeline.md §3).
 - Push: `git -C /Users/fvrodriguez/repos/zealgt-genotype push origin genotype`. Bring CRAM fixes in regularly:
   `git -C /Users/fvrodriguez/repos/zealgt-genotype fetch origin`, then `git -C /Users/fvrodriguez/repos/zealgt-genotype merge origin/main`;
   resolve shared-file conflicts minimally; never hand-merge conf/env_prefixes.config — regenerate it with
-  `bash bin/build_envs.sh --write-config` and commit.
+  `bash scripts/build_envs.sh --write-config` and commit.
 - Merge back: after Gate 1 passes and CodeRabbit is clean on the branch, open a PR `genotype` → `main` (`gh pr create`) and stop; the
   user approves and merges. Env prefixes are content-hashed, so both checkouts share /share/maize/frodrig4/conda/zealgt/ safely.
 
@@ -50,7 +50,7 @@ Algorithm code you may read for the maths only (rewrite as modules, do not port)
   (bcftools/mpileup etc.), changes to them only via `nf-core modules patch`.
 - Environments: one pinned environment.yml per module (only the tools its script calls; versions from `envs/legacy_zealbc1/` where
   zealbc1 ran them); non-conda tools by a pinned-commit build.sh (CRISP = vibansal/crisp @ 1a9027e; nilHMM = sawers-rellan-labs/nilhmm
-  @ 248e67e, RTIGER caller); registered with `bash bin/build_envs.sh --write-config`; built on hazel by `bin/build_envs.sbatch` (xfer) into
+  @ 248e67e, RTIGER caller); registered with `bash scripts/build_envs.sh --write-config`; built on hazel by `scripts/build_envs.sbatch` (xfer) into
   /share/maize/frodrig4/conda/zealgt/ — never on /rsstu, never at task time. Push env ymls early as their own commit so the build runs in
   parallel with the module code.
 - Resources from REQUIREMENTS §4 (variant_discovery donor × chr10: 8 cpu / 48 GB req., 8–17 min; RTIGER 4 cpu / 16 GB; counts batched);
