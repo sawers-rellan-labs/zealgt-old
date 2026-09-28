@@ -50,7 +50,8 @@ def zgStageParamNames() {
     ]
 }
 
-// Module directories whose code (main.nf + templates/*) each stage runs (design §2); hashed into the stage settings.
+// Module directories whose code (main.nf + templates/*) each stage runs (design §2); hashed into the stage settings with
+// zgStageWiring (zgStageCode).
 def zgStageModules() {
     def lcl = { names -> names.collect { n -> "modules/local/${n}".toString() } }
     return [
@@ -65,6 +66,22 @@ def zgStageModules() {
         genotype_imputation   : lcl.call(['rasterize']),
         reporting             : lcl.call(['genotype_summary', 'chromosome_painting', 'read_position_qc']),
     ]
+}
+
+// Wiring and module config of each stage, hashed into its settings next to the modules (PLAN §2 hash hygiene): the stage's
+// subworkflow, workflows/genotype.nf and conf/genotype_modules.config (ext.args / ext.prefix / ext.when / storeDir). An
+// ext.prefix or storeDir change under an existing key is refused like a code change. conf/genotype_hazel.config is not
+// hashed: it holds resources only (cpus / memory / time; the scripts read the allocation from Slurm, task hashes keep).
+def zgStageWiring() {
+    def swf = [sample_quality_control: 'sample_quality_control', variant_discovery: 'variant_discovery',
+               ancestry_inference: 'ancestry_inference', marker_union: 'marker_union', donor_allele_calling: 'donor_allele_calling',
+               genotype_imputation: 'genotype_imputation', reporting: 'genotype_reporting']
+    return swf.collectEntries { stage, dir -> [(stage): ["subworkflows/local/${dir}/main.nf".toString(), 'workflows/genotype.nf', 'conf/genotype_modules.config']] }
+}
+
+// Every code path hashed into a stage's settings: module dirs, then the wiring files
+def zgStageCode(String stage) {
+    return zgStageModules()[stage] + zgStageWiring()[stage]
 }
 
 // Upstream store outputs each entry reads (design §1.3), and the entry that writes each kind.
@@ -516,14 +533,15 @@ def zgFileDigest(f) {
     return md.digest().encodeHex().toString()
 }
 
-// sha256 of a module directory's main.nf and templates/* (content and file names, not the checkout path)
+// sha256 of a module directory's main.nf and templates/*, or of one file (content and file names, not the checkout path)
 def zgModuleDigest(String rel) {
     def dir = file("${projectDir}/${rel}")
-    if (!dir.isDirectory()) {
+    if (!dir.exists()) {
         return 'absent'
     }
     def tdir = dir.resolve('templates')
-    def files = [dir.resolve('main.nf')] + (tdir.isDirectory() ? tdir.listFiles().findAll { f -> f.isFile() }.sort { f -> f.name } : [])
+    def files = dir.isFile() ? [dir] :
+        [dir.resolve('main.nf')] + (tdir.isDirectory() ? tdir.listFiles().findAll { f -> f.isFile() }.sort { f -> f.name } : [])
     def md = java.security.MessageDigest.getInstance('SHA-256')
     files.findAll { f -> f.exists() }.each { f ->
         md.update("${f.name}\n".toString().getBytes('UTF-8'))
@@ -559,7 +577,7 @@ def zgStageSettings(String stage, Map units) {
     def path = file("${zgGenotypeStore()}/settings/${stage}.json")
     def current = [
         params: zgStageParamNames()[stage].collectEntries { n -> [(n): zgSettingsValue(n)] } + [input_store_key: (params.input_store_key ?: key).toString()],
-        code  : zgStageModules()[stage].collectEntries { m -> [(m): zgModuleDigest(m)] },
+        code  : zgStageCode(stage).collectEntries { m -> [(m): zgModuleDigest(m)] },
     ]
     def stored = null
     if (path.exists()) {

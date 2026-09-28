@@ -353,6 +353,39 @@ nextflow_pipeline {
         }
     }
 
+    // Hash hygiene (PLAN §2, review fix c): the settings hash covers conf/genotype_modules.config, so outputs stored under
+    // this key with another ext.prefix are refused. The stored digest is that of the config with one ext.prefix changed
+    // (zgModuleDigest: file name + newline + bytes).
+    test("genotype refusal: same store key, other ext.prefix in conf/genotype_modules.config") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'variant_discovery'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'variant_discovery')
+                def cfg = new File("${baseDir}/conf/genotype_modules.config")
+                def changed = cfg.text.replaceFirst(java.util.regex.Pattern.quote('ext.prefix = { "'), 'ext.prefix = { "changed.')
+                assert changed != cfg.text
+                def md = java.security.MessageDigest.getInstance('SHA-256')
+                md.update("${cfg.name}\n".toString().getBytes('UTF-8'))
+                md.update(changed.getBytes('UTF-8'))
+                def s = new File("$outputDir/store_stub/genotype/test/settings")
+                s.mkdirs()
+                new File(s, 'variant_discovery.json').text = groovy.json.JsonOutput.toJson(
+                    [stage: 'variant_discovery', genotype_store_key: 'test', params: [:],
+                     code: ['conf/genotype_modules.config': md.digest().encodeHex().toString()], units: [:]])
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert (workflow.stdout + workflow.stderr).any { l -> l.contains("code.conf/genotype_modules.config: stored '") } },
+                { assert workflow.trace.tasks().size() == 0 }
+            )
+        }
+    }
+
     test("genotype refusal: provenance does not match the read-processing settings") {
         options "-stub"
         when {

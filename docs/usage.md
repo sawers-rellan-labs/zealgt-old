@@ -125,12 +125,14 @@ message names the entry to run first. `--workflow genotype` without `--entry` is
   Genotype outputs go to `<store>/genotype/<genotype_store_key>/`.
 - **Keyed settings (review #7):** on first use, each stage writes `settings/<stage>.json` with:
   - its parameters;
-  - the sha256 of its modules' code;
+  - the sha256 of its code: each module's `main.nf` + templates, the stage's subworkflow `main.nf`,
+    `workflows/genotype.nf` and `conf/genotype_modules.config` (ext.args, ext.prefix, storeDir). The resource-only
+    `conf/genotype_hazel.config` is not hashed;
   - the sample rows of every unit.
 
   A later run with the same key and different parameters, code or sample rows is refused, and the message lists each
-  differing field. Use a new key, or `--input_store_key <old key>` to read upstream outputs from an older key. A module
-  edit under an existing key is refused too, so develop under a fresh key.
+  differing field. Use a new key, or `--input_store_key <old key>` to read upstream outputs from an older key. A module,
+  wiring or module-config edit under an existing key is refused too, so develop under a fresh key.
 - **Provenance:** each CRAM's `provenance.json` must record `markdup = samtools markdup ${markdup_args}`
   (`--provenance_check strict`, the default); `warn` only logs a mismatch.
 - **Controls:** `--b73_controls` must name at least one `b73_control` row in a real run, because the controls are the zero
