@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_input.json",
     "title": "sawers-rellan-labs/zealgt - params.input schema for --entry read_trimming / read_alignment",
-    "description": "Paired FASTQs per sample: demultiplexed reads (read_trimming) or trimmed reads (read_alignment). Every sample must be in params.samples (meta/samples.csv), which supplies library and read-group fields.",
+    "description": "Paired FASTQs per sample: demultiplexed reads (read_trimming) or trimmed reads (read_alignment). Every sample must be in params.samples (meta/samples.csv), which supplies library and read-group fields. crop_r1 / crop_r2 are required: the non-genomic 5' bases the FASTQs still carry (e.g. Nirwan's filtered_S batch-1 reads: 12 on R1, 0 on R2); only 0 is supported so far, so reads that still carry primer bases are refused instead of aligned.",
     "type": "array",
     "items": {
         "type": "object",
@@ -11,7 +11,9 @@
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_.-]+$",
                 "errorMessage": "Sample name must be provided (letters, digits, _ . - only)",
-                "meta": ["id"]
+                "meta": [
+                    "id"
+                ]
             },
             "fastq_1": {
                 "type": "string",
@@ -26,8 +28,30 @@
                 "exists": true,
                 "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
                 "errorMessage": "FastQ file for reads 2 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+            },
+            "crop_r1": {
+                "type": "integer",
+                "minimum": 0,
+                "meta": [
+                    "crop_r1"
+                ],
+                "errorMessage": "crop_r1: bases still to remove from the 5' end of read 1 (primer / randomer / skip bases left by the demultiplexer); 0 if none"
+            },
+            "crop_r2": {
+                "type": "integer",
+                "minimum": 0,
+                "meta": [
+                    "crop_r2"
+                ],
+                "errorMessage": "crop_r2: bases still to remove from the 5' end of read 2 (primer / randomer / skip bases left by the demultiplexer); 0 if none"
             }
         },
-        "required": ["sample", "fastq_1", "fastq_2"]
+        "required": [
+            "sample",
+            "fastq_1",
+            "fastq_2",
+            "crop_r1",
+            "crop_r2"
+        ]
     }
 }

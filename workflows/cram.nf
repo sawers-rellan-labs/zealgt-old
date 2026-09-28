@@ -247,6 +247,12 @@ workflow CRAM {
             // FASTQ sheet (assets/schema_input.json): demuxed (read_trimming) or trimmed (read_alignment) pairs
             //
             def rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
+            // Pre-demuxed FASTQs must declare the non-genomic 5' bases they still carry (crop_r1 / crop_r2). Cropping
+            // is not implemented, so anything but 0 / 0 is refused: primer / randomer bases are never aligned silently.
+            def uncropped = rows.findAll { meta, _fq1, _fq2 -> meta.crop_r1 || meta.crop_r2 }
+            if (uncropped) {
+                error("${params.input}: samples still carry non-genomic 5' bases (crop_r1 / crop_r2 > 0), and zealgt does not crop pre-demuxed FASTQs yet: ${uncropped.collect { r -> "${r[0].id} (${r[0].crop_r1}/${r[0].crop_r2})" }}")
+            }
             def pairs = rows.collect { meta, fq1, fq2 ->
                 def r = samples[meta.id]
                 if (!r) {
@@ -255,7 +261,7 @@ workflow CRAM {
                 def m = zgSampleMeta(r, '')
                 sample_metas << m
                 origin[m.id] = [kind: entry == 'read_trimming' ? 'fastq_demuxed' : 'fastq_trimmed', sheet: params.input,
-                                fastq_1: fq1.toString(), fastq_2: fq2.toString()]
+                                fastq_1: fq1.toString(), fastq_2: fq2.toString(), crop_r1: meta.crop_r1, crop_r2: meta.crop_r2]
                 [m, [file(fq1), file(fq2)]]
             }
             if (entry == 'read_trimming') {
