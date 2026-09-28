@@ -230,8 +230,8 @@ def zgRunGuards() {
     }
     if (workflow.stubRun) {
         // the stub store must be its own directory named store_stub* and must not lie inside the production store
-        def stub_store = file(params.store).toAbsolutePath().normalize()
-        def production = file('/rsstu/users/r/rrellan/BZea/ZEAL/store').toAbsolutePath().normalize()
+        def stub_store = zgRealPath(params.store)
+        def production = zgRealPath('/rsstu/users/r/rrellan/BZea/ZEAL/store')
         if (!stub_store.name.startsWith('store_stub') || stub_store.startsWith(production)) {
             error("stub runs must not write into the real store: --store must be a directory named store_stub* outside ${production} (conf/stub.config sets <outdir>/store_stub), got ${stub_store}")
         }
@@ -242,6 +242,21 @@ def zgRunGuards() {
     if (params.workflow == 'cram' && params.entry in ['read_trimming', 'read_alignment'] && !params.input) {
         error("--entry ${params.entry} needs --input <fastq sheet> (assets/schema_input.json)")
     }
+}
+
+//
+// Absolute path with symlinks resolved, also for a path that does not exist yet: the deepest existing ancestor is resolved
+// (toRealPath) and the missing tail appended.
+//
+def zgRealPath(String path) {
+    return zgRealPathOf(file(path).toAbsolutePath().normalize())
+}
+
+def zgRealPathOf(p) {
+    if (p.exists()) {
+        return p.toRealPath()
+    }
+    return p.parent == null ? p : zgRealPathOf(p.parent).resolve(p.name)
 }
 
 //
