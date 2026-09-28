@@ -413,7 +413,11 @@ Rules for v2:
    2 TB scratch figure — the group has 20 TB, and the file count is the binding limit; bound as a run guard, coordinator 2026-09-28).
    Nothing is removed automatically: `work/` keeps every library of a run for the whole run (and after it, until cleaned with
    consent), and the checkpoint keeps each library's trimmed pairs until the user removes them (rule 4). A concurrency limit alone
-   would therefore not bound the disk. So `--max_libraries N` (default 4) bounds what a run may hold: `read_demultiplexing` is
+   would therefore not bound the disk: the in-run admission semaphore tried on 2026-09-28 (Phase B: at most N libraries in stage 1
+   at a time, the next admitted when one finished) was **rejected** for that reason — under the no-auto-delete rule a finished
+   library keeps its `work/` FASTQs and its checkpoint until the user cleans them, so a semaphore bounds how many libraries are
+   *processed* at once, not how many *hold FASTQs*; a 32-library request would still leave 32 libraries on `/share` (and it
+   relied on one blocking operator on Nextflow's fixed dataflow pool). So `--max_libraries N` (default 4) bounds what a run may hold: `read_demultiplexing` is
    **refused** when |requested libraries ∪ libraries that already have a checkpoint dir under `--fastq_checkpoint`| > N (`subsample_*`
    and `checkpoint_stub*` dirs are other checkpoint roots and not counted); the error names those libraries and their
    `cleanup_status.tsv`, whose checkpoint may be removed only with the user's consent. The requested libraries then all run
@@ -425,13 +429,24 @@ Rules for v2:
    TRIMMOMATIC's `work/` files, not the checkpoint, so a library's stage-1 task dirs can be cleaned (with consent) only **after the
    run has ended** — then `read_alignment` reads the checkpoint, and a `-resume` of that session would redo stage 1. Cleaning them
    frees no space while the checkpoint holds the hardlinked pairs (the space moves to the checkpoint), only the demux FASTQs.
+   More than N libraries (Gate 3) therefore run as **waves** of ≤ N libraries, one run each, with the user's consented cleanup
+   of the finished wave's checkpoint and `work/` (rule 4's cleanup file) between two waves (§6).
 4. **Cleanup.** The pipeline never removes anything. A library's checkpoint FASTQs are removed **only after all its CRAMs are stored and
    verified** (rule 2), and **only with the user's consent** (`CLAUDE.md`): every run with stage 2 (chained or alone) reports it per
    library in the log and in `<checkpoint>/<library>/cleanup_status.tsv` (tab-separated `sample cram cram_bytes verified fastq_1
    fastq_1_bytes fastq_2 fastq_2_bytes`, one row per sample; verified = CRAM + `.crai` + CRAM 3 EOF), ending in `# checkpoint <dir>:
    removable (N files, X GB) — remove only with the user's consent` (N counts the FASTQs) or `# checkpoint <dir>: keep: k of n CRAMs
-   missing`. Removing a checkpoint dir is also what lets `--max_libraries` admit new libraries (rule 3). After each successful
-   run: `nextflow clean -f -but <last>` (with the user's consent) and a size **and file-count** report; stub runs always cleaned.
+   missing`. Removing a checkpoint dir is also what lets `--max_libraries` admit new libraries (rule 3). The same run writes
+   **`<outdir>/pipeline_info/cleanup_<run_id or session>.sh`** (also printed in the log), which the pipeline never runs: a header
+   saying so and that it must be read before use; per removable library, listing / measuring commands (`ls`, `du`, `find
+   -maxdepth … | wc -l`, `cat cleanup_status.tsv`) for its checkpoint dir and for the run's `work/` task dirs that hold its FASTQs
+   (DEMUX, MERGE_LANES, TRIMMOMATIC, FASTQC; path, size, file count, hardlinked bytes, measured by the pipeline at the end of the
+   run, depth-bounded), then the removal lines commented out under `# CONSENT:`; per library that is not complete, `keep: k of n
+   CRAMs missing` and no removal line; and, when every library of the run is removable, a `nextflow clean -n` / `-f <run name>`
+   alternative for the whole run's `work/` (never the checkpoint). The task dirs are taken from those processes' output channels
+   (each output's `<workDir>/xx/hash` dir; cached tasks included; failed or retried attempts are left to `nextflow clean`), not
+   from the trace file (no library there, hash prefix only, still being written in `onComplete`). After each run: the user checks
+   the file and removes, with consent, what it lists (stub runs always cleaned), and a size **and file-count** report.
 5. Existing `work/` (3.2 TB): before deleting, confirm every CRAM / table the project uses is published outside `work/`
    (`results/cram`, `results/align_membench`, `results/bc2s3_batch2/cram`, the pilot dirs) — decision and check pending, nothing deleted.
    `results/work/` and `results/bc2s3_batch2/work/` hold the only copy of the demuxed reads of ~130 BC1 samples and ~185 batch-2 lines (§0,
@@ -458,7 +473,14 @@ watched with the session kept open (`/loop`), acting only as the run card allows
 - **Gate 2 · one full unit**, the benchmark (cpu/ram/time/disk per module, recorded in `docs/REQUIREMENTS.md`). *Proposed, not
   decided:* CRAM workflow = one full library (e.g. BC1_1B) on compute/normal; genotype workflow = one donor × chr10 on short QOS. Nothing
   full-scale runs before this passes.
-- **Gate 3 · full run**, once Gate 2's numbers justify the allocation.
+- **Gate 3 · full run**, once Gate 2's numbers justify the allocation. CRAM workflow: **waves** of ≤ `--max_libraries` libraries,
+  one `read_demultiplexing` run (own `--run_id`) per wave (§5 rule 3). Between two waves: the wave's head job has ended, its log
+  shows no failed task, and the user — after reading `<outdir>/pipeline_info/cleanup_<run_id>.sh` and running its listing lines —
+  consents to removing the finished (removable) libraries' checkpoint dirs and the wave's `work/` (the file's commented `rm` lines,
+  or its `nextflow clean` alternative when every library is removable); `keep` libraries are rerun first. Only then the next
+  wave, whose guard counts the checkpoint dirs still present. Not a semaphore inside one big run: it would bound concurrency,
+  not the FASTQs held on `/share`, because nothing is removed automatically (§5 rule 3). Operator steps: docs/usage.md
+  "Waves of libraries".
 
 Lessons turned into checks (2026-09-28):
 - **Check the resolved resources, not the config text.** At Gate 2, TRIMMOMATIC's own `withName: 'TRIMMOMATIC' { time = 12.h }` in
@@ -475,6 +497,10 @@ Lessons turned into checks (2026-09-28):
   on the laptop and at Gate 1 scale on hazel before a gate that depends on reuse. First finding (2026-09-28): PROVENANCE reran on
   every resume because its hashed record carried the Nextflow run name; the name was dropped from the record, and (a) is now
   strict (laptop: PASSED, 24 of 24 cached).
+- **Bound what is held, not what runs.** Under the no-auto-delete rule a library's FASTQs stay on `/share` after it finishes, so
+  an admission semaphore (at most N libraries in stage 1 at once) let a long request hold every library's FASTQs; it was replaced
+  by the `--max_libraries` run guard plus waves with a consented cleanup between them, and each run now prints the exact cleanup
+  commands (never runs them) so the between-wave step is a check of listed paths, not a hunt through `work/`.
 
 ## 7. Open decisions (summary)
 §4 #2, #3, #5–#7, #12, #14 (proposed test: in the QC set, trace each ALT read at the disputed sites to its source position in the

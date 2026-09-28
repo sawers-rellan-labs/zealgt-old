@@ -34,6 +34,11 @@ output:
       type: list
       description: |
         channel: [ process, tool, version ]
+  - task_outputs:
+      type: list
+      description: |
+        channel: [ library, process, one output file of the task ] for every TRIMMOMATIC and FASTQC task (new or cached);
+        the CRAM workflow turns the file into its task work dir for the end-of-run cleanup report
 authors:
   - "@faustovrz"
 maintainers:

@@ -46,7 +46,8 @@ only in the run fields (the registry snapshot is identical). No line or nil id i
 | `<lib>/cleanup_status.tsv` | every run with stage 2 (at its end) | per sample `sample`, `cram`, `cram_bytes`, `verified` (yes/no), `fastq_1`, `fastq_1_bytes`, `fastq_2`, `fastq_2_bytes`; last line `# checkpoint <dir>: removable (N files, X GB) — remove only with the user's consent` or `# checkpoint <dir>: keep: k of n CRAMs missing` (also in the log) |
 
 Nothing is removed by the pipeline. Every `<lib>/` directory counts against `--max_libraries` until it is removed (with the
-user's consent, once `cleanup_status.tsv` says removable; docs/usage.md "Store rules"). The trim reports live here, not in
+user's consent, once `cleanup_status.tsv` says removable, using the commands in `<outdir>/pipeline_info/cleanup_*.sh`;
+docs/usage.md "Store rules" and "Waves of libraries"). The trim reports live here, not in
 `--outdir` (one `publishDir` per process: docs/usage.md "Deliberate deviations"). A `--subsample N` run uses a checkpoint named
 `subsample_<N>`; a stub run `checkpoint_stub*`.
 
@@ -57,3 +58,19 @@ user's consent, once `cleanup_status.tsv` says removable; docs/usage.md "Store r
 - `fastqc/<library>/`: FastQC reports of the trimmed reads.
 - `pipeline_info/`: Nextflow execution report, timeline, trace, DAG, `params_*.json`, and
   `zealgt_software_mqc_versions.yml` (every tool version of the run).
+- `pipeline_info/cleanup_<run_id or session id>.sh` (runs with stage 2: `read_demultiplexing`, `read_alignment`; written at the
+  end of the run, success or failure, and printed in the log; a `-resume` with the same run id or session rewrites it):
+  **cleanup commands for the user, never run by the pipeline**. It starts with a header saying so (read the whole file before
+  using any line). Per library of the run:
+  - *removable* (every CRAM stored and verified, as in `cleanup_status.tsv`): the checkpoint dir with its size and file count, then
+    the run's `work/` task dirs that hold the library's FASTQs (DEMUX, MERGE_LANES, TRIMMOMATIC, FASTQC; each with process, path,
+    file count, size and hardlinked bytes, measured at the end of the run), as active listing lines (`ls -la`, `du -sh`,
+    `find -maxdepth … ! -type d | wc -l`, `cat cleanup_status.tsv`), followed by one `# rm -r -- '<path>'` line per task dir and
+    one for the checkpoint dir, **commented out** under a `# CONSENT:` line. A `read_alignment` run has no stage-1 task dirs;
+    the file names the stage-1 session whose own cleanup file lists them.
+  - *keep*: `# ==== library <lib>: keep: k of n CRAMs missing; no removal line ====` (or `keep: no samplesheet.csv`).
+  - At the end, a `nextflow clean -n <run name>` / `# CONSENT: nextflow clean -f <run name>` alternative (whole run, every task
+    dir, never the checkpoint), offered only when every library of the run is removable.
+
+  The task dirs are those whose outputs the run used (cached ones included); failed or retried attempts are not listed (the file
+  says how to list them with `nextflow log`). Running the file unchanged only lists and measures.

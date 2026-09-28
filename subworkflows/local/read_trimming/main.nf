@@ -21,4 +21,6 @@ workflow READ_TRIMMING {
     reads    = TRIMMOMATIC.out.trimmed_reads // channel: [ val(meta), [ paired.trim_1, paired.trim_2 ] ]
     qc       = TRIMMOMATIC.out.out_log.mix(TRIMMOMATIC.out.summary, FASTQC.out.zip) // channel: [ val(meta), QC file ]  (MultiQC)
     versions = TRIMMOMATIC.out.versions_trimmomatic.mix(FASTQC.out.versions_fastqc) // channel: [ process, tool, version ]
+    task_outputs = TRIMMOMATIC.out.trimmed_reads.map { meta, reads -> [meta.library, 'TRIMMOMATIC', [reads].flatten()[0]] }
+        .mix(FASTQC.out.zip.map { meta, zips -> [meta.library, 'FASTQC', [zips].flatten()[0]] }) // channel: [ library, process, one output file of the task ]  (cleanup report: the task's work dir)
 }

@@ -35,6 +35,7 @@ include { zgToolVersionsString    } from '../subworkflows/local/utils_nfcore_zea
 include { zgStage1Tools           } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { zgWithStage1Tools       } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { zgWriteCheckpointSheet  } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
+include { zgTaskDir               } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
 
 workflow CRAM {
 
@@ -55,6 +56,7 @@ workflow CRAM {
     def ch_ref = channel.value([[id: fasta.baseName], fasta, file("${fasta}.fai", checkIfExists: true),
                                 [file("${fasta}.l2b", checkIfExists: true), file("${fasta}.mbw", checkIfExists: true)]])
     def ch_qc  = channel.empty() // [ val(meta), QC file ], grouped by meta.qc_group for MultiQC
+    def ch_task_dirs = channel.empty() // [ library, process, task work dir ]  stage-1 tasks holding the library's FASTQs (cleanup report)
 
     if (params.entry == 'markdup_import') {
         def dir = "${store}/cram_import"
@@ -120,6 +122,13 @@ workflow CRAM {
             ch_rec      = ch_records.combine(ch_stage1_tools).map { id, record, tools -> [id, zgWithStage1Tools(record, tools)] }
             ch_demux_qc = READ_DEMULTIPLEXING.out.demux_qc
             ch_qc       = READ_DEMULTIPLEXING.out.report.mix(READ_TRIMMING.out.qc)
+            // the work dirs of this run's DEMUX, MERGE_LANES, TRIMMOMATIC and FASTQC tasks (cached ones included: their
+            // outputs point to the earlier task dir), for the end-of-run cleanup commands (PIPELINE_COMPLETION)
+            def work_dir = workflow.workDir
+            ch_task_dirs = READ_DEMULTIPLEXING.out.task_outputs
+                .mix(READ_TRIMMING.out.task_outputs)
+                .map { lib, process, f -> [lib, process, zgTaskDir(f, work_dir)] }
+                .filter { _lib, _process, dir -> dir }
         }
         else {
             // read_alignment: stage 2 alone, from the checkpoint samplesheets (validated by nf-schema at initialisation)
@@ -207,4 +216,5 @@ workflow CRAM {
 
     emit:
     multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
+    task_dirs      = ch_task_dirs // channel: [ library, process, task work dir (string) ]  (read_demultiplexing; empty otherwise)
 }

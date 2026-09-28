@@ -44,6 +44,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
 
     main:
     def ch_multiqc_report = channel.empty()
+    def ch_task_dirs = channel.empty()
     if (params.workflow == 'cram') {
         CRAM (
             ch_libraries,
@@ -55,6 +56,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
             params.outdir,
         )
         ch_multiqc_report = CRAM.out.multiqc_report
+        ch_task_dirs = CRAM.out.task_dirs
     }
     else if (params.workflow == 'genotype') {
         GENOTYPE ()
@@ -65,6 +67,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
 
     emit:
     multiqc_report = ch_multiqc_report // channel: /path/to/multiqc_report.html
+    task_dirs      = ch_task_dirs      // channel: [ library, process, task work dir ]  stage-1 tasks (cleanup report)
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,6 +107,7 @@ workflow {
     //
     PIPELINE_COMPLETION (
         params.monochrome_logs,
+        SAWERSRELLANLABS_ZEALGT.out.task_dirs,
     )
 }
 

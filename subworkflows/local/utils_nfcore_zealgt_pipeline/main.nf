@@ -99,18 +99,30 @@ workflow PIPELINE_COMPLETION {
 
     take:
     monochrome_logs // boolean: Disable ANSI colour codes in log output
+    ch_task_dirs    // channel: [ library, process, task work dir ]  this run's stage-1 tasks holding a library's FASTQs
 
     main:
 
-    // Checkpoint cleanup report after every run with stage 2 (read_demultiplexing, read_alignment). onComplete runs after
-    // Nextflow has finished the publishDir transfers (26.04.6: Session.destroy shuts the publish pool down first), but
-    // params / projectDir are unbound there, so the report gets its values now.
+    // Checkpoint cleanup report + cleanup commands after every run with stage 2 (read_demultiplexing, read_alignment).
+    // onComplete runs after Nextflow has finished the publishDir transfers (26.04.6: Session.destroy shuts the publish pool
+    // down first), but params / projectDir are unbound there, so the report gets its values now.
     def cleanup = params.workflow == 'cram' && params.entry in ['read_demultiplexing', 'read_alignment'] ? [
-        libraries  : zgList(params.libraries).unique(),
-        checkpoint : zgList(params.libraries).collectEntries { lib -> [lib, zgCheckpointDir(lib).toString()] },
-        cram_dir   : "${params.store}/cram".toString(),
-        schema     : "${projectDir}/assets/schema_checkpoint.json".toString(),
+        libraries    : zgList(params.libraries).unique(),
+        checkpoint   : zgList(params.libraries).collectEntries { lib -> [lib, zgCheckpointDir(lib).toString()] },
+        cram_dir     : "${params.store}/cram".toString(),
+        schema       : "${projectDir}/assets/schema_checkpoint.json".toString(),
+        script       : file("${params.outdir}/pipeline_info/cleanup_${params.run_id ?: workflow.sessionId}.sh").toAbsolutePath().normalize().toString(),
+        entry        : params.entry,
+        run_id       : params.run_id ?: '',
+        session_id   : workflow.sessionId.toString(),
+        run_name     : workflow.runName,
+        launch_dir   : workflow.launchDir.toString(),
+        work_dir     : workflow.workDir.toString(),
+        code_version : zgCodeVersion(),
     ] : null
+    // this run's stage-1 task dirs, gathered while the run goes (the channel has ended when onComplete runs)
+    def task_dirs = Collections.synchronizedList([])
+    ch_task_dirs.subscribe { lib, process, dir -> task_dirs << [lib, process, dir] }
 
     //
     // Completion summary
@@ -119,7 +131,8 @@ workflow PIPELINE_COMPLETION {
 
         completionSummary(monochrome_logs)
         if (cleanup) {
-            zgCheckpointCleanupReport(cleanup)
+            def reports = zgCheckpointCleanupReport(cleanup)
+            zgCleanupCommands(cleanup, reports, task_dirs.toList().unique())
         }
 
     }
@@ -591,22 +604,25 @@ def zgWithStage1Tools(Map record, String tools) {
 // Checkpoint cleanup report (never removes anything), from workflow.onComplete after every run with stage 2: per library,
 // are ALL its samples' CRAMs stored and verified (zgCramState)? Writes <checkpoint>/<library>/cleanup_status.tsv and logs
 // "removable" or "keep". Called from onComplete, where params / projectDir are no longer bound: everything comes in `ctx`
-// [libraries, checkpoint dirs by library, cram dir, schema path].
+// [libraries, checkpoint dirs by library, cram dir, schema path]. Returns one map per library for zgCleanupCommands:
+// [library, dir, removable, status, rows].
 //
 def zgCheckpointCleanupReport(Map ctx) {
-    ctx.libraries.each { lib ->
+    return ctx.libraries.collect { lib ->
         def dir = file(ctx.checkpoint[lib])
         def sheet = dir.resolve('samplesheet.csv')
         if (!sheet.exists()) {
-            log.warn("zealgt: checkpoint ${dir}: keep: no samplesheet.csv (stage 1 of library ${lib} did not finish)")
-            return
+            def status = "checkpoint ${dir}: keep: no samplesheet.csv (stage 1 of library ${lib} did not finish)"
+            log.warn("zealgt: ${status}")
+            return [library: lib, dir: dir.toString(), removable: false, status: status, rows: []]
         }
         def rows
         try {
             rows = samplesheetToList(sheet.toString(), ctx.schema).collect { r -> r[0] + [fastq_1: r[1], fastq_2: r[2]] }
         } catch (Exception e) {
-            log.warn("zealgt: checkpoint ${dir}: keep: ${sheet} does not validate (${e.message})")
-            return
+            def status = "checkpoint ${dir}: keep: ${sheet} does not validate (${e.message})"
+            log.warn("zealgt: ${status}")
+            return [library: lib, dir: dir.toString(), removable: false, status: status, rows: []]
         }
         def lines = [['sample', 'cram', 'cram_bytes', 'verified', 'fastq_1', 'fastq_1_bytes', 'fastq_2', 'fastq_2_bytes'].join('\t')]
         def n_ok = 0
@@ -625,7 +641,167 @@ def zgCheckpointCleanupReport(Map ctx) {
             : "checkpoint ${dir}: keep: ${rows.size() - n_ok} of ${rows.size()} CRAMs missing"
         dir.resolve('cleanup_status.tsv').text = (lines + ["# ${status}"]).join('\n') + '\n'
         log.info("zealgt: ${status} (${dir}/cleanup_status.tsv)")
+        return [library: lib, dir: dir.toString(), removable: n_ok == rows.size(), status: status, rows: rows]
     }
+}
+
+//
+// End-of-run cleanup commands, NEVER run by the pipeline: written to <outdir>/pipeline_info/cleanup_<run_id or session>.sh
+// and printed in the log, for the user to read, check and (with consent) use. Per library of the run (zgCheckpointCleanupReport):
+//   removable (every CRAM stored and verified) -> listing / measuring commands (ls, du, find -maxdepth | wc -l, cat) for its
+//     checkpoint dir and for this run's work dirs of its DEMUX, MERGE_LANES, TRIMMOMATIC and FASTQC tasks, then the removal
+//     lines, commented out and marked "CONSENT:";
+//   otherwise -> its "keep: ..." status and no removal line.
+// The task dirs come from those processes' output channels (workflows/cram.nf, `task_dirs`: each output file's
+// <workDir>/xx/hash dir), so they are exactly the tasks whose outputs this run used, cached ones included (their outputs
+// point to the earlier task dir); failed / retried attempts never reach a channel and are left to `nextflow clean`. Chosen
+// over parsing the trace file: the trace has no library and only the hash prefix, and it is still being written when
+// onComplete runs. Sizes and file counts are measured here (zgDirStats, depth-bounded, symlinks not followed). A
+// `nextflow clean` alternative for the whole run is offered when every library of the run is removable.
+//
+def zgCleanupCommands(Map ctx, List reports, List task_dirs) {
+    def order = ['DEMUX', 'MERGE_LANES', 'TRIMMOMATIC', 'FASTQC']
+    def out = [
+        '#!/usr/bin/env bash',
+        '#',
+        '# zealgt cleanup commands. NEVER RUN BY THE PIPELINE: the pipeline only writes this file. READ ALL OF IT BEFORE USING ANY LINE.',
+        '#',
+        "# Written at the end of run ${ctx.run_name} (session ${ctx.session_id}, run_id ${ctx.run_id ?: '-'}, entry ${ctx.entry}, code ${ctx.code_version}), ${java.time.Instant.now()}.",
+        "# Launch dir ${ctx.launch_dir}; work dir ${ctx.work_dir}; CRAM store ${ctx.cram_dir}.",
+        '#',
+        '# The active lines only list and measure (ls, du, find -maxdepth ... | wc -l, cat): running this file as it is removes nothing.',
+        '# Every removal line is commented out and marked "CONSENT:". Uncomment or copy one only after the user has explicitly',
+        '# approved that removal (CLAUDE.md; docs/PLAN_pipeline.md §5 rule 4), and only after the listing shows the paths are still',
+        '# what this file says (sizes and file counts below were measured by the pipeline at the end of the run).',
+        '# A library is removable only when every one of its CRAMs is stored and verified (CRAM + .crai + CRAM 3 EOF), as its',
+        '# <checkpoint>/<library>/cleanup_status.tsv says. The checkpoint FASTQs are hardlinks of TRIMMOMATIC work/ files: their space',
+        '# is freed only when both the checkpoint dir and the TRIMMOMATIC task dirs are gone. Afterwards the CRAMs stay in the store',
+        '# (skipped as stored); --entry read_alignment can no longer read that checkpoint, a -resume of this session redoes stage 1,',
+        '# and the removed checkpoint dir no longer counts against --max_libraries.',
+        '# Listed task dirs are the tasks whose outputs this run used (cached ones included); failed or retried attempts are not',
+        "# listed: in the launch dir, `nextflow log ${ctx.run_name} -f name,status,workdir` lists every task dir of the run.",
+    ]
+    reports.each { rep ->
+        out << '#'
+        if (!rep.removable) {
+            out << "# ==== library ${rep.library}: ${rep.status - "checkpoint ${rep.dir}: "}; no removal line ===="
+            out << "# checkpoint ${rep.dir}" + (rep.rows ? " (see its cleanup_status.tsv)" : '')
+            return
+        }
+        def ck = zgDirStats(rep.dir, 1)
+        out << "# ==== library ${rep.library}: removable: all ${rep.rows.size()} CRAMs stored and verified ===="
+        out << "# checkpoint ${rep.dir}: " + (ck ? zgStatsText(ck) : 'not found')
+        out << "ls -la -- ${zgShellQuote(rep.dir)}"
+        out << "du -sh -- ${zgShellQuote(rep.dir)}"
+        out << "find ${zgShellQuote(rep.dir)} -maxdepth 1 ! -type d | wc -l"
+        out << "cat -- ${zgShellQuote(rep.dir + '/cleanup_status.tsv')}"
+        def dirs = task_dirs.findAll { lib, _p, _d -> lib == rep.library }
+            .collect { _lib, p, d -> [p, d, zgDirStats(d, 3)] }
+            .findAll { _p, _d, st -> st }
+            .sort { a, b -> order.indexOf(a[0]) <=> order.indexOf(b[0]) ?: a[1] <=> b[1] }
+        if (dirs) {
+            def total = [0, 1, 2].collect { i -> dirs.sum { _p, _d, st -> st[i] } }
+            def per = order.collect { p -> [p, dirs.count { dp, _d, _st -> dp == p }] }.findAll { _p, n -> n }.collect { p, n -> "${p} ${n}" }
+            out << "# work/ task dirs of this run holding ${rep.library}'s FASTQs: ${dirs.size()} dirs (${per.join(', ')}), ${zgStatsText(total)}"
+            dirs.each { p, d, st -> out << "#   ${p.padRight(11)} ${d}  ${zgStatsText(st)}" }
+            out << 'work_dirs=('
+            dirs.each { _p, d, _st -> out << "    ${zgShellQuote(d)}" }
+            out << ')'
+            out << 'du -shc -- "${work_dirs[@]}"'
+            out << 'find "${work_dirs[@]}" -maxdepth 3 ! -type d | wc -l'
+        }
+        else {
+            def r = rep.rows[0]
+            out << "# work/: this run used no stage-1 task of ${rep.library} (entry ${ctx.entry}). Stage 1 ran in session ${zgCell(r.stage1_session_id)}" +
+                   " (run_id ${zgCell(r.stage1_run_id) ?: '-'}): its task dirs, if still there, are in that run's own cleanup_<run_id or session>.sh."
+        }
+        out << "# CONSENT: the lines below remove ${rep.library}'s FASTQs; uncomment them only with the user's explicit approval."
+        dirs.each { _p, d, _st -> out << "# rm -r -- ${zgShellQuote(d)}" }
+        out << "# rm -r -- ${zgShellQuote(rep.dir)}"
+    }
+    out << '#'
+    out << '# ==== alternative for the whole run: nextflow clean ===='
+    def keep = reports.findAll { rep -> !rep.removable }*.library
+    if (reports && !keep) {
+        out += [
+            "# Every library of this run is removable, so instead of the per-library work/ lines above every task dir of run",
+            "# ${ctx.run_name} may go at once (stage 1 and stage 2, all libraries; `nextflow clean -n` shows exactly which). It never",
+            '# touches the checkpoint (use the per-library lines above for it). Run in the launch dir; on hazel as a short-QOS job',
+            '# (hazel-debug-loop skill). Dry run first, it lists and removes nothing:',
+            "#   cd ${zgShellQuote(ctx.launch_dir)}",
+            "#   nextflow clean -n ${ctx.run_name}",
+            "# CONSENT: nextflow clean -f ${ctx.run_name}",
+        ]
+    }
+    else {
+        out << "# not offered: ${keep ? "library ${keep.join(', ')} is not removable" : 'no library in this run'}, and nextflow clean removes every task dir of the run."
+    }
+    def text = out.join('\n') + '\n'
+    def script = file(ctx.script)
+    script.parent.mkdirs()
+    script.text = text
+    log.info("zealgt: cleanup commands (never run by the pipeline; read the file before using any line): ${script}\n${text}")
+    return script
+}
+
+// The task dir (<workDir>/xx/<rest of hash>) holding a task output file, as a string; null for a file outside workDir
+def zgTaskDir(f, wd) {
+    def p = java.nio.file.Paths.get(f.toString()).toAbsolutePath().normalize()
+    def w = java.nio.file.Paths.get(wd.toString()).toAbsolutePath().normalize()
+    if (!p.startsWith(w)) {
+        return null
+    }
+    def rel = w.relativize(p)
+    return rel.nameCount >= 3 ? w.resolve(rel.getName(0)).resolve(rel.getName(1)).toString() : null
+}
+
+//
+// [files, bytes, hardlinked bytes] of a directory, at most `depth` levels down, symlinks not followed (null if it is not a
+// directory). files = every non-directory entry (regular files and symlinks: each takes an inode of the quota); bytes =
+// regular files; hardlinked bytes = regular files with more than one link (freed only once every link is removed).
+//
+def zgDirStats(String path, int depth) {
+    def root = java.nio.file.Paths.get(path)
+    def nofollow = java.nio.file.LinkOption.NOFOLLOW_LINKS
+    if (!java.nio.file.Files.isDirectory(root, nofollow)) {
+        return null
+    }
+    def n = 0L
+    def bytes = 0L
+    def linked = 0L
+    java.nio.file.Files.walk(root, depth).withCloseable { s ->
+        s.iterator().each { p ->
+            def a = java.nio.file.Files.readAttributes(p, java.nio.file.attribute.BasicFileAttributes, nofollow)
+            if (a.isDirectory()) {
+                return
+            }
+            n += 1
+            if (a.isRegularFile()) {
+                bytes += a.size()
+                def links = 1
+                try {
+                    links = java.nio.file.Files.getAttribute(p, 'unix:nlink', nofollow) as int
+                } catch (Exception _e) {
+                    links = 1
+                }
+                linked += links > 1 ? a.size() : 0
+            }
+        }
+    }
+    return [n, bytes, linked]
+}
+
+def zgStatsText(List st) {
+    return "${st[0]} files, ${zgSize(st[1])}" + (st[2] ? " (${zgSize(st[2])} hardlinked)" : '')
+}
+
+def zgSize(long bytes) {
+    return bytes >= 1e9 ? String.format('%.2f GB', bytes / 1e9) : bytes >= 1e6 ? String.format('%.1f MB', bytes / 1e6) : String.format('%.1f kB', bytes / 1e3)
+}
+
+// A string as one single-quoted shell word
+def zgShellQuote(String s) {
+    return "'" + s.replace("'", "'\\''") + "'"
 }
 
 //

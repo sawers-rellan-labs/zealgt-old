@@ -19,18 +19,30 @@ nextflow_pipeline {
 
         then {
             // stable_path: All files + folders in ${params.outdir}/ with a stable path (including file name)
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
             // stable_content: All files in ${params.outdir}/ with stable content
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             // the registry snapshot of every provenance record (the rest of the record holds run fields; .nftignore)
             def registry = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
                 .collect { f -> def r = new groovy.json.JsonSlurper().parse(f).registry; [f.name, "registry file: ${r.file}", r.row, r.note] }
+            // end-of-run cleanup commands (name has the session id: path and content outside the snapshot)
+            def cleanup = new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }
+            def cl = cleanup ? cleanup[0].readLines() : []
             assertAll(
                 { assert workflow.success },
                 { assert workflow.trace.succeeded().size() == 24 }, // DEMUX x 2 lanes, MERGE_LANES, DEMUX_QC, 3 x 6 per-sample tasks, REGISTRY, MULTIQC
                 // FASTQ checkpoint: the trimmed pairs, the samplesheet (written once all 3 samples are trimmed), the cleanup report
                 { assert file("$outputDir/checkpoint_stub/LIBX/samplesheet.csv").readLines().size() == 4 },
                 { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (6 files') },
+                // cleanup commands: one file, header first, LIBX removable with its 9 stage-1 task dirs (DEMUX x 2, MERGE_LANES,
+                // TRIMMOMATIC x 3, FASTQC x 3) + the checkpoint as consent-marked (commented) removal lines, no active rm
+                { assert cleanup.size() == 1 },
+                { assert cl[2].contains('NEVER RUN BY THE PIPELINE') },
+                { assert cl.contains('# ==== library LIBX: removable: all 3 CRAMs stored and verified ====') },
+                { assert cl.any { l -> l.startsWith('# work/ task dirs of this run holding LIBX') && l.contains('9 dirs (DEMUX 2, MERGE_LANES 1, TRIMMOMATIC 3, FASTQC 3)') } },
+                { assert cl.count { l -> l.startsWith('# rm -r -- ') } == 10 },
+                { assert !cl.any { l -> l.trim().startsWith('rm ') } },
+                { assert cl.any { l -> l.startsWith('# CONSENT: nextflow clean -f ') } },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
@@ -146,7 +158,7 @@ nextflow_pipeline {
         }
 
         then {
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             // registry snapshots rebuilt from the checkpoint samplesheet (code_version: the sheet's stage1_code_version)
             def records = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
@@ -158,6 +170,10 @@ nextflow_pipeline {
                 { assert workflow.trace.succeeded().size() == 10 },
                 { assert !workflow.trace.tasks().any { t -> t.name =~ /DEMUX|MERGE_LANES|TRIMMOMATIC|FASTQC/ } },
                 { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (4 files') },
+                // cleanup commands: no stage-1 task in this run, so only the checkpoint's (commented) removal line
+                { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.with { cls -> cls.size() == 1 } },
+                { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.every { cl ->
+                    cl.any { l -> l.startsWith('# work/: this run used no stage-1 task of LIBX') } && cl.count { l -> l.startsWith('# rm -r -- ') } == 1 } },
                 { assert records.size() == 2 && records.every { r -> r.registry.code_version == 'test' } },
                 { assert records[0].registry.row.nil_id == 'Zx9000001' && records[1].registry.row.nil_id == '' },
                 { assert snapshot(
@@ -195,7 +211,7 @@ nextflow_pipeline {
         }
 
         then {
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             // import records: the import sheet's row (origin.import_sheet_row, path / index dropped: under $outputDir) and the
             // registry snapshot (IMP_* are not in the fixture registry: row null with a note)

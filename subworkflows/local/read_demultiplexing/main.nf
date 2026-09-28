@@ -49,6 +49,8 @@ workflow READ_DEMULTIPLEXING {
     demux_qc = DEMUX_QC.out.tsv.mix(ch_stored.map { meta, stored -> [meta, stored[0]] }) // channel: [ val(library meta), <library>.tsv ]  (new or stored)
     summary  = DEMUX_QC.out.summary.mix(ch_stored.filter { _meta, stored -> stored.size() > 1 }.map { meta, stored -> [meta, stored[1]] }) // channel: [ val(library meta), <library>.summary.tsv ]
     versions = DEMUX.out.versions_cutadapt.mix(DEMUX.out.versions_pigz, DEMUX.out.versions_tar) // channel: [ process, tool, version ]
+    task_outputs = DEMUX.out.json.map { meta, f -> [meta.library, 'DEMUX', f] }
+        .mix(MERGE_LANES.out.reads.map { meta, reads -> [meta.id, 'MERGE_LANES', [reads].flatten()[0]] }) // channel: [ library, process, one output file of the task ]  (cleanup report: the task's work dir)
 }
 
 //

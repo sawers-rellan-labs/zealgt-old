@@ -46,6 +46,8 @@ entries end at the CRAM stop point and write one MultiQC report per library (per
   sample the CRAM, `cram_bytes`, `verified` (yes/no, the store check below) and both FASTQs with their sizes, and ends with (also
   in the log) `# checkpoint <dir>: removable (N files, X GB) — remove only with the user's consent` or `# checkpoint <dir>: keep:
   k of n CRAMs missing`. Removing the checkpoint frees space only once `work/` no longer holds the same files (hardlinks).
+  The same run writes the commands to check and (with consent) remove each removable library's checkpoint and stage-1 `work/`
+  dirs to `<outdir>/pipeline_info/cleanup_<run_id or session>.sh` (never run by the pipeline; "Waves of libraries" below).
 
 ## Sample sheets
 
@@ -88,10 +90,11 @@ sbatch /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch <r
     --workflow cram --entry read_demultiplexing --libraries 1A --outdir /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/<run_id>
 ```
 
-Profiles: `hazel,stub` (Gate 0, `-stub`), `hazel,short` (gates, 1 h cap), `hazel,normal` (Gate 2 and later; heavy tasks on
-compute/normal), `hazel,local` (one allocation, per-task cap in `conf/local.config`). The conda prefixes are prebuilt by
+Profiles: `hazel,stub` (Gate 0, `-stub`), `hazel,short` (gates, 1 h cap), `hazel,normal` (Gate 2 and later; 24 h limit, each
+task on short QOS when it asks <= 1 h 45, else on compute/normal; head job `sbatch --qos=normal --partition=compute --time=3-00:00:00`), `hazel,local` (one allocation, per-task cap in `conf/local.config`). The conda prefixes are prebuilt by
 `scripts/build_envs.sbatch` (an xfer job) and listed in `conf/env_prefixes.config`; no env is ever built at task time.
-Resources are Nextflow directives (`conf/base.config` labels, per-process values in `conf/hazel.config` / `conf/normal.config`)
+Resources are Nextflow directives (`conf/base.config` labels, per-process values in `conf/hazel.config`, per-sample times scaled
+by the task's input size; routing in `conf/normal.config`)
 that the scripts read as `task.cpus` / `task.memory`; a resource change does not rerun cached tasks (Nextflow 26.04.6 does
 not hash those values). `scripts/check_resources.sh` checks what each process resolves to (`tests/expected_resources.tsv`).
 The head job's log starts with the checkout (`ZG_REPO`, default `ZEAL/zealgt`) and its commit; every Nextflow line carries a
@@ -123,6 +126,31 @@ timestamp.
   `--fastq_checkpoint` (not counting `subsample_*` / `checkpoint_stub*` dirs) are more than N; the error lists those libraries
   with their `cleanup_status.tsv`. Remove a checkpoint only with the user's consent, once its report says removable. The
   requested libraries then all run concurrently (no `maxForks`). `read_alignment` adds no library and is not bounded.
+
+### Waves of libraries (Gate 3) and the cleanup file
+
+The full run (Gate 3, docs/PLAN_pipeline.md §6) is a series of **waves**: one `read_demultiplexing` run of at most
+`--max_libraries` libraries each, with its own `--run_id` (e.g. `bc1_w01`, `bc1_w02`, ...), so its scratch dir, launch dir and
+cleanup file are its own. Between two waves:
+
+1. Wait for the wave's head job to end; check its log for failed tasks and the `zealgt: checkpoint <dir>: removable` /
+   `keep:` lines (one per library).
+2. Read `<outdir>/pipeline_info/cleanup_<run_id>.sh` (also printed at the end of the log). Its active lines only list and
+   measure: `bash <file>` (or the lines one by one) shows each removable library's checkpoint dir and the wave's DEMUX,
+   MERGE_LANES, TRIMMOMATIC and FASTQC task dirs with sizes and file counts, to compare with the numbers the pipeline wrote.
+   On hazel `ls` / `du` / `find` over ssh are fine; a `nextflow clean` goes through a short-QOS job (hazel-debug-loop skill).
+3. **With the user's explicit consent** for that wave, uncomment (or copy) the `# rm -r -- ...` lines under `# CONSENT:` for
+   the removable libraries — or, if every library of the wave is removable, use the `nextflow clean -n` / `-f <run name>`
+   alternative at the end of the file for all of the wave's `work/` plus the per-library checkpoint lines. Libraries marked
+   `keep: k of n CRAMs missing` get no removal line: fix and rerun them (`-resume` of that wave, or `--entry
+   read_alignment --libraries <lib>` from their checkpoint) before cleaning them.
+4. Start the next wave. Its guard counts the checkpoint dirs still present (step 3 removed the finished ones), so a wave whose
+   libraries were not cleaned leaves less room: the next request is refused with the list of those libraries.
+
+Removing a library's checkpoint and stage-1 task dirs is final for its FASTQs: its CRAMs stay in the store (skipped as
+stored), but `read_alignment` can no longer rerun it and demultiplexing it again needs `--force_demux` (registered).
+The cleanup file lists the task dirs whose outputs the wave used (cached ones included); failed or retried attempts are not
+listed (`nextflow log <run name> -f name,status,workdir` in the launch dir shows them; `nextflow clean` removes them too).
 
 ## Testing
 

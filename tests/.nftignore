@@ -4,6 +4,7 @@ multiqc/*_multiqc_report_data/**
 multiqc/*_multiqc_report_plots/**
 fastqc/**/*_fastqc.{html,zip}
 pipeline_info/*.{html,json,txt,yml}
+pipeline_info/cleanup_*.sh
 store_stub/**/*.provenance.json
 store_stub/registry/*.registry.tsv
 checkpoint_stub/**/samplesheet.csv
