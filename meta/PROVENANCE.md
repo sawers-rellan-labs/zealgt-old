@@ -14,7 +14,7 @@ every sample has a raw location.
 |---|---|---|---|
 | `bc1_well_map.csv` | BC1: pool, column, barcode, `Sample_Id` (`S_<pool>_<col>`), BC1 line, donor, taxon (384) | zealbc1 `meta/bc1_well_map.csv` | built in zealbc1 from the BC1 sequencing manifest of `bzea-bc1-reference` (`meta/samples.tsv`, `docs/BZea_BC1_384_sequencing_manifest.csv`; Rubén) and the 12 inline column barcodes; builder not tracked |
 | `bc1_libraries.csv` | BC1 pool → raw directory name (1A = `BC1_1Ar`, a re-delivery) | zealbc1 `meta/` | raw data `BZea/BC1_dna_raw/01.RawData/` (Novogene; 4B re-demultiplexed by the center, 2026-09-03) |
-| `inline_barcodes.tsv` | the 12 BC1 / batch-2 inline column barcodes (6 bp, same on R1 and R2) | zealbc1 `meta/` | from the library design |
+| `inline_barcodes.tsv` | the 12 BC1 / batch-2 inline column barcodes (6 bp, same on R1 and R2) | zealbc1 `meta/` | Hannah's Google Sheet (sent in Slack 2026-09-21, https://docs.google.com/spreadsheets/d/1aAjkTqVYN4uBqzG-b8sgR2BF6YtXA5WQ9vGTsNj7Fy8/edit?gid=0) downloaded as `zealbc1/meta/ZeaLV2.xlsx`, sheet `REF-inline`; the 12 sequences are Twist FlexPrep UHT's inline barcodes (Twist demux guide DOC-001509, read structure `6B2S+T` on both reads; `agent/20260927_231439_twist_96plex_guide.md`). The same workbook holds the batch-2 manifest but no BC1 pool map (checked 2026-09-28) |
 | `bc2s3_batch2_well_map.csv` | batch 2: row, column, barcode, `Sample_Id` (`P<plot>`), label, nil_id (+ source), check flag, class, taxon, plot, pedigree, donor, plate, cell (384) | zealbc1 `meta/` (decisions 2026-09-21) | Hannah's Google Sheet → `zealbc1/meta/ZeaLV2.xlsx` (sheet ZeaL-V2_manifest) → `bc2s3_batch2_manifest.csv`, restricted on 2026-09-23 to the 4 sequenced plates BZeaV2_1–4 (plate BZeaV2_5 was never and will never be sequenced); nil_id from the zealhmm register, 3 pedigrees missing from it given nil_ids derived by the register's rule |
 | `bc2s3_batch2_libraries.csv` | batch-2 row → raw directory | zealbc1 `meta/` | raw data `BZea/BC2S3_batch_2_dna_raw/01.RawData/` (Novogene X202SC26093287-Z01-F001, delivered 2026-09-15) |
 | `bc2s3_batch1_sample_sheet.csv` | batch 1 (CLY2023): well, barcode (8 bp, R1), library, plate, plate index (TruSeq 6 bp), running number, genotype (1,632 wells) | `sara/DNA_Sequencing_raw/BZea/BZea_Sample_ID.xlsx` (delivery document, Dec 2023; read-only) | converted to CSV on 2026-09-24 (sheet 1, no edits) |
@@ -53,4 +53,6 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
    sequencing run? Its raw data location is unknown.
 2. **2 batch-1 teosinte lines without a nil_id** (in the sheet, not in the skim map): PN13_SID1226 (`Zdip-JSG-RMM-LCL-551_P3_P1_P1_P2.5.1.1-bulk`), PN17_SID1574 (`Mesa-JSG-Y-RMM-444_P2_P1_P1_P2.2.1.1-bulk`).
 3. **Landrace BC1S3/BC1S4 lines (79):** part of this delivery; confirm they belong in the ZEAL genotyping.
-4. The builders of `bc1_well_map.csv` and `bc2s3_batch1_skim_nil_id.tsv` are not in any repository.
+4. The builders of `bc1_well_map.csv` and `bc2s3_batch1_skim_nil_id.tsv` are not in any repository. `ZeaLV2.xlsx` (Hannah's sheet) is
+   not the BC1 source: no BC1 pool, line id or donor of `bc1_well_map.csv` appears in it (2026-09-28); the BC1 map traces to Rubén's
+   `bzea-bc1-reference` manifest (row above).
