@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. No own environment.yml: it runs in the shared genotype python env
+# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv DONOR_CONTENT_QC -> pooled_likelihood_tiers).
+name: donor_content_qc
+description: Stage 2b donor-content QC; ALT read fraction and share of covered blind-panel sites with ALT reads per sample, against the expectation (12.5 % for BC2S3 lines) and relative to the sample's donor group, flagging B73 contamination.
+keywords:
+  - sample qc
+  - contamination
+  - donor content
+  - genotype
+tools:
+  - python:
+      description: Python standard library script (module template, templates/estimate_donor_content.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map for the cohort
+          e.g. [ id:'cohort' ]
+    - counts:
+        type: file
+        description: QC_PANEL_COUNTS tables (ALLELE_COUNTS, bcftools query -H %CHROM %POS %REF %ALT [%AD], one column per sample SM)
+        pattern: "*.ad.tsv.gz"
+        ontologies: []
+  - panel:
+      type: file
+      description: Blind QC panel, chrom pos [ref alt], tab-separated, no header needed (params.qc_panel)
+      pattern: "*.{tsv,tsv.gz}"
+      ontologies: []
+  - sample_map:
+      type: list
+      description: "[ sample, role, donor ] per cohort sample (role bc1_sample | line | b73_control; donor '' for B73 controls)"
+output:
+  tsv:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map for the cohort
+            e.g. [ id:'cohort' ]
+      - "*.donor_content.tsv":
+          type: file
+          description: "One row per sample: covered_sites, sites_with_alt, share_sites_alt, reads, alt_reads, alt_read_fraction, expected, ratio_to_expected, statistic, rel_to_group, flag, reason (low_donor_content | low_relative_to_group | donor_alleles_in_b73 | insufficient_sites | .)"
+          pattern: "*.donor_content.tsv"
+          ontologies: []
+  versions:
+    - "*.donor_content_qc.versions.yml":
+        type: file
+        description: Tool versions (python); a file, not `eval`, so the process may use storeDir
+        pattern: "*.donor_content_qc.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

@@ -1,0 +1,88 @@
+{
+    "D1.chr10_1-5000 - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "D1.chr10_1-5000",
+                        "donor": "D1",
+                        "region": "chr10_1-5000"
+                    },
+                    "D1.chr10_1-5000.counts.tsv:md5,8499007cb355e76e408a1e478d6893a7"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "D1.chr10_1-5000",
+                        "donor": "D1",
+                        "region": "chr10_1-5000"
+                    },
+                    "D1.chr10_1-5000.line_qc.tsv:md5,6bc354672eabf2ea8c67f523732a7e6d"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:47:25.913359",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "D1.chr10_1-5000 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.counts.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.line_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "D1.chr10_1-5000.line_marker_qc.versions.yml:md5,6db9b66ae351a4393dd39beb8e283064"
+                ],
+                "counts": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.counts.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "line_qc": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.line_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "D1.chr10_1-5000.line_marker_qc.versions.yml:md5,6db9b66ae351a4393dd39beb8e283064"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:47:22.931498",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

@@ -1,0 +1,76 @@
+{
+    "cohort - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "cohort"
+                    },
+                    "cohort.relatedness.tsv:md5,85cb725406d8922f40e5b4db330e997d"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "cohort"
+                    },
+                    "cohort.relatedness_donors.tsv:md5,d07b926736bfaa066f93638e98b7f777"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:43:03.44706",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cohort - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.relatedness.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.relatedness_donors.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "cohort.relatedness_qc.versions.yml:md5,7f63dc07a7e452a2f51ebd8a67e8b0f5"
+                ],
+                "donors": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.relatedness_donors.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "tsv": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.relatedness.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "cohort.relatedness_qc.versions.yml:md5,7f63dc07a7e452a2f51ebd8a67e8b0f5"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:43:00.687858",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

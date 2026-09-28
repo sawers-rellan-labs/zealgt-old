@@ -1,0 +1,71 @@
+nextflow_process {
+
+    name "Test Process MIN_COVERAGE"
+    script "../main.nf"
+    process "MIN_COVERAGE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "min_coverage"
+
+    test("cohort - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'cohort' ],
+                    [ file("${moduleDir}/tests/fixtures/LINE_1.CollectWgsMetrics.coverage_metrics", checkIfExists: true) ],
+                    [ 'LINE_1' ]
+                ])
+                input[1] = 0.05
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.tsv[0][1]).name == "cohort.min_coverage.tsv" }
+            )
+        }
+    }
+
+    // Real mode (python3 on PATH; standard library only): LINE_1 passes at 0.41x, LINE_2 fails at 0.0031x, LINE_3 has no file.
+    test("cohort - real") {
+
+        tag "real"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'cohort' ],
+                    [
+                        file("${moduleDir}/tests/fixtures/LINE_1.CollectWgsMetrics.coverage_metrics", checkIfExists: true),
+                        file("${moduleDir}/tests/fixtures/LINE_2.CollectWgsMetrics.coverage_metrics", checkIfExists: true)
+                    ],
+                    [ 'LINE_1', 'LINE_2', 'LINE_3' ]
+                ])
+                input[1] = 0.05
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.tsv[0][1]).readLines()
+            assertAll(
+                { assert process.success },
+                { assert rows.size() == 4 },
+                { assert rows[1] == "LINE_1\t0.412345\t0.281\t0.05\ttrue\t." },
+                { assert rows[2] == "LINE_2\t0.0031\t0.002\t0.05\tfalse\tbelow_min_coverage" },
+                { assert rows[3] == "LINE_3\tNA\tNA\t0.05\tfalse\tno_metrics_file" },
+                { assert snapshot(process.out.tsv).match() }
+            )
+        }
+    }
+}

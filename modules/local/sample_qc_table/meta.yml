@@ -1,0 +1,68 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. No own environment.yml: it runs in the shared genotype python env
+# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv SAMPLE_QC_TABLE -> pooled_likelihood_tiers).
+name: sample_qc_table
+description: Stage 2b decision table sample_qc.tsv; joins MIN_COVERAGE with the optional blind-panel tables (coverage, relatedness, donor content) into one pass/fail row per sample with reasons and notes.
+keywords:
+  - sample qc
+  - genotype
+tools:
+  - python:
+      description: Python standard library script (module template, templates/write_sample_qc.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map for the cohort
+          e.g. [ id:'cohort' ]
+    - min_coverage:
+        type: file
+        description: MIN_COVERAGE table (required)
+        pattern: "*.min_coverage.tsv"
+        ontologies: []
+    - panel_coverage:
+        type: file
+        description: COVERAGE_QC table, or [] when params.qc_panel is not set
+        pattern: "*.panel_coverage.tsv"
+        ontologies: []
+    - relatedness:
+        type: file
+        description: RELATEDNESS_QC table, or [] when params.qc_panel is not set
+        pattern: "*.relatedness.tsv"
+        ontologies: []
+    - donor_content:
+        type: file
+        description: DONOR_CONTENT_QC table, or [] when params.qc_panel is not set
+        pattern: "*.donor_content.tsv"
+        ontologies: []
+  - sample_map:
+      type: list
+      description: "[ sample, role, donor ] per cohort sample, in output order (donor '' for B73 controls)"
+output:
+  tsv:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map for the cohort
+            e.g. [ id:'cohort' ]
+      - "*.sample_qc.tsv":
+          type: file
+          description: "One row per sample: sample, role, donor, pass, reasons, notes, mean_coverage, pct_1x, panel_qc (run | not_run | partial), panel_min_covered, panel_contigs_below_floor, kinship_own, own_z, closest_other_donor, kinship_closest_other, relatedness_reason, donor_content, donor_content_reason"
+          pattern: "*.sample_qc.tsv"
+          ontologies: []
+  versions:
+    - "*.sample_qc_table.versions.yml":
+        type: file
+        description: Tool versions (python); a file, not `eval`, since the process uses storeDir
+        pattern: "*.sample_qc_table.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

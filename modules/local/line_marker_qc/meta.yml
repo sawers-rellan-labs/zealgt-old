@@ -1,0 +1,74 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. No own environment.yml: it runs in the shared genotype python env
+# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv LINE_MARKER_QC -> pooled_likelihood_tiers).
+name: line_marker_qc
+description: Stage 4 line coverage floor and RTIGER input; per-line REF/ALT reads at the donor's own tier-A markers, invariant markers dropped, lines below min_markers_factor x rigidity covered markers excluded (PLAN §4 #13), RTIGER counts table of the passing lines.
+keywords:
+  - ancestry
+  - rtiger
+  - coverage
+  - genotype
+tools:
+  - python:
+      description: Python standard library script (module template, templates/filter_line_markers.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map of the donor x region unit
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - counts:
+        type: file
+        description: LINE_ALLELE_COUNTS table (ALLELE_COUNTS, bcftools query -H %CHROM %POS %REF %ALT [%AD], one column per line SM)
+        pattern: "*.ad.tsv.gz"
+        ontologies: []
+    - sites:
+        type: file
+        description: The donor's tier-A markers (RTIGER_MARKERS), chrom pos ref alt, no header
+        pattern: "*.tierA_sites.tsv"
+        ontologies: []
+  - rigidity:
+      type: integer
+      description: RTIGER rigidity (params.rigidity, 500)
+  - min_markers_factor:
+      type: float
+      description: Covered-marker floor factor (params.min_markers_factor, 2); floor = ceil(factor x rigidity), at least 2 x rigidity
+output:
+  counts:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the donor x region unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+      - "*.counts.tsv":
+          type: file
+          description: "RTIGER input of the passing lines: SAMPLE CONTIG POSITION REF_COUNT ALT_COUNT REF_NUCLEOTIDE ALT_NUCLEOTIDE (observations with reads only)"
+          pattern: "*.counts.tsv"
+          ontologies: []
+  line_qc:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the donor x region unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+      - "*.line_qc.tsv":
+          type: file
+          description: "Per line x contig: markers, markers_kept, covered, reads, mean_depth, floor, contig_pass, line_pass, reason (below_marker_floor | .)"
+          pattern: "*.line_qc.tsv"
+          ontologies: []
+  versions:
+    - "*.line_marker_qc.versions.yml":
+        type: file
+        description: Tool versions (python); a file, not `eval`, so the process may use storeDir
+        pattern: "*.line_marker_qc.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

@@ -1,0 +1,112 @@
+nextflow_process {
+
+    name "Test Process LINE_MARKER_QC"
+    script "../main.nf"
+    process "LINE_MARKER_QC"
+
+    tag "modules"
+    tag "modules_local"
+    tag "line_marker_qc"
+
+    test("D1.chr10_1-5000 - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                    file("${moduleDir}/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                    file("${moduleDir}/tests/fixtures/D1.tierA_sites.tsv", checkIfExists: true)
+                ])
+                input[1] = 500
+                input[2] = 2
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.counts[0][1]).name == "D1.chr10_1-5000.counts.tsv" },
+                { assert file(process.out.line_qc[0][1]).name == "D1.chr10_1-5000.line_qc.tsv" }
+            )
+        }
+    }
+
+    // Real mode (python3 on PATH). Fixture: 40 markers, the last two with 0 ALT reads in every line (dropped); L1-L3 covered
+    // at ~90 % of the markers, L4 at 5 only. Rigidity 10, factor 2 -> floor 20: L4 excluded, and absent from counts.tsv.
+    // The records at a non-marker position and with another REF are skipped.
+    test("D1.chr10_1-5000 - real") {
+
+        tag "real"
+
+        config "./nextflow.config"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                    file("${moduleDir}/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                    file("${moduleDir}/tests/fixtures/D1.tierA_sites.tsv", checkIfExists: true)
+                ])
+                input[1] = 10
+                input[2] = 2
+                """
+            }
+        }
+
+        then {
+            def qc = path(process.out.line_qc[0][1]).readLines().drop(1).collect { it.split('\t') as List }
+            def counts = path(process.out.counts[0][1]).readLines()
+            def samples = counts.drop(1).collect { it.split('\t')[0] } as Set
+            def positions = counts.drop(1).collect { it.split('\t')[2] as int } as Set
+            assertAll(
+                { assert process.success },
+                { assert qc.collectEntries { [ (it[0]): it[9] ] } == [ L1:'true', L2:'true', L3:'true', L4:'false' ] },
+                { assert qc.every { it[7] == '20' && it[2] == '40' } },
+                { assert qc.find { it[0] == 'L4' }[10] == 'below_marker_floor' },
+                { assert counts[0] == "SAMPLE\tCONTIG\tPOSITION\tREF_COUNT\tALT_COUNT\tREF_NUCLEOTIDE\tALT_NUCLEOTIDE" },
+                { assert samples == [ 'L1', 'L2', 'L3' ] as Set },
+                { assert !(1950 in positions) && !(1975 in positions) && !(1174 in positions) },
+                { assert counts.drop(1).every { (it.split('\t')[3] as int) + (it.split('\t')[4] as int) > 0 } },
+                { assert snapshot(process.out.counts, process.out.line_qc).match() }
+            )
+        }
+    }
+
+    // rigidity 10 and factor 1: the floor is raised to RTIGER's 2 x rigidity = 20 (a warning), so L4 is still excluded.
+    test("D1.chr10_1-5000 - floor raised to 2 x rigidity - real") {
+
+        tag "real"
+
+        config "./nextflow.config"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                    file("${moduleDir}/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                    file("${moduleDir}/tests/fixtures/D1.tierA_sites.tsv", checkIfExists: true)
+                ])
+                input[1] = 10
+                input[2] = 1
+                """
+            }
+        }
+
+        then {
+            def qc = path(process.out.line_qc[0][1]).readLines().drop(1).collect { it.split('\t') as List }
+            assertAll(
+                { assert process.success },
+                { assert qc.every { it[7] == '20' } },
+                { assert qc.find { it[0] == 'L4' }[9] == 'false' }
+            )
+        }
+    }
+}

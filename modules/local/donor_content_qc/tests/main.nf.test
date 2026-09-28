@@ -1,0 +1,103 @@
+nextflow_process {
+
+    name "Test Process DONOR_CONTENT_QC"
+    script "../main.nf"
+    process "DONOR_CONTENT_QC"
+
+    tag "modules"
+    tag "modules_local"
+    tag "donor_content_qc"
+
+    // Fixture panel (the blind QC panel does not exist yet, design §10 item 6):
+    // modules/local/relatedness_qc/tests/fixtures (make_panel_fixture.py).
+    test("cohort - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                def d = "${projectDir}/modules/local/relatedness_qc/tests/fixtures"
+                input[0] = channel.of([ [ id:'cohort' ], [ file("\${d}/D1.panel.ad.tsv.gz", checkIfExists: true) ] ])
+                input[1] = file("\${d}/panel.tsv", checkIfExists: true)
+                input[2] = [ ['L1', 'line', 'D1'] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.tsv[0][1]).name == "cohort.donor_content.tsv" }
+            )
+        }
+    }
+
+    // Real mode (python3 on PATH): L5 carries no donor allele (B73 contamination) and is the only flagged sample.
+    test("cohort - real") {
+
+        tag "real"
+
+        config "./nextflow.config"
+
+        when {
+            process {
+                """
+                def d = "${projectDir}/modules/local/relatedness_qc/tests/fixtures"
+                input[0] = channel.of([
+                    [ id:'cohort' ],
+                    [
+                        file("\${d}/D1.panel.ad.tsv.gz", checkIfExists: true),
+                        file("\${d}/D2.panel.ad.tsv.gz", checkIfExists: true),
+                        file("\${d}/b73.panel.ad.tsv.gz", checkIfExists: true)
+                    ]
+                ])
+                input[1] = file("\${d}/panel.tsv", checkIfExists: true)
+                input[2] = new groovy.json.JsonSlurper().parse(file("\${d}/sample_map.json"))
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.tsv[0][1]).readLines().drop(1).collect { it.split('\t') as List }
+            def flagged = rows.findAll { it[13] == 'true' }.collectEntries { [ (it[0]): it[14] ] }
+            def k1 = rows.find { it[0] == 'K1' }
+            assertAll(
+                { assert process.success },
+                { assert rows.size() == 15 },
+                { assert flagged == [ L5: 'low_donor_content' ] },
+                { assert k1[7] == '0' && k1[13] == 'false' },
+                { assert snapshot(process.out.tsv).match() }
+            )
+        }
+    }
+
+    // Skippable by run-card param: with ext.when = false (skip.config) the task does not run and emits nothing.
+    test("cohort - skipped - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        config "./skip.config"
+
+        when {
+            process {
+                """
+                def d = "${projectDir}/modules/local/relatedness_qc/tests/fixtures"
+                input[0] = channel.of([ [ id:'cohort' ], [ file("\${d}/D1.panel.ad.tsv.gz", checkIfExists: true) ] ])
+                input[1] = file("\${d}/panel.tsv", checkIfExists: true)
+                input[2] = [ ['L1', 'line', 'D1'] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.tsv.size() == 0 }
+            )
+        }
+    }
+}

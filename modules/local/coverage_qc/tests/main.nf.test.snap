@@ -1,0 +1,52 @@
+{
+    "cohort - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "cohort"
+                    },
+                    "cohort.panel_coverage.tsv:md5,d3833d59e5b301654d007c2bb7c92904"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:40:44.265237",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cohort - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.panel_coverage.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "cohort.coverage_qc.versions.yml:md5,c9c629b25ef3033c37b7019c2b0c9fd3"
+                ],
+                "tsv": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.panel_coverage.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "cohort.coverage_qc.versions.yml:md5,c9c629b25ef3033c37b7019c2b0c9fd3"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:40:41.608189",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

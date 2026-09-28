@@ -1,0 +1,64 @@
+nextflow_process {
+
+    name "Test Process RTIGER_MARKERS"
+    script "../main.nf"
+    process "RTIGER_MARKERS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "rtiger_markers"
+
+    test("D1.chr10_1-5000 - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                    file("${moduleDir}/tests/fixtures/D1.chr10_1-5000.sites.tsv.gz", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.sites[0][1]).name == "D1.chr10_1-5000.tierA_sites.tsv" }
+            )
+        }
+    }
+
+    // Real mode (python3 on PATH). Fixture rows: clean tier A at 100, 200 (single_sample is not a hard flag), 800, 900
+    // (lower-case bases); dropped: 300 hidepth, 400 indel, 500 two tier-A alleles, 600 tier B, 700 ref.
+    test("D1.chr10_1-5000 - real") {
+
+        tag "real"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                    file("${moduleDir}/tests/fixtures/D1.chr10_1-5000.sites.tsv.gz", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            def sites = path(process.out.sites[0][1]).readLines()
+            def summary = path(process.out.summary[0][1]).readLines()
+            assertAll(
+                { assert process.success },
+                { assert sites == [ "chr10\t100\tA\tG", "chr10\t200\tC\tT", "chr10\t800\tT\tA", "chr10\t900\tA\tC" ] },
+                { assert summary[1] == "D1.chr10_1-5000\t10\tA\t8\t1\t1\t1\t4" },
+                { assert snapshot(process.out.sites, process.out.summary).match() }
+            )
+        }
+    }
+}

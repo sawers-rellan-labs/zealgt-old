@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module. No own environment.yml: it runs in the shared genotype python env
+# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv MIN_COVERAGE -> pooled_likelihood_tiers).
+name: min_coverage
+description: Stage 2b minimum-coverage rule; one row per sample with Picard CollectWgsMetrics MEAN_COVERAGE and PCT_1X, failing samples below min_coverage (0.05x) or without metrics.
+keywords:
+  - sample qc
+  - coverage
+  - genotype
+tools:
+  - python:
+      description: Python standard library script (module template, templates/flag_low_coverage.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map for the cohort
+          e.g. [ id:'cohort' ]
+    - metrics:
+        type: file
+        description: Picard CollectWgsMetrics files, <sample>.CollectWgsMetrics.coverage_metrics (CRAM store)
+        pattern: "*.CollectWgsMetrics.coverage_metrics"
+        ontologies: []
+    - sample_ids:
+        type: list
+        description: Sample ids of the cohort, in output order; each is matched to the metrics file named <sample>.*
+  - min_coverage:
+      type: float
+      description: Minimum MEAN_COVERAGE (params.min_coverage, default 0.05)
+output:
+  tsv:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map for the cohort
+            e.g. [ id:'cohort' ]
+      - "*.min_coverage.tsv":
+          type: file
+          description: "sample, mean_coverage, pct_1x, min_coverage, pass (true/false), reason (below_min_coverage | no_metrics_file | no_mean_coverage | .)"
+          pattern: "*.min_coverage.tsv"
+          ontologies: []
+  versions:
+    - "*.min_coverage.versions.yml":
+        type: file
+        description: Tool versions (python); a file, not `eval`, so the process may use storeDir
+        pattern: "*.min_coverage.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

@@ -1,0 +1,105 @@
+nextflow_process {
+
+    name "Test Process RTIGER"
+    script "../main.nf"
+    process "RTIGER"
+
+    tag "modules"
+    tag "modules_local"
+    tag "rtiger"
+
+    test("D1.chr10_1-50000 - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-50000', donor:'D1', region:'chr10_1-50000' ],
+                    file("${moduleDir}/tests/fixtures/D1.chr10_1-50000.counts.tsv", checkIfExists: true)
+                ])
+                input[1] = 500
+                input[2] = 10
+                input[3] = 'D1'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.segments[0][1]).name == "D1.chr10_1-50000.segments.csv" }
+            )
+        }
+    }
+
+    // Real mode: needs Rscript with nilHMM 0.3.0 and data.table on PATH (the laptop R library, or the hazel rtiger env).
+    // Fixture (agent-generated, known ancestry): L1 x = 2 on the first 120 markers then 0; L2 x = 1 on markers 100-219;
+    // L3 x = 0. Rigidity 5 (floor 10 covered markers). Checked: every line gets segments, states are 0/1/2, L3 is all 0 and
+    // L1 carries x = 2 at its first marker.
+    test("D1.chr10_1-50000 - real") {
+
+        tag "real"
+        tag "real_r"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.chr10_1-50000', donor:'D1', region:'chr10_1-50000' ],
+                    file("${moduleDir}/tests/fixtures/D1.chr10_1-50000.counts.tsv", checkIfExists: true)
+                ])
+                input[1] = 5
+                input[2] = 10
+                input[3] = 'D1'
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.segments[0][1]).readLines()
+            def seg = rows.drop(1).collect { it.split(',') as List }
+            def first = { n -> seg.findAll { it[2] == n }.min { it[4] as long } }
+            assertAll(
+                { assert process.success },
+                { assert rows[0] == 'source,donor,name,chr,start_bp,end_bp,state' },
+                { assert seg.collect { it[2] }.unique().sort() == ['L1', 'L2', 'L3'] },
+                { assert seg.every { it[0] == 'RTIGER_poolseq' && it[1] == 'D1' && it[3] == '10' && it[6] in ['0', '1', '2'] } },
+                { assert seg.findAll { it[2] == 'L3' }.every { it[6] == '0' } },
+                { assert first('L1')[6] == '2' },
+                { assert snapshot(process.out.segments).match() }
+            )
+        }
+    }
+
+    // No line passed LINE_MARKER_QC: header-only table, exit 0.
+    test("D1 - no passing line - real") {
+
+        tag "real"
+        tag "real_r"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'D1.empty', donor:'D1', region:'chr10_1-50000' ],
+                    file("${moduleDir}/tests/fixtures/D1.empty.counts.tsv", checkIfExists: true)
+                ])
+                input[1] = 500
+                input[2] = 10
+                input[3] = 'D1'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.segments[0][1]).readLines() == [ 'source,donor,name,chr,start_bp,end_bp,state' ] }
+            )
+        }
+    }
+}
