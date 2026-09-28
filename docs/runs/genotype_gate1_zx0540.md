@@ -17,12 +17,15 @@ passes is the effect of the mask.
 
 | pass | `genotype_store_key` | `mask_read_starts` | `--outdir` | run ids |
 |---|---|---|---|---|
-| A | `gate1_zx0540_nomask_r2` | false | `…/results/zealgt/genotype_gate1_zx0540/nomask` | `genotype_gate1_nomask_r2_<entry>` |
+| A | `gate1_zx0540_nomask_r3` | false | `…/results/zealgt/genotype_gate1_zx0540/nomask` | `genotype_gate1_nomask_r3_<entry>` |
 | B | `gate1_zx0540_mask` | true | `…/results/zealgt/genotype_gate1_zx0540/mask` | `genotype_gate1_mask_<entry>` |
 
 The first pass-A key, `gate1_zx0540_nomask`, holds sample_quality_control and a failed variant_discovery (job 974146:
 ALLELE_COUNTS exit 141, SIGPIPE from `bgzip -dc | head -1` under pipefail). `allele_counts` is in every stage's code hash,
-so that key refuses the fixed code by design (review #7), and pass A restarts from entry 1 under `gate1_zx0540_nomask_r2`.
+so that key refuses the fixed code by design (review #7), and pass A restarted from entry 1 under `gate1_zx0540_nomask_r2`.
+Under `_r2`, ancestry_inference failed (job 974290): RTIGER crashed R ('C stack usage too close to the limit') with
+nilHMM threads 4 plus RcppParallel threads 4. RcppParallel now gets 1 thread, which changes the ancestry_inference code
+hash, so pass A restarted again from entry 1 under `gate1_zx0540_nomask_r3`.
 
 Pass B uses the same card and overrides three values on the command line:
 `--genotype_store_key gate1_zx0540_mask --mask_read_starts true --outdir …/mask`.
@@ -76,7 +79,7 @@ donor_allele_calling, genotype_imputation, reporting, submit the next one only a
 
 ```
 ssh hazel 'git -C /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype pull --ff-only'
-ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_r2_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
+ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_r3_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
 ```
 
 For pass B, use run ids `genotype_gate1_mask_<entry>` and add the three overrides above. Before any
