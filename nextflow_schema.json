@@ -123,11 +123,28 @@
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
                 }
             }
+        },
+        "zealgt_run_options": {
+            "title": "zealgt run options",
+            "type": "object",
+            "fa_icon": "fas fa-server",
+            "description": "Options of a zealgt run on hazel.",
+            "properties": {
+                "run_id": {
+                    "type": "string",
+                    "description": "Run name; the run's work/ and TMPDIR go to /share/maize/frodrig4/nf_work/<run_id> (profile hazel).",
+                    "pattern": "^[A-Za-z0-9._-]+$",
+                    "fa_icon": "fas fa-tag"
+                }
+            }
         }
     },
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/zealgt_run_options"
         },
         {
             "$ref": "#/$defs/generic_options"

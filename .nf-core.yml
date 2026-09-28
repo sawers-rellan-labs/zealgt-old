@@ -35,6 +35,8 @@ lint:
   multiqc_config:
     - report_comment
   files_exist:
+    # zealgt: .gitattributes belongs to the skipped 'github' template feature (GitHub linguist hints only; no GitHub CI here)
+    - .gitattributes
     - .github/workflows/branch.yml
     - .github/workflows/nf-test.yml
     - .github/actions/get-shards/action.yml
@@ -72,8 +74,7 @@ template:
     and CRAM store to ancestry and imputed genotypes (genotype workflow)'
   author: Fausto Rodriguez Zapata
   version: 0.1.0dev
-  force: true
-  outdir: /Users/fvrodriguez/repos/zealgt/agent/20260928_011000_scaffold/zealgt
+  outdir: .
   skip_features:
     - github
     - github_badges
