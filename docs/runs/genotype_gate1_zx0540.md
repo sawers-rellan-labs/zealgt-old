@@ -5,14 +5,17 @@ decision carries a comment. Design: genotype design §7.4. Testing ladder: `docs
 
 ## Purpose
 
-This is the first real-tool run of the genotype workflow on hazel. It checks three things:
+This is the first real-tool run of the genotype workflow on hazel, a rung of the testing ladder (`docs/PLAN_pipeline.md` §6).
+The ladder is a scaling strategy for debugging: Gate 1 catches bugs on the full code path at a small size. It does **not**
+judge genotypes; genotype accuracy against zealbc1 is assessed on the full chromosome (the RTIGER fit and segments are cut
+at the window edge, and the rigidity is set for full-chromosome marker density). It checks three things:
 
 - every entry runs, in order, on one donor and one region with the real tools, under the `short` QOS;
-- the outputs agree with the zealbc1 pilot for the same donor and region, except where the design changed something on purpose;
+- bug checks: the expected tasks run, no env is built, every output exists and is well formed, results are deterministic;
 - the measurements that `docs/REQUIREMENTS.md` §4 asks for are recorded.
 
-It runs in two passes, each under its own store key. Pass A turns the 5′ read-start mask off (`mask_read_starts: false`), so
-it is comparable with zealbc1, which did not mask. Pass B turns the mask on (design Decision 6). The difference between the
+It runs in two passes, each under its own store key. Pass A turns the 5′ read-start mask off (`mask_read_starts: false`), as
+zealbc1 did. Pass B turns the mask on (design Decision 6). The difference between the
 passes is the effect of the mask.
 
 | pass | `genotype_store_key` | `mask_read_starts` | `--outdir` | run ids |
@@ -39,9 +42,10 @@ Pass B uses the same card and overrides three values on the command line:
 - **Zero class:** `B73_skim10` only, with mask 12/0 in pass B. It merges 10 batch-1 B73 checks.
 - **Not used:** `B73_ERR3288215` is not in `store_genotype_dev`, because its Picard CollectWgsMetrics (~2.5 h) does not fit the
   short QOS. It would need an import with `-profile hazel,normal`. **[OPEN]** Should Gate 1 wait for it? It would then run under a new key.
-- **Region:** chr10:1-20,000,000. The RTIGER floor needs at least 1,000 covered own tier-A markers per line (2 × rigidity 500). On
-  chr10, Zx.0540_P3 has 40,941 tier-A sites (zealbc1 step 4), about 5-6 k in the first 20 Mb. At ~0.4× about a third of
-  those are covered, which gives ~2 k per typical line. A smaller region would exclude most lines.
+- **Region:** chr10:1-20,000,000, a debugging size chosen by the design agent (design §7.4), not a user decision. It only has
+  to be big enough that lines pass the RTIGER floor (2 × rigidity covered own tier-A markers per line), so RTIGER runs:
+  Zx.0540_P3 has 40,941 tier-A sites on chr10 (zealbc1 step 4), about 5-6 k in the first 20 Mb, ~2 k covered per line.
+  Rigidity is not tuned on the window: it follows the full-chromosome marker density (500 per 100,000 SNPs per chromosome).
 - **Reference donor:** Zx.0570_P2, through its zealbc1 step-4 table. It is read-only and never re-called. It supplies the gaps
   of Zx.0540_P3 and the k / m of the step-1 prior (`gap_prior_source: other_donors`). With one run donor and no reference
   table, stages 5-6 would have 0 gaps (design §2.4).
@@ -92,7 +96,12 @@ real-data run, the code must have passed a CodeRabbit review.
   "Genotype workflow").
 - Published tables and paintings go to `--outdir`.
 
-## Comparison with the zealbc1 pilot (restricted to chr10:1-20,000,000)
+## zealbc1 pilot outputs (for the full-chromosome run, not for this gate)
+
+The table below was run on this window (agent/20260928_120000_compare_gate1_zealbc1.py) before the ladder's intent was
+clarified (user, 2026-09-29). Agreement numbers on a 20 Mb window are not genotype-quality measures (edge effects, a
+window-only RTIGER fit); the comparison belongs to the full-chromosome run. At this gate, zealbc1 outputs are only a
+sanity check that a stage produces plausible tables (for example, similar tier counts).
 
 | zealgt output | zealbc1 pilot (`ZEAL/results/…`) | expected differences |
 |---|---|---|
@@ -114,5 +123,5 @@ The comparison is an agent script run as a short-QOS job, not a pipeline module.
 
 ## Done means
 
-Both passes finish every entry with exit 0 under the short QOS, the comparison table above is filled in with the differences
-explained, and the measurements are recorded.
+Both passes finish every entry with exit 0 under the short QOS, with the expected tasks and 0 "Creating env", every stored
+output present and readable, and the measurements recorded. Genotype agreement with zealbc1 is not a Gate 1 criterion.

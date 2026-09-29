@@ -15,7 +15,8 @@ workflow: genotype
 # 43 lines (PN8_SID736 has include FALSE in meta/genotype_dev.csv) + 5 BC1 pools
 donors: Zx.0570_P2
 donor_set: gate1_zx0570
-# [decided, design §7.4] 20 Mb, the Zx.0540 region, so the two donors can be joined (gate1_mex2) on the same region
+# Debugging size (design §7.4, agent-chosen; the Zx.0540 window, so gate1_mex2 can join the donors). Gate 1 catches bugs; it
+# does not judge genotypes: accuracy vs zealbc1 and the rigidity belong to the full-chromosome run.
 regions: "chr10:1-20000000"
 # B73 controls = the zero class of step 4. [OPEN] B73_ERR3288215 is NOT in store_genotype_dev (its CollectWgsMetrics, ~2.5 h,
 # does not fit the short QOS; job 972246 imported the sheet without it). Gate 1 therefore uses B73_skim10 alone (mask 12/0).

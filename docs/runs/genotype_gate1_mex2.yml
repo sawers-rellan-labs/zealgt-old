@@ -1,7 +1,7 @@
 # Run card: genotype workflow Gate 1, both mexicana donors Zx.0540_P3 + Zx.0570_P2 x chr10:1-20000000, all 7 entries under one
 # key: the multi-donor path of Gate 2 (two run donors in one variant_discovery / ancestry run, the joint marker union, the joint
 # step-4 recount, gap filling from the other run donor, reporting) on the Gate 1 region. A copy of
-# docs/runs/genotype_gate1_zx0570.yml (pass A: mask off, comparable with zealbc1 results/union_zx0540_zx0570_chr10) with the
+# docs/runs/genotype_gate1_zx0570.yml (pass A: mask off) with the
 # donors, donor set, key and outdir changed and no reference donor; every other value, and its [OPEN] / [STOP-GAP] mark, is
 # the Zx.0540 card's (see docs/runs/genotype_gate1_zx0540.md). Stages 1-4 run per donor, so their tables must equal the
 # single-donor keys gate1_zx0540_nomask_r3 and gate1_zx0570_r1.
@@ -19,7 +19,8 @@ workflow: genotype
 # Zx.0540_P3: 39 lines + 5 BC1 pools; Zx.0570_P2: 43 lines (PN8_SID736 has include FALSE) + 5 BC1 pools
 donors: "Zx.0540_P3,Zx.0570_P2"
 donor_set: gate1_mex2
-# [decided, design §7.4] 20 Mb, the Zx.0540 region, so the two donors can be joined (gate1_mex2) on the same region
+# Debugging size (design §7.4, agent-chosen; the Zx.0540 window, so gate1_mex2 can join the donors). Gate 1 catches bugs; it
+# does not judge genotypes: accuracy vs zealbc1 and the rigidity belong to the full-chromosome run.
 regions: "chr10:1-20000000"
 # B73 controls = the zero class of step 4. [OPEN] B73_ERR3288215 is NOT in store_genotype_dev (its CollectWgsMetrics, ~2.5 h,
 # does not fit the short QOS; job 972246 imported the sheet without it). Gate 1 therefore uses B73_skim10 alone (mask 12/0).
