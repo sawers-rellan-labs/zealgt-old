@@ -40,11 +40,15 @@ input:
   - rigidity:
       type: integer
       description: |
-        value: RTIGER rigidity
+        value: RTIGER rigidity at rigidity_ref_markers markers per chromosome
   - min_markers_factor:
       type: float
       description: |
         value: covered-marker floor factor
+  - rigidity_ref_markers:
+      type: integer
+      description: |
+        value: markers per chromosome at which rigidity applies (per unit scaled to its marker density by LINE_MARKER_QC); 0 = no scaling
 output:
   - segments:
       type: file

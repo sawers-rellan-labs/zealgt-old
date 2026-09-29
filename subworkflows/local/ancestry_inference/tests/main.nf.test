@@ -38,6 +38,7 @@ nextflow_workflow {
                 input[4] = channel.value([[id: 'tiny10'], file(fx + '/ref/tiny10.fa', checkIfExists: true), file(fx + '/ref/tiny10.fa.fai', checkIfExists: true)])
                 input[5] = 3
                 input[6] = 2
+                input[7] = 0
                 """
             }
         }

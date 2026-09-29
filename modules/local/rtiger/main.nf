@@ -6,7 +6,8 @@
 // templates/infer_ancestry_rtiger.R is a module template (hashed by content); it runs bin/export_slurm_resources.sh for
 // ZG_CPUS (nilHMM threads; RcppParallel stays at 1 thread, nested threads crashed R). Own env (modules/local/rtiger/environment.yml + build.sh: nilHMM
 // 0.3.0 @ 248e67e). storeDir forbids `eval` outputs, so the versions (R, nilHMM, data.table) go into a versions.yml.
-// Inputs besides the counts: rigidity (params.rigidity), the integer chromosome of the region (nilHMM needs an integer chr;
+// Inputs besides the counts: the unit's effective rigidity (LINE_MARKER_QC rigidity.txt: params.rigidity scaled to marker
+// density), the integer chromosome of the region (nilHMM needs an integer chr;
 // e.g. 10 for chr10) and the donor label written into the table (a val, not a custom meta key).
 // ext.args = [--seed N] (nilHMM rtiger's randomised init; default 1).
 process RTIGER {

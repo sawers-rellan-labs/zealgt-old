@@ -16,11 +16,17 @@ non-marker positions, with another REF, or indels are skipped; a repeated positi
    min_reads = 1). A line with any contig below the floor is EXCLUDED (PLAN §4 #13: excluded from every caller; the
    downstream stages read line_qc.tsv). floor = ceil(min_markers_factor x rigidity), raised to 2 x rigidity if lower, since
    nilHMM's RTIGER stops on any chain below 2 x rigidity covered markers (R/rtiger.R .rtiger_check_coverage).
+   rigidity here is the EFFECTIVE rigidity (user rule 2026-09-29: rigidity follows marker density): with
+   rigidity_ref_markers > 0, rigidity is the value at rigidity_ref_markers markers per chromosome, scaled to the unit's kept
+   markers per chromosome: max(1, round(rigidity x kept x (chromosome length / region length) / rigidity_ref_markers)),
+   chromosome length from the reference .fai. A whole-chromosome region has factor 1; a window is scaled to its
+   full-chromosome density, so it runs at the value the whole chromosome would. rigidity_ref_markers 0 = rigidity as given.
 Outputs:
   <prefix>.counts.tsv   RTIGER input, only lines that pass and observations with reads:
                         SAMPLE CONTIG POSITION REF_COUNT ALT_COUNT REF_NUCLEOTIDE ALT_NUCLEOTIDE (zealbc1 layout)
   <prefix>.line_qc.tsv  one row per line x contig: sample contig markers markers_kept covered reads mean_depth floor
                         contig_pass line_pass reason (below_marker_floor | no_markers | .)
+  <prefix>.rigidity.txt the effective rigidity (one integer), RTIGER's rigidity for this unit
 Standard library only.
 """
 import argparse
@@ -38,8 +44,36 @@ PROCESS = "${task.process}"
 COUNTS = "${counts}"
 SITES = "${sites}"
 RIGIDITY = int("${rigidity}")
+RIGIDITY_REF_MARKERS = int("${rigidity_ref_markers}")
 MIN_MARKERS_FACTOR = float("${min_markers_factor}")
+FAI = "${fai}"
+REGION = "${region}"
 EXT_ARGS = shlex.split('''${task.ext.args ?: ''}''')
+
+
+def region_span(region, chrom_len):
+    """'chr10' -> (chr10, chromosome length); 'chr10:1-20000000' -> (chr10, 20000000), end clipped to the chromosome."""
+    if ":" not in region:
+        return region, chrom_len[region]
+    chrom, span = region.rsplit(":", 1)
+    start, end = (int(t) for t in span.replace(",", "").split("-"))
+    if start < 1 or end < start:
+        sys.exit(f"{PROCESS}: bad region {region}")
+    return chrom, min(end, chrom_len[chrom]) - start + 1
+
+
+def effective_rigidity(n_kept, region, chrom_len):
+    """rigidity at RIGIDITY_REF_MARKERS markers per chromosome, scaled to the unit's kept markers per chromosome."""
+    if RIGIDITY_REF_MARKERS == 0:
+        return RIGIDITY, "rigidity_ref_markers 0: rigidity as given"
+    chrom = region.split(":", 1)[0]
+    if chrom not in chrom_len:
+        sys.exit(f"{PROCESS}: chromosome {chrom} of region {region} is not in {FAI}")
+    _, span = region_span(region, chrom_len)
+    per_chrom = n_kept * chrom_len[chrom] / span
+    r = max(1, round(RIGIDITY * per_chrom / RIGIDITY_REF_MARKERS))
+    return r, (f"rigidity {RIGIDITY} at {RIGIDITY_REF_MARKERS} markers per chromosome; {n_kept} kept markers in {span} bp of "
+               f"{chrom} ({chrom_len[chrom]} bp) = {per_chrom:.0f} per chromosome -> rigidity {r}")
 
 
 def sample_of(token):
@@ -70,11 +104,14 @@ def main():
     drop_invariant = truthy(a.drop_invariant)
     if RIGIDITY < 1:
         sys.exit(f"{PROCESS}: rigidity must be >= 1, got {RIGIDITY}")
-    floor = math.ceil(MIN_MARKERS_FACTOR * RIGIDITY)
-    if floor < 2 * RIGIDITY:
-        print(f"WARN {PROCESS}: floor {floor} (min_markers_factor {MIN_MARKERS_FACTOR} x rigidity {RIGIDITY}) is below "
-              f"RTIGER's 2 x rigidity = {2 * RIGIDITY}; using {2 * RIGIDITY}", file=sys.stderr)
-        floor = 2 * RIGIDITY
+    if RIGIDITY_REF_MARKERS < 0:
+        sys.exit(f"{PROCESS}: rigidity_ref_markers must be >= 0 (0 = no scaling), got {RIGIDITY_REF_MARKERS}")
+    chrom_len = {}
+    with open(FAI) as fh:
+        for ln in fh:
+            x = ln.split(TAB)
+            if len(x) >= 2:
+                chrom_len[x[0]] = int(x[1])
 
     markers = {}
     contigs = []
@@ -141,6 +178,15 @@ def main():
     n_kept = {c: 0 for c in contigs}
     for c, _ in kept:
         n_kept[c] += 1
+    rigidity, why = effective_rigidity(len(kept), REGION, chrom_len)
+    print(f"line_marker_qc {PREFIX}: {why}")
+    floor = math.ceil(MIN_MARKERS_FACTOR * rigidity)
+    if floor < 2 * rigidity:
+        print(f"WARN {PROCESS}: floor {floor} (min_markers_factor {MIN_MARKERS_FACTOR} x rigidity {rigidity}) is below "
+              f"RTIGER's 2 x rigidity = {2 * rigidity}; using {2 * rigidity}", file=sys.stderr)
+        floor = 2 * rigidity
+    with open(f"{PREFIX}.rigidity.txt", "w") as out:
+        out.write(f"{rigidity}{NL}")
     covered = {}
     reads = {}
     for key in kept:

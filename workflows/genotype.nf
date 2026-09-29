@@ -85,7 +85,7 @@ workflow GENOTYPE {
         ANCESTRY_INFERENCE(
             ch_groups.filter { g, _c, _i, _ids, _m -> g.role == 'line' },
             ch_units.map { u -> [u, zgStorePath('step4', u.donor, u.region)] },
-            ch_regions, ch_lowcopy, ch_ref, params.rigidity, params.min_markers_factor,
+            ch_regions, ch_lowcopy, ch_ref, params.rigidity, params.min_markers_factor, params.rigidity_ref_markers,
         )
         ch_versions = ANCESTRY_INFERENCE.out.versions
     }

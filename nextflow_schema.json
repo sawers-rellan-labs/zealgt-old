@@ -650,7 +650,17 @@
                     ],
                     "pattern": "^-?\\d+$",
                     "default": 500,
-                    "description": "4: RTIGER rigidity."
+                    "description": "4: RTIGER rigidity at rigidity_ref_markers markers per chromosome; scaled per donor x chromosome to its marker density (LINE_MARKER_QC)."
+                },
+                "rigidity_ref_markers": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^\\d+$",
+                    "default": 100000,
+                    "minimum": 0,
+                    "description": "4: markers per chromosome at which rigidity applies (500 for 100,000 SNPs, user 2026-09-29); effective rigidity = round(rigidity x kept markers per chromosome / this). 0 = rigidity as given."
                 },
                 "min_markers_factor": {
                     "type": [

@@ -103,10 +103,10 @@ hidepth_factor: 2
 af_gt_half_p: 0.01
 
 # ------------------------------------------------------------------------------------------------ stage 4: ancestry
-# [TO SET before ancestry_inference] the user rule (2026-09-29): 500 for 100,000 SNPs per chromosome, scaled to the RTIGER
-# marker count of the whole chromosome (round(500 x markers / 100,000)); read the counts after variant_discovery. The two
-# donors have different counts and this is one value for the run: how to set it per donor is open (user).
+# [decided, user 2026-09-29] 500 for 100,000 SNPs per chromosome; LINE_MARKER_QC scales it per donor x chromosome to the
+# donor's own RTIGER marker count (round(500 x kept markers / 100,000); written to ancestry/<unit>.rigidity.txt)
 rigidity: 500
+rigidity_ref_markers: 100000
 min_markers_factor: 2            # [decided, PLAN §4 #13] line excluded below 2 x rigidity covered own tier-A markers
 rtiger_drop_invariant_sites: true   # as zealbc1
 

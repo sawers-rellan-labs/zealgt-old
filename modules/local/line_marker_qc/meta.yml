@@ -35,10 +35,21 @@ input:
         ontologies: []
   - rigidity:
       type: integer
-      description: RTIGER rigidity (params.rigidity, 500)
+      description: RTIGER rigidity at rigidity_ref_markers markers per chromosome (params.rigidity, 500)
   - min_markers_factor:
       type: float
-      description: Covered-marker floor factor (params.min_markers_factor, 2); floor = ceil(factor x rigidity), at least 2 x rigidity
+      description: Covered-marker floor factor (params.min_markers_factor, 2); floor = ceil(factor x effective rigidity), at least 2 x effective rigidity
+  - rigidity_ref_markers:
+      type: integer
+      description: Markers per chromosome at which rigidity applies (params.rigidity_ref_markers, 100000); effective rigidity = max(1, round(rigidity x kept markers x chromosome length / region length / rigidity_ref_markers)); 0 = rigidity as given
+  - fai:
+      type: file
+      description: Reference FASTA index (chromosome lengths)
+      pattern: "*.fai"
+      ontologies: []
+  - region:
+      type: string
+      description: The unit's region, chr or chr:start-end (e.g. chr10 or chr10:1-20000000)
 output:
   counts:
     - - meta:
@@ -61,6 +72,17 @@ output:
           type: file
           description: "Per line x contig: markers, markers_kept, covered, reads, mean_depth, floor, contig_pass, line_pass, reason (below_marker_floor | no_markers: one contig . row per line when there is no marker | .)"
           pattern: "*.line_qc.tsv"
+          ontologies: []
+  rigidity:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the donor x region unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+      - "*.rigidity.txt":
+          type: file
+          description: The unit's effective rigidity (one integer), used by RTIGER and by the floor
+          pattern: "*.rigidity.txt"
           ontologies: []
   versions:
     - "*.line_marker_qc.versions.yml":

@@ -52,6 +52,16 @@
                     ]
                 ],
                 "2": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.rigidity.txt:md5,905f2bb7e8852fb96cb9aeff9568a839"
+                    ]
+                ],
+                "3": [
                     "D1.chr10_1-5000.line_marker_qc.versions.yml:md5,6db9b66ae351a4393dd39beb8e283064"
                 ],
                 "counts": [
@@ -74,12 +84,22 @@
                         "D1.chr10_1-5000.line_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
+                "rigidity": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.rigidity.txt:md5,905f2bb7e8852fb96cb9aeff9568a839"
+                    ]
+                ],
                 "versions": [
                     "D1.chr10_1-5000.line_marker_qc.versions.yml:md5,6db9b66ae351a4393dd39beb8e283064"
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:47:22.931498",
+        "timestamp": "2026-09-29T18:29:46.249305",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

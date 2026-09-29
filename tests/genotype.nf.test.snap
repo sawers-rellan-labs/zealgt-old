@@ -427,6 +427,7 @@
                 "store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.counts.tsv",
                 "store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.line_marker_qc.versions.yml",
                 "store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.line_qc.tsv",
+                "store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.rigidity.txt",
                 "store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.rtiger.versions.yml",
                 "store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.rtiger_markers.tsv",
                 "store_stub/genotype/test/ancestry/Zx.9001_P1.chr10_1-16000.rtiger_markers.versions.yml",
@@ -445,6 +446,7 @@
                 "Zx.9001_P1.chr10_1-16000.counts.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "Zx.9001_P1.chr10_1-16000.line_marker_qc.versions.yml:md5,8e895c75bc7d1d833928953ff8f06334",
                 "Zx.9001_P1.chr10_1-16000.line_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "Zx.9001_P1.chr10_1-16000.rigidity.txt:md5,6d7fce9fee471194aa8b5b6e47267f03",
                 "Zx.9001_P1.chr10_1-16000.rtiger.versions.yml:md5,43bcd223efe7a3568763b2252632d721",
                 "Zx.9001_P1.chr10_1-16000.rtiger_markers.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "Zx.9001_P1.chr10_1-16000.rtiger_markers.versions.yml:md5,35bd4fb56aa81fc8ca827271abaa3b9f",
@@ -457,7 +459,7 @@
                 "Zx.9001_P1.chr10_1-16000.summary.tsv:md5,56e3ff03257cb27755e303b0d8e84905"
             ]
         ],
-        "timestamp": "2026-09-28T08:32:55.160661",
+        "timestamp": "2026-09-29T18:34:58.134714",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

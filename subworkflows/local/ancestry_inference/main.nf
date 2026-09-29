@@ -3,7 +3,8 @@
 // per unit (donor x region):
 //   step-4 table (store) -> RTIGER_MARKERS (own tier-A sites; storeDir ancestry/, also read by reporting)
 //   lines -> MASK_READ_STARTS -> LINE_ALLELE_COUNTS (at the tier-A sites) -> LINE_MARKER_QC (coverage floor
-//   min_markers_factor x rigidity; storeDir ancestry/: counts + line_qc) -> RTIGER (storeDir ancestry/: <donor>.<label>.segments.csv)
+//   min_markers_factor x rigidity, rigidity scaled to the unit's marker density; storeDir ancestry/: counts + line_qc +
+//   rigidity) -> RTIGER at that rigidity (storeDir ancestry/: <donor>.<label>.segments.csv)
 // Every unit needs a line group (all lines of a donor failing sample QC stops the join with an error, not silently).
 //
 include { REGION_BED                          } from '../../../modules/local/region_bed/main'
@@ -32,8 +33,9 @@ workflow ANCESTRY_INFERENCE {
     ch_regions         // channel: [ val(rmeta), val(region) ]
     ch_lowcopy         // channel: value [ val(meta), bed ]
     ch_ref             // channel: value [ val(meta), fasta, fai ]
-    rigidity           // value: RTIGER rigidity (params.rigidity)
+    rigidity           // value: RTIGER rigidity at rigidity_ref_markers markers per chromosome (params.rigidity)
     min_markers_factor // value: covered-marker floor factor (params.min_markers_factor)
+    rigidity_ref_markers // value: markers per chromosome at which rigidity applies; 0 = no scaling (params.rigidity_ref_markers)
 
     main:
     RTIGER_MARKERS(ch_step4)
@@ -67,15 +69,24 @@ workflow ANCESTRY_INFERENCE {
     def ch_lmq = LINE_ALLELE_COUNTS.out.counts
         .map { u, counts -> [u.id, u, counts] }
         .join(ch_markers.map { id, _u, sites -> [id, sites] }, failOnMismatch: true)
-        .map { _id, u, counts, sites -> [u, counts, sites] }
-    LINE_MARKER_QC(ch_lmq, rigidity, min_markers_factor)
+        .multiMap { _id, u, counts, sites ->
+            input: [u, counts, sites]
+            region: u.interval
+        }
+    LINE_MARKER_QC(ch_lmq.input, rigidity, min_markers_factor, rigidity_ref_markers, ch_ref.map { _m, _fa, fai -> fai },
+                   ch_lmq.region)
 
-    def ch_rt = LINE_MARKER_QC.out.counts.multiMap { u, counts ->
-        counts: [u, counts]
-        chrom_int: zgChromInt(u.interval)
-        donor: u.donor
-    }
-    RTIGER(ch_rt.counts, rigidity, ch_rt.chrom_int, ch_rt.donor)
+    // RTIGER runs at the unit's effective rigidity (LINE_MARKER_QC <prefix>.rigidity.txt, scaled to marker density)
+    def ch_rt = LINE_MARKER_QC.out.counts
+        .map { u, counts -> [u.id, u, counts] }
+        .join(LINE_MARKER_QC.out.rigidity.map { u, r -> [u.id, r] }, failOnMismatch: true)
+        .multiMap { _id, u, counts, r ->
+            counts: [u, counts]
+            rigidity: r.text.trim().toInteger()
+            chrom_int: zgChromInt(u.interval)
+            donor: u.donor
+        }
+    RTIGER(ch_rt.counts, ch_rt.rigidity, ch_rt.chrom_int, ch_rt.donor)
 
     emit:
     segments = RTIGER.out.segments          // channel: [ val(unit), <donor>.<label>.segments.csv ]

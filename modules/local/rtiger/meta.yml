@@ -36,7 +36,7 @@ input:
         ontologies: []
   - rigidity:
       type: integer
-      description: RTIGER rigidity, the minimum run length in markers (params.rigidity, 500)
+      description: RTIGER rigidity, the minimum run length in markers; the unit's effective rigidity (params.rigidity at params.rigidity_ref_markers markers per chromosome, scaled by LINE_MARKER_QC)
   - chrom_int:
       type: integer
       description: Integer chromosome of the region (nilHMM needs an integer chr), e.g. 10 for chr10
