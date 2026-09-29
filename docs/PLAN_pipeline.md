@@ -199,8 +199,8 @@ Same steps for every library, one DEMUX task per library × lane, MERGE_LANES pe
 → cutadapt 5.2 trimming (nf-core CUTADAPT: the full TruSeq read-through adapter on each read, `-a` / `-A`; `--nextseq-trim=15`;
 `-m 36`; it replaced batch 1's Trimmomatic, see *Trimming* below) →
 minibwa -x sr → read groups → `samtools fixmate -m` → `sort` → `markdup -d 2500` → CRAM; demux FASTQs in `work/` only, trimmed
-pairs also in the FASTQ checkpoint until the library's CRAMs are stored and verified (`work/` peak ≈ 2–3 × the library: demuxed +
-trimmed FASTQs; at most `--max_libraries` libraries per run, all concurrent, §5 rules 3–4). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
+pairs also in the FASTQ checkpoint until the library's CRAMs are stored and verified (`work/` peak ≈ 3 × the library: lane demux +
+merged + trimmed FASTQs + CRAMs; at most `--max_libraries` libraries per run, all concurrent, §5 rules 3–4). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
 sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comparison.
 
 **Trimming** (user, 2026-09-29): cutadapt 5.2 (nf-core CUTADAPT) replaces Trimmomatic after MERGE_LANES. Batch 1 (Nirwan) and
@@ -456,11 +456,14 @@ Rules for v2:
    can be written without rerunning it.
 3. Demux FASTQs never outlive their library's stage 1 in `work/`: DEMUX (per lane) → MERGE_LANES → CUTADAPT pass FASTQs through
    `work/` (§0, Task 2, user 2026-09-27), and each sample's trimmed pair is **hardlinked into the FASTQ checkpoint**
-   `/share/maize/frodrig4/fastq_checkpoint/<library>/` (user, 2026-09-29; §3). **Checkpoint footprint ≈ N libraries × ~1 ×
-   raw** (trimmed pairs; Gate 1 estimate for full 1A: trimmed ≈ 200 GB vs demux FASTQs ≈ 237 GB, `docs/REQUIREMENTS.md` §4), and hardlinked, so while `work/` holds the same file it costs
+   `/share/maize/frodrig4/fastq_checkpoint/<library>/` (user, 2026-09-29; §3). **Checkpoint footprint ≈ N libraries × 0.83 ×
+   raw** (cutadapt level-4 trimmed pairs, measured 2026-09-29: BC1 120-125 B per kept pair = 0.83 × raw, 0.855 × the demux
+   FASTQs, `simplify_g1l4` and the compression retest; batch 1 ~145 B per pair ≈ 0.82 × raw, estimated from `simplify_b1g1`
+   at level 1; +9 % over Trimmomatic's 0.76 × raw at 3A; full 1A ≈ 210 GB; `docs/REQUIREMENTS.md` §4), and hardlinked, so while `work/` holds the same file it costs
    **no extra space and no extra inode**; once `work/` is cleaned the checkpoint alone holds those bytes (the space moves, it does not
    grow). Files: 2 per sample + `samplesheet.csv` + `cleanup_status.tsv` (≈ 26 per 12-sample library), negligible against the group
-   quota. The checkpoint must stay on the same GPFS as `work/` (a hardlink cannot cross `/share` → `/rsstu`).
+   quota (12 samples: 38 files, ~110 GB for a typical 130 GB BC1 library; a 96-sample batch-1 plate: 290 files, 50-75 GB).
+   The checkpoint must stay on the same GPFS as `work/` (a hardlink cannot cross `/share` → `/rsstu`).
    **At most N libraries hold FASTQs on `/share`** (user, 2026-09-29, replacing "one library in flight", which rested on the wrong
    2 TB scratch figure — the group has 20 TB, and the file count is the binding limit; bound as a run guard, coordinator 2026-09-28).
    Nothing is removed automatically: `work/` keeps every library of a run for the whole run (and after it, until cleaned with
@@ -474,9 +477,11 @@ Rules for v2:
    and `checkpoint_stub*` dirs are other checkpoint roots and not counted); the error names those libraries and their
    `cleanup_status.tsv`, whose checkpoint may be removed only with the user's consent. The requested libraries then all run
    concurrently: **no `maxForks`** on DEMUX or any other process (at most N × lanes DEMUX tasks), the queue sets the wall time.
-   `read_alignment` adds no library (it reads existing checkpoints). Each library holds ≈ 2–3 × its raw size in `work/` at peak (lane
-   demux outputs + merged + trimmed FASTQs; Gate 2 measures it) and ~900 files, so N is set from the Gate 2 numbers so that the peak
-   stays under ~5 TB of `/share` and the group stays under 90 % of its file quota (default N = 4: ≈ 1.5–4 TB). The guard sees only
+   `read_alignment` adds no library (it reads existing checkpoints). Each library holds ≈ 3 × its raw size in `work/` at peak (lane
+   demux FASTQs 0.95 + merged copy 0.95 + trimmed 0.83 + CRAMs 0.29; Gate 2 3A measured 2.72 × raw with Trimmomatic) and
+   ~1.3 K files for a BC1 library (+39 per lane beyond 3), ~7.1 K for a 96-sample batch-1 plate, so N is set so that the peak
+   stays under ~5 TB of `/share` and the group stays under 90 % of its file quota (default N = 4: ≈ 1.4 TB for CRAM Gate 2's
+   largest wave, w02 = 2B 2H 3C BZea6; ≈ 3.6 TB for the 4 largest BC1 libraries 4E, 1C, 1D, 1Ar; checkpoint 0.39 / 0.99 TB). The guard sees only
    checkpoint dirs, not the `work/` of earlier runs: those are cleaned after each run (rule 4). A chained run's stage 2 reads
    CUTADAPT's `work/` files, not the checkpoint, so a library's stage-1 task dirs can be cleaned (with consent) only **after the
    run has ended** — then `read_alignment` reads the checkpoint, and a `-resume` of that session would redo stage 1. Cleaning them
@@ -546,7 +551,8 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
   below). The FASTQ checkpoint of these libraries is **kept** (no consented cleanup of them) until the genotype workflow's Gate 2
   passes, so a CRAM-side fix found there reruns only stage 2 (`--entry read_alignment`). The run guard counts the checkpoint dirs
   already present, so with the checkpoints kept wave k passes `--max_libraries 4k` (4, 8, 12): 4 libraries run at a time, and the
-  bound says explicitly how many libraries' FASTQs are then held on `/share` (≈ 1× raw each, §5). The stage-1 `work/` of a wave
+  bound says explicitly how many libraries' FASTQs are then held on `/share` (≈ 0.83 × raw each, §5: 0.36 / 0.75 / 1.05 TB after waves
+  w01-w03 of `docs/runs/cram_gate2_w0{1,2,3}.md`; user 2026-09-29: keep the checkpoints, `--max_libraries` 4 / 8 / 12). The stage-1 `work/` of a wave
   may still be cleaned with consent (the checkpoint files are hardlinks and stay).
 - **Genotype workflow Gate 1 / Gate 2** on those CRAMs (genotype session's gates; Gate 2 = the development donors in full).
 - **Gate 3 · full dataset in waves, on the user's go**, once the Gate 2 numbers justify the allocation. CRAM workflow: **waves** of ≤ `--max_libraries` libraries,

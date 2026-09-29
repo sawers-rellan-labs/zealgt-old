@@ -138,7 +138,7 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
 Disk / files (Gate 2): `work/` **332 GB, 1,310 files** at the end (peak ≈ the end state: lane FASTQs 124.7 GB + merged copies 124.7 GB + trimmed
 99.4 GB; no trimlog since 98f8bae), plus `tmp/` 0.5 GB / 3 files (sort temps of stopped attempts). Store: 12 × 8 files, CRAMs 0.74–5.32 GB,
 **36 GB for 3A = 0.27 × raw**; demux_qc 6 files, registry 2 files. Group quota after the run: 785 GB / 20 TB, 802,230 / 1,000,000 files
-(lab-wide; this run holds ~1.3 K). Full-scale planning: `work/` ≈ 2.5 × raw per library in flight (MERGE_LANES doubles the demux FASTQs until
+(lab-wide; this run holds ~1.3 K). Full-scale planning: `work/` ≈ 3 × raw per library in flight, including the CRAMs (MERGE_LANES doubles the demux FASTQs until
 the lane task dirs are cleaned).
 
 **Notes from Gate 2 (BC1 3A, full library, `-profile hazel,normal`, 2026-09-28; they supersede the estimates above where they differ).**
@@ -166,7 +166,7 @@ the lane task dirs are cleaned).
   bookkeeping tasks 10 min / 1 GB. On `normal` each task goes to short QOS when it asks ≤ 1 h 45, else to compute / normal.
 - Resources are set only by directives (`conf/hazel.config`, `conf/normal.config`, `conf/short.config`) and read in the scripts as
   `task.cpus` / `task.memory` (nf-core standard, PLAN §2); `scripts/check_resources.sh` checks what each process actually gets.
-- The FASTQ checkpoint (PLAN §3, §5 rule 3) adds ≈ 1 × raw per library on `/share` (at most `--max_libraries` libraries: requested + already checkpointed), hardlinked from `work/`, so no space or
+- The FASTQ checkpoint (PLAN §3, §5 rule 3) adds ≈ 0.83 × raw per library (cutadapt L4) on `/share` (at most `--max_libraries` libraries: requested + already checkpointed), hardlinked from `work/`, so no space or
   inode beyond `work/` while the task dirs exist.
 
 **Trimmomatic vs cutadapt (2026-09-29; hazel jobs 988773–988842; measurement log `agent/20260929_182000_trim_comparison_summary.txt`).** 8 M random pairs (fixed seed) from

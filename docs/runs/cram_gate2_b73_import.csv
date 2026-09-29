@@ -1,0 +1,3 @@
+sample_id,source,role,library,donor,import_set,path,index,size_bytes,made_by,dup_marked,read_groups,include,note
+B73_ERR3288215,b73_control,b73_control,,,b73_control,/rsstu/users/r/rrellan/BZea/ZEAL/results/b73_control/ERR3288215/B73_ERR3288215.cram,/rsstu/users/r/rrellan/BZea/ZEAL/results/b73_control/ERR3288215/B73_ERR3288215.cram.crai,8943423931,zealbc1 b73_control/ERR3288215/align_b73.sbatch,no,check,TRUE,SRA ERR3288215
+B73_skim10,b73_control,b73_control,,,b73_control,/rsstu/users/r/rrellan/BZea/ZEAL/results/b73_control/skim10/B73_skim10.bam,/rsstu/users/r/rrellan/BZea/ZEAL/results/b73_control/skim10/B73_skim10.bam.bai,7296679956,zealbc1 b73_control/skim10/merge_skim10.sbatch,no,check,TRUE,"BAM, merge of 10 batch-1 B73 checks"

@@ -1,0 +1,20 @@
+# Run card (params): CRAM Gate 2, B73 controls — markdup_import into the production store (<store>/cram_import/). Approved by
+# the user 2026-09-29 (submitted together with wave 1); card docs/runs/cram_gate2_b73.md. Independent of the demux waves: markdup_import adds no library, so neither the registry guard
+# nor --max_libraries applies; it can run next to wave 1 (own run_id, own work/).
+# Import sheet: docs/runs/cram_gate2_b73_import.csv = the two import_set b73_control rows of meta/dev_import.csv, verbatim
+# (validated against assets/schema_import.json; paths checked on hazel 2026-09-29, sizes match size_bytes):
+#   B73_ERR3288215  ZEAL/results/b73_control/ERR3288215/B73_ERR3288215.cram (+ .crai)  8.9 GB  SRA ERR3288215, 15.5x
+#   B73_skim10      ZEAL/results/b73_control/skim10/B73_skim10.bam (+ .bai)            7.3 GB  merge of 10 batch-1 B73 checks, 5.7x
+# Neither is in ZEAL/store yet (cram_import/ does not exist). -profile hazel,normal because ERR3288215's CollectWgsMetrics
+# (~2.5 h) does not fit the short QOS (genotype branch docs/runs/genotype_gate1_zx0540.md).
+# The genotype branch reads them as role b73_control, store_dir cram_import, under --cram_store ZEAL/store (its default
+# b73_controls = B73_ERR3288215,B73_skim10).
+#
+# Submit (after commit + push + pull):
+#   ssh hazel 'sbatch --qos=normal --partition=compute --time=3-00:00:00 --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch cram_gate2_b73 -profile hazel,normal -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_b73.yml'
+workflow: cram
+entry: markdup_import
+import_sheet: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_b73_import.csv
+import_sets: b73_control
+store: /rsstu/users/r/rrellan/BZea/ZEAL/store
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_b73
