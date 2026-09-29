@@ -1049,7 +1049,10 @@ def zgRegistryFile() {
 // The registry rows by sample_id, as text (every snapshot column must be in the header)
 def zgRegistryRows() {
     def rows = zgReadCsv(file(params.registry, checkIfExists: true))
-    def missing = rows ? (zgRegistryFields() + zgRegistryResolvedFields()) - rows[0].keySet() : []
+    if (!rows) {
+        error("--registry ${params.registry} has no rows")
+    }
+    def missing = (zgRegistryFields() + zgRegistryResolvedFields()) - rows[0].keySet()
     if (missing) {
         error("--registry ${params.registry} lacks the columns ${missing} (meta/build_samples.py writes them)")
     }
