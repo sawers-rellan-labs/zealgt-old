@@ -35,11 +35,11 @@ nextflow_pipeline {
                 { assert file("$outputDir/checkpoint_stub/LIBX/samplesheet.csv").readLines().size() == 4 },
                 { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (6 files') },
                 // cleanup commands: one file, header first, LIBX removable with its 9 stage-1 task dirs (DEMUX x 2, MERGE_LANES,
-                // TRIMMOMATIC x 3, FASTQC x 3) + the checkpoint as consent-marked (commented) removal lines, no active rm
+                // CUTADAPT x 3, FASTQC x 3) + the checkpoint as consent-marked (commented) removal lines, no active rm
                 { assert cleanup.size() == 1 },
                 { assert cl[2].contains('NEVER RUN BY THE PIPELINE') },
                 { assert cl.contains('# ==== library LIBX: removable: all 3 CRAMs stored and verified ====') },
-                { assert cl.any { l -> l.startsWith('# work/ task dirs of this run holding LIBX') && l.contains('9 dirs (DEMUX 2, MERGE_LANES 1, TRIMMOMATIC 3, FASTQC 3)') } },
+                { assert cl.any { l -> l.startsWith('# work/ task dirs of this run holding LIBX') && l.contains('9 dirs (DEMUX 2, MERGE_LANES 1, CUTADAPT 3, FASTQC 3)') } },
                 { assert cl.count { l -> l.startsWith('# rm -r -- ') } == 10 },
                 { assert !cl.any { l -> l.trim().startsWith('rm ') } },
                 { assert cl.any { l -> l.startsWith('# CONSENT: nextflow clean -f ') } },
@@ -88,7 +88,12 @@ nextflow_pipeline {
                 { assert records.size() == 4 },
                 { assert records.every { r -> r.read_group == '@RG\\tID:' + r.sample + '\\tSM:' + r.sample + '\\tLB:LIBB1\\tPL:ILLUMINA\\tPU:TESTFCB1.1,TESTFCB1.2' } },
                 { assert records.every { r -> r.origin.tar_members_r1 == ['LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz', 'LIBB1_R1/LIBB1_S1_L002_R1_001.fastq.gz'] && r.origin.raw_files_r1 == ['R1.tar'] } },
-                { assert records.every { r -> r.origin.read_structure == '8B12S+T 8S+T' && r.origin.layout == 'r1_only' && r.trimming.phred == 'phred33' } },
+                { assert records.every { r -> r.origin.read_structure == '8B12S+T 8S+T' && r.origin.layout == 'r1_only' } },
+                // trimming settings (values = the params; not frozen here) and the stage-1 tool versions, keyed by process
+                // (DEMUX's and CUTADAPT's cutadapt come from different envs)
+                { assert records.every { r -> r.trimming.keySet() == ['tool', 'adapter_r1', 'adapter_r2', 'args'] as Set && r.trimming.tool == 'cutadapt' && r.trimming.adapter_r1 ==~ /[ACGTN]+/ && r.trimming.adapter_r2 ==~ /[ACGTN]+/ } },
+                { assert records.every { r -> r.origin.stage1_tool_versions.keySet() == ['CUTADAPT.cutadapt', 'DEMUX.cutadapt', 'DEMUX.pigz', 'DEMUX.tar'] as Set } },
+                { assert sheet[0].contains(',demux_args,trim_tool,trim_adapter_r1,trim_adapter_r2,trim_args,raw_location,') },
                 // raw registry values (the registry's spelling) and the resolved ones apart: PB1_SID3 carries a correction
                 { assert records[2].registry.row.pedigree == 'Zx.TEST_P2_P1_P3.1.1.1' && records[2].registry.resolved.pedigree_resolved == 'Zx.TEST_P3_P1_P3.1.1.1' },
                 { assert records[3].registry.row.is_check == 'TRUE' && records[3].registry.row.role == 'check' },
@@ -186,8 +191,8 @@ nextflow_pipeline {
                                   'pedigree_resolved', 'nil_id_resolved', 'donor_resolved', 'correction_ids']
                 def cols = ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'registry_file', 'registry_note'] +
                            reg_fields.collect { f -> "reg_${f}".toString() } +
-                           ['read_group', 'read_structure', 'layout', 'barcode_r1', 'barcode_r2', 'demux_args', 'trim_illuminaclip', 'trim_args',
-                            'trim_adapters', 'raw_location', 'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample',
+                           ['read_group', 'read_structure', 'layout', 'barcode_r1', 'barcode_r2', 'demux_args', 'trim_tool', 'trim_adapter_r1',
+                            'trim_adapter_r2', 'trim_args', 'raw_location', 'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample',
                             'stage1_run_id', 'stage1_session_id', 'stage1_code_version', 'stage1_tool_versions']
                 // LX_1: a registry row with a nil_id and a correction (resolved values differ); LX_2: not in the registry
                 def reg = [LX_1: [sample_id: 'LX_1', source: 'bc1', role: 'bc1_sample', library: 'LIBX', well: '1', donor: 'Zx.TEST_P1',
@@ -196,19 +201,19 @@ nextflow_pipeline {
                                   correction_ids: 'C9001'],
                            LX_2: null]
                 def rows = [['LX_1', 'GCCATA'], ['LX_2', 'TCTGGT']].collect { s, bc ->
-                    [1, 2].each { r -> new File(ck, "${s}.paired.trim_${r}.fastq.gz").text = '' }
-                    def row = [sample: s, library: 'LIBX', fastq_1: "${ck}/${s}.paired.trim_1.fastq.gz", fastq_2: "${ck}/${s}.paired.trim_2.fastq.gz",
+                    [1, 2].each { r -> new File(ck, "${s}_${r}.trim.fastq.gz").text = '' }
+                    def row = [sample: s, library: 'LIBX', fastq_1: "${ck}/${s}_1.trim.fastq.gz", fastq_2: "${ck}/${s}_2.trim.fastq.gz",
                                source: 'bc1', role: 'bc1_sample', donor: 'Zx.TEST_P1', taxon: 'mexicana', registry_file: 'tests/fixtures/registry_test.csv',
                                registry_note: reg[s] ? '' : 'sample_id not in the registry'] +
                               reg_fields.collectEntries { f -> ["reg_${f}".toString(), reg[s]?.get(f) ?: ''] } +
                               [read_group: "\"@RG\\tID:${s}\\tSM:${s}\\tLB:LIBX\\tPL:ILLUMINA\\tPU:TESTFC01.1,TESTFC01.2\"", read_structure: '6B2S+T 6B2S+T',
                                layout: 'symmetric', barcode_r1: bc, barcode_r2: bc, demux_args: '-e 0 --no-indels --discard-untrimmed -Z',
-                               trim_illuminaclip: '2:30:10', trim_args: 'LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36',
-                               trim_adapters: '/adapters/TruSeq3-PE-2.fa', raw_location: '/raw/LIBX',
+                               trim_tool: 'cutadapt', trim_adapter_r1: 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCA',
+                               trim_adapter_r2: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT', trim_args: '--nextseq-trim=15 -m 36', raw_location: '/raw/LIBX',
                                raw_files_r1: 'LIBX_TESTFC01_L1_1.fq.gz;LIBX_TESTFC01_L2_1.fq.gz', raw_files_r2: 'LIBX_TESTFC01_L1_2.fq.gz;LIBX_TESTFC01_L2_2.fq.gz',
                                tar_members_r1: '', tar_members_r2: '', subsample: '0', stage1_run_id: '',
                                stage1_session_id: '00000000-0000-0000-0000-000000000000', stage1_code_version: 'test',
-                               stage1_tool_versions: 'cutadapt=4.9;pigz=2.8;tar=1.35;trimmomatic=0.39']
+                               stage1_tool_versions: 'CUTADAPT.cutadapt=5.2;DEMUX.cutadapt=4.9;DEMUX.pigz=2.8;DEMUX.tar=1.35']
                     cols.collect { c -> row[c] }.join(',')
                 }
                 new File(ck, 'samplesheet.csv').text = ([cols.join(',')] + rows).join('\n') + '\n'
@@ -229,7 +234,7 @@ nextflow_pipeline {
                 { assert workflow.success },
                 // stage 2 only: 2 x (ALIGN_MARKDUP, SAMTOOLS_STATS, PICARD, PROVENANCE), REGISTRY, MULTIQC; no stage-1 task
                 { assert workflow.trace.succeeded().size() == 10 },
-                { assert !workflow.trace.tasks().any { t -> t.name =~ /DEMUX|MERGE_LANES|TRIMMOMATIC|FASTQC/ } },
+                { assert !workflow.trace.tasks().any { t -> t.name =~ /DEMUX|MERGE_LANES|CUTADAPT|FASTQC/ } },
                 { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (4 files') },
                 // cleanup commands: no stage-1 task in this run, so only the checkpoint's (commented) removal line
                 { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.with { cls -> cls.size() == 1 } },

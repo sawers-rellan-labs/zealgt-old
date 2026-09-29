@@ -154,7 +154,6 @@ def toolCitationText() {
     def citation_text = [
             "Tools used in the workflow included:",
             "cutadapt (Martin 2011),",
-            "Trimmomatic (Bolger et al. 2014),",
             "FastQC (Andrews 2010),",
             "minibwa (Li, https://github.com/lh3/minibwa),",
             "SAMtools (Danecek et al. 2021),",
@@ -169,7 +168,6 @@ def toolCitationText() {
 def toolBibliographyText() {
     def reference_text = [
             "<li>Martin M (2011) Cutadapt removes adapter sequences from high-throughput sequencing reads. EMBnet.journal 17(1):10-12. doi: 10.14806/ej.17.1.200</li>",
-            "<li>Bolger AM, Lohse M, Usadel B (2014) Trimmomatic: a flexible trimmer for Illumina sequence data. Bioinformatics 30(15):2114-2120. doi: 10.1093/bioinformatics/btu170</li>",
             "<li>Andrews S (2010) FastQC, URL: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/</li>",
             "<li>Li H. minibwa, URL: https://github.com/lh3/minibwa</li>",
             "<li>Danecek P et al. (2021) Twelve years of SAMtools and BCFtools. GigaScience 10(2):giab008. doi: 10.1093/gigascience/giab008</li>",
@@ -428,20 +426,20 @@ def zgDemuxInputs() {
         out.libraries << [lmeta, raw.r1, raw.r2, lrows.collect { r -> [r.sample_id, r.barcode_r1, r.barcode_r2 ?: ''] }, structures, [raw.members_r1, raw.members_r2]]
         def ckpt = zgCheckpointDir(lib)
         lrows.each { r ->
-            // fastq_1 / fastq_2: where TRIMMOMATIC's publishDir (conf/modules.config) hardlinks the trimmed pair
+            // fastq_1 / fastq_2: where CUTADAPT's publishDir (conf/modules.config) hardlinks the trimmed pair
             def row = zgCheckpointRow([
                 sample: r.sample_id, library: lib,
-                fastq_1: ckpt.resolve("${r.sample_id}.paired.trim_1.fastq.gz"), fastq_2: ckpt.resolve("${r.sample_id}.paired.trim_2.fastq.gz"),
+                fastq_1: ckpt.resolve("${r.sample_id}_1.trim.fastq.gz"), fastq_2: ckpt.resolve("${r.sample_id}_2.trim.fastq.gz"),
                 source: r.source, role: r.role, donor: r.donor, taxon: r.taxon,
                 registry_file: registry_file] + zgRegistryColumnsOf(registry_rows[r.sample_id], r) + [
                 read_group: zgReadGroup(r.sample_id, r.rg_lb ?: r.library, r.rg_pl, pu),
                 read_structure: structures.join(' '), layout: first.barcode_layout, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2,
-                demux_args: params.demux_args, trim_illuminaclip: params.trim_illuminaclip, trim_args: params.trim_args,
-                trim_adapters: params.trim_adapters, raw_location: raw.location,
+                demux_args: params.demux_args, trim_tool: 'cutadapt', trim_adapter_r1: params.trim_adapter_r1,
+                trim_adapter_r2: params.trim_adapter_r2, trim_args: params.trim_args, raw_location: raw.location,
                 raw_files_r1: raw.r1*.name.join(';'), raw_files_r2: raw.r2*.name.join(';'),
                 tar_members_r1: raw.members_r1.join(';'), tar_members_r2: raw.members_r2.join(';'), subsample: zgSubsample(),
                 stage1_run_id: params.run_id, stage1_session_id: workflow.sessionId, stage1_code_version: settings.code_version,
-                stage1_tool_versions: '', // filled in by the CRAM workflow from this session's DEMUX / TRIMMOMATIC versions
+                stage1_tool_versions: '', // filled in by the CRAM workflow from this session's DEMUX / CUTADAPT versions
             ])
             zgCsvLine(row) // refuse now, not after trimming, a value the samplesheet cannot hold
             def meta = zgCheckpointMeta(row)
@@ -490,8 +488,8 @@ def zgAlignmentInputs() {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ZEALGT FUNCTIONS: FASTQ checkpoint (stage 1 -> stage 2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    <fastq_checkpoint>/<library>/: the trimmed pairs <sample>.paired.trim_{1,2}.fastq.gz (hardlinks of TRIMMOMATIC's work/
-    outputs), samplesheet.csv (assets/schema_checkpoint.json; one row per sample, everything stage 2 needs) and, after
+    <fastq_checkpoint>/<library>/: the trimmed pairs <sample>_{1,2}.trim.fastq.gz and <sample>.cutadapt.log (hardlinks of
+    CUTADAPT's work/ outputs), samplesheet.csv (assets/schema_checkpoint.json; one row per sample, everything stage 2 needs) and, after
     every run with stage 2, cleanup_status.tsv (zgCheckpointCleanupReport). Nothing here removes a file.
 */
 
@@ -502,7 +500,7 @@ def zgCheckpointColumns() {
     return ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'registry_file', 'registry_note'] +
            (zgRegistryFields() + zgRegistryResolvedFields()).collect { f -> "reg_${f}".toString() } +
            ['read_group', 'read_structure', 'layout',
-            'barcode_r1', 'barcode_r2', 'demux_args', 'trim_illuminaclip', 'trim_args', 'trim_adapters', 'raw_location',
+            'barcode_r1', 'barcode_r2', 'demux_args', 'trim_tool', 'trim_adapter_r1', 'trim_adapter_r2', 'trim_args', 'raw_location',
             'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample', 'stage1_run_id', 'stage1_session_id',
             'stage1_code_version', 'stage1_tool_versions']
 }
@@ -616,7 +614,7 @@ def zgCheckpointMeta(Map row) {
 
 //
 // Provenance record of a checkpoint row (origin = demux), shared by both stage-2 entries, so the JSON differs only in the
-// run fields. stage1_tool_versions: the DEMUX / TRIMMOMATIC tool versions of the session that wrote the checkpoint.
+// run fields. stage1_tool_versions: the DEMUX / CUTADAPT tool versions of the session that wrote the checkpoint.
 //
 def zgCheckpointRecord(Map settings, Map row) {
     def meta = zgCheckpointMeta(row)
@@ -631,18 +629,19 @@ def zgCheckpointRecord(Map settings, Map row) {
     def reg = row.registry_note ? null : (zgRegistryFields() + zgRegistryResolvedFields()).collectEntries { f -> [f, row["reg_${f}".toString()]] }
     def registry = zgRegistrySnapshot(row.registry_file, row.stage1_code_version, reg)
     return zgProvenanceRecord(settings, meta, "${params.store}/cram", origin, row.read_group, registry) + [
-        // phred: -phred33, TRIMMOMATIC ext.args3 (conf/modules.config; the zealgt patch puts it before the inputs)
-        trimming : [tool: 'trimmomatic', illuminaclip: row.trim_illuminaclip, args: row.trim_args,
-                    adapters: row.trim_adapters, phred: 'phred33'],
+        // CUTADAPT's ext.args = -a <adapter_r1> -A <adapter_r2> <args> (conf/modules.config). No phred field: cutadapt reads
+        // qualities as phred+33 by default (--quality-base 33), with no auto-detection, so an empty sample needs no option.
+        trimming : [tool: row.trim_tool, adapter_r1: row.trim_adapter_r1, adapter_r2: row.trim_adapter_r2, args: row.trim_args],
         alignment: [tool: 'minibwa map', args: params.align_args, read_group: row.read_group],
     ]
 }
 
-// The tools that make the checkpoint FASTQs, i.e. the version outputs of DEMUX (cutadapt, pigz, tar) and TRIMMOMATIC. The CRAM
-// workflow waits until each has reported once: a tool added to those modules must be added here (else the samplesheet and
-// the provenance records wait for the end of stage 1).
+// The tools that make the checkpoint FASTQs, keyed <PROCESS>.<tool>: the version outputs of DEMUX (cutadapt, pigz, tar) and
+// CUTADAPT (cutadapt; another env than DEMUX's, hence the process key). The CRAM workflow waits until each has reported once:
+// a tool added to those modules must be added here (else the samplesheet and the provenance records wait for the end of
+// stage 1).
 def zgStage1Tools() {
-    return ['cutadapt', 'pigz', 'tar', 'trimmomatic']
+    return ['CUTADAPT.cutadapt', 'DEMUX.cutadapt', 'DEMUX.pigz', 'DEMUX.tar']
 }
 
 // [[tool, version], ...] -> "tool=version;tool=version" (sorted; several versions of one tool comma-joined)
@@ -708,7 +707,7 @@ def zgCheckpointCleanupReport(Map ctx) {
 // End-of-run cleanup commands, NEVER run by the pipeline: written to <outdir>/pipeline_info/cleanup_<run_id or session>.sh
 // and printed in the log, for the user to read, check and (with consent) use. Per library of the run (zgCheckpointCleanupReport):
 //   removable (every CRAM stored and verified) -> listing / measuring commands (ls, du, find -maxdepth | wc -l, cat) for its
-//     checkpoint dir and for this run's work dirs of its DEMUX, MERGE_LANES, TRIMMOMATIC and FASTQC tasks, then the removal
+//     checkpoint dir and for this run's work dirs of its DEMUX, MERGE_LANES, CUTADAPT and FASTQC tasks, then the removal
 //     lines, commented out and marked "CONSENT:";
 //   otherwise -> its "keep: ..." status and no removal line.
 // The task dirs come from those processes' output channels (workflows/cram.nf, `task_dirs`: each output file's
@@ -719,7 +718,7 @@ def zgCheckpointCleanupReport(Map ctx) {
 // `nextflow clean` alternative for the whole run is offered when every library of the run is removable.
 //
 def zgCleanupCommands(Map ctx, List reports, List task_dirs) {
-    def order = ['DEMUX', 'MERGE_LANES', 'TRIMMOMATIC', 'FASTQC']
+    def order = ['DEMUX', 'MERGE_LANES', 'CUTADAPT', 'FASTQC']
     def out = [
         '#!/usr/bin/env bash',
         '#',
@@ -733,8 +732,8 @@ def zgCleanupCommands(Map ctx, List reports, List task_dirs) {
         '# approved that removal (CLAUDE.md; docs/PLAN_pipeline.md §5 rule 4), and only after the listing shows the paths are still',
         '# what this file says (sizes and file counts below were measured by the pipeline at the end of the run).',
         '# A library is removable only when every one of its CRAMs is stored and verified (CRAM + .crai + CRAM 3 EOF), as its',
-        '# <checkpoint>/<library>/cleanup_status.tsv says. The checkpoint FASTQs are hardlinks of TRIMMOMATIC work/ files: their space',
-        '# is freed only when both the checkpoint dir and the TRIMMOMATIC task dirs are gone. Afterwards the CRAMs stay in the store',
+        '# <checkpoint>/<library>/cleanup_status.tsv says. The checkpoint FASTQs are hardlinks of CUTADAPT work/ files: their space',
+        '# is freed only when both the checkpoint dir and the CUTADAPT task dirs are gone. Afterwards the CRAMs stay in the store',
         '# (skipped as stored); --entry read_alignment can no longer read that checkpoint, a -resume of this session redoes stage 1,',
         '# and the removed checkpoint dir no longer counts against --max_libraries.',
         '# Listed task dirs are the tasks whose outputs this run used (cached ones included); failed or retried attempts are not',

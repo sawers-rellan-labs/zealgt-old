@@ -14,18 +14,19 @@ The CRAM workflow runs in two stages with a **FASTQ checkpoint** between them, a
 
 | entry | input | steps | output |
 |---|---|---|---|
-| `read_demultiplexing` (default) | `--libraries <lib>[,...]` rows of `--input` (meta/samples.csv) | stage 1: DEMUX (cutadapt, exact inline barcodes, per lane) -> MERGE_LANES -> DEMUX_QC -> READ_TRIMMING (Trimmomatic -> FASTQ checkpoint, FastQC); then stage 2 in the same run | checkpoint `<lib>/`; store `demux_qc/`, `cram/`, `registry/` |
+| `read_demultiplexing` (default) | `--libraries <lib>[,...]` rows of `--input` (meta/samples.csv) | stage 1: DEMUX (cutadapt, exact inline barcodes, per lane) -> MERGE_LANES -> DEMUX_QC -> READ_TRIMMING (cutadapt -> FASTQ checkpoint, FastQC); then stage 2 in the same run | checkpoint `<lib>/`; store `demux_qc/`, `cram/`, `registry/` |
 | `read_alignment` | `--libraries <lib>[,...]`: `<fastq_checkpoint>/<lib>/samplesheet.csv` only | stage 2: READ_ALIGNMENT (minibwa, samtools markdup -> CRAM) -> SAMTOOLS_STATS + Picard CollectWgsMetrics -> PROVENANCE -> REGISTRY | store `cram/`, `registry/` |
 | `markdup_import` | `--import_sheet` (meta/dev_import.csv) | MARKDUP_IMPORT (read groups + samtools markdup, no realignment) -> SAMTOOLS_STATS + Picard -> PROVENANCE | store `cram_import/` |
 
-One `read_demultiplexing` command per request runs both stages; stage 2 takes the trimmed reads straight from TRIMMOMATIC
+One `read_demultiplexing` command per request runs both stages; stage 2 takes the trimmed reads straight from CUTADAPT
 (not from the published files). After a fix to stage 2, `--entry read_alignment` reruns stage 2 alone from the checkpoint,
 without demultiplexing again (nextflow-cache skill: the task cache does not carry across entries, the checkpoint does). All
 entries end at the CRAM stop point and write one MultiQC report per library (per import set).
 
 ### FASTQ checkpoint (`--fastq_checkpoint`, default `/share/maize/frodrig4/fastq_checkpoint`)
 
-- TRIMMOMATIC's `publishDir` **hardlinks** each sample's trimmed pair to `<fastq_checkpoint>/<lib>/<sample>.paired.trim_{1,2}.fastq.gz`
+- CUTADAPT's `publishDir` **hardlinks** each sample's trimmed pair to `<fastq_checkpoint>/<lib>/<sample>_{1,2}.trim.fastq.gz`
+  (and its log `<sample>.cutadapt.log`)
   (same inode as the `work/` file: no extra space or inode while `work/` holds it). The checkpoint must be on the filesystem of
   `work/` (`/share` on hazel); a failed link fails the run.
 - Once every sample of the library is trimmed, the run writes `<lib>/samplesheet.csv` (assets/schema_checkpoint.json), one row per
@@ -33,9 +34,9 @@ entries end at the CRAM stop point and write one MultiQC report per library (per
   `registry_file` (the `--registry` the snapshot was read from), `registry_note` (empty, or `sample_id not in the registry`),
   `reg_<column>` (the sample's `meta/registry.csv` row for the provenance record's registry snapshot: 38 raw identity and biology
   columns plus `pedigree_resolved`, `nil_id_resolved`, `donor_resolved`, `correction_ids`; read back as text), `read_group`, `read_structure` (crops already applied), `layout`, `barcode_r1`, `barcode_r2`, `demux_args`,
-  `trim_illuminaclip`, `trim_args`, `trim_adapters`, `raw_location`, `raw_files_r1`, `raw_files_r2`, `tar_members_r1`,
+  `trim_tool` (`cutadapt`), `trim_adapter_r1`, `trim_adapter_r2`, `trim_args`, `raw_location`, `raw_files_r1`, `raw_files_r2`, `tar_members_r1`,
   `tar_members_r2` (`;`-joined lists), `subsample`, `stage1_run_id`, `stage1_session_id`, `stage1_code_version`,
-  `stage1_tool_versions` (`tool=version;...` of DEMUX and TRIMMOMATIC). Both stage-2 entries build meta, read group and the
+  `stage1_tool_versions` (`PROCESS.tool=version;...` of DEMUX and CUTADAPT, e.g. `CUTADAPT.cutadapt=5.2;DEMUX.cutadapt=4.9;...`). Both stage-2 entries build meta, read group and the
   provenance record from these columns with the same function, so the records differ only in the run fields.
 - `read_alignment` validates the sheet with nf-schema (the FASTQs must exist). It does not demultiplex, so no registry guard
   applies; it needs `<store>/demux_qc/<lib>.tsv` for the registry entry (without it the library is aligned, not registered,
@@ -145,7 +146,7 @@ cleanup file are its own. Between two waves:
    `keep:` lines (one per library).
 2. Read `<outdir>/pipeline_info/cleanup_<run_id>.sh` (also printed at the end of the log). Its active lines only list and
    measure: `bash <file>` (or the lines one by one) shows each removable library's checkpoint dir and the wave's DEMUX,
-   MERGE_LANES, TRIMMOMATIC and FASTQC task dirs with sizes and file counts, to compare with the numbers the pipeline wrote.
+   MERGE_LANES, CUTADAPT and FASTQC task dirs with sizes and file counts, to compare with the numbers the pipeline wrote.
    On hazel `ls` / `du` / `find` over ssh are fine; a `nextflow clean` goes through a short-QOS job (hazel-debug-loop skill).
 3. **With the user's explicit consent** for that wave, uncomment (or copy) the `# rm -r -- ...` lines under `# CONSENT:` for
    the removable libraries — or, if every library of the wave is removable, use the `nextflow clean -n` / `-f <run name>`
@@ -192,8 +193,8 @@ Deliberate deviations from the nf-core specifications. The same list, word for w
 - **Permanent store and FASTQ checkpoint outside `--outdir`** (spec: outputs published to `--outdir`). CRAMs, QC,
   provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
   stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
-  TRIMMOMATIC's small trim reports (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o
-  json`, so nf-core lint). Only reports go to `--outdir`.
+  CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
+  lint). Only reports go to `--outdir`.
 - **`versions.yml` files for five local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and MARKDUP_IMPORT
   publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored CRAM (skipped, not
   made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY are python module templates,

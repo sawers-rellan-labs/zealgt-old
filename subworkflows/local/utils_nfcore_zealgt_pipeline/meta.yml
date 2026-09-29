@@ -39,7 +39,7 @@ input:
   - ch_task_dirs:
       type: list
       description: |
-        (PIPELINE_COMPLETION) channel: [ library, process, task work dir ] of the run's DEMUX, MERGE_LANES, TRIMMOMATIC and
+        (PIPELINE_COMPLETION) channel: [ library, process, task work dir ] of the run's DEMUX, MERGE_LANES, CUTADAPT and
         FASTQC tasks, for the end-of-run cleanup commands <outdir>/pipeline_info/cleanup_<run_id or session>.sh (never run
         by the pipeline)
 output:

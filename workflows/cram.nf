@@ -3,9 +3,9 @@
     CRAM workflow: raw libraries -> analysis-ready CRAMs + QC + provenance + demux registry (docs/PLAN_pipeline.md §0, §3)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Two stages with a published FASTQ checkpoint between them (nextflow-cache skill: a fix to stage 2 never reruns stage 1):
-    --entry read_demultiplexing --libraries <lib>  stage 1: DEMUX -> MERGE_LANES -> DEMUX_QC -> TRIMMOMATIC (-> checkpoint
+    --entry read_demultiplexing --libraries <lib>  stage 1: DEMUX -> MERGE_LANES -> DEMUX_QC -> CUTADAPT (-> checkpoint
                                                    <fastq_checkpoint>/<lib>/: hardlinked trimmed pairs + samplesheet.csv)
-                                                   -> FASTQC, then stage 2 in the same run on TRIMMOMATIC's output channel
+                                                   -> FASTQC, then stage 2 in the same run on CUTADAPT's output channel
     --entry read_alignment --libraries <lib>       stage 2 alone, from <fastq_checkpoint>/<lib>/samplesheet.csv: ALIGN_MARKDUP
                                                    -> SAMTOOLS_STATS + PICARD -> PROVENANCE -> REGISTRY
     --entry markdup_import [--import_sheet <csv>]  existing CRAMs (meta/dev_import.csv) -> MARKDUP_IMPORT -> QC
@@ -90,22 +90,23 @@ workflow CRAM {
                 .flatMap { _lmeta, fastqs -> fastqs.groupBy { f -> f.name - ~/_R[12]\.fastq\.gz$/ }.collect { id, fs -> [id, fs.sort { f -> f.name }] } }
                 .join(ch_checkpoint.map { meta, _row -> [meta.id, meta] }, failOnMismatch: true)
                 .map { _id, fastqs, meta -> [meta, fastqs] }
-            READ_TRIMMING(ch_fastq, channel.value(file(params.trim_adapters, checkIfExists: true)))
+            READ_TRIMMING(ch_fastq)
 
-            // tool versions of the tools that made the checkpoint FASTQs (zgStage1Tools: DEMUX's and TRIMMOMATIC's), as
-            // "tool=version;..." for the samplesheet and every provenance record. Taken as soon as each tool has reported once
-            // (one environment per process, so every task reports the same), not at the end of the channel: a library's
-            // samplesheet must not wait for the stage 1 of the other libraries of the run.
+            // tool versions of the tools that made the checkpoint FASTQs (zgStage1Tools: DEMUX's and CUTADAPT's), as
+            // "PROCESS.tool=version;..." for the samplesheet and every provenance record (keyed by process: DEMUX and CUTADAPT
+            // both report a cutadapt, from different envs). Taken as soon as each tool has reported once (one environment
+            // per process, so every task reports the same), not at the end of the channel: a library's samplesheet must not
+            // wait for the stage 1 of the other libraries of the run.
             def ch_stage1_tools = READ_DEMULTIPLEXING.out.versions
                 .mix(READ_TRIMMING.out.versions)
-                .map { _process, tool, version -> [tool, version] }
-                .filter { tool, _version -> tool in zgStage1Tools() }
+                .map { process, tool, version -> ["${process.toString().tokenize(':')[-1]}.${tool}".toString(), version] }
+                .filter { key, _version -> key in zgStage1Tools() }
                 .unique()
                 .take(zgStage1Tools().size())
                 .toList()
                 .map { tools -> zgToolVersionsString(tools) }
 
-            // checkpoint samplesheet of a library once ALL its samples are trimmed (TRIMMOMATIC's publishDir hardlinks the
+            // checkpoint samplesheet of a library once ALL its samples are trimmed (CUTADAPT's publishDir hardlinks the
             // pairs to the row's fastq_1 / fastq_2; stage 2 below reads the channel, never the published files)
             def ch_lib_rows = ch_checkpoint.map { meta, row -> [meta.library, row] }.groupTuple()
             READ_TRIMMING.out.reads
@@ -122,7 +123,7 @@ workflow CRAM {
             ch_rec      = ch_records.combine(ch_stage1_tools).map { id, record, tools -> [id, zgWithStage1Tools(record, tools)] }
             ch_demux_qc = READ_DEMULTIPLEXING.out.demux_qc
             ch_qc       = READ_DEMULTIPLEXING.out.report.mix(READ_TRIMMING.out.qc)
-            // the work dirs of this run's DEMUX, MERGE_LANES, TRIMMOMATIC and FASTQC tasks (cached ones included: their
+            // the work dirs of this run's DEMUX, MERGE_LANES, CUTADAPT and FASTQC tasks (cached ones included: their
             // outputs point to the earlier task dir), for the end-of-run cleanup commands (PIPELINE_COMPLETION)
             def work_dir = workflow.workDir
             ch_task_dirs = READ_DEMULTIPLEXING.out.task_outputs

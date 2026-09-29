@@ -2,7 +2,7 @@
 //
 // DEMUX runs once per library x lane and writes <sample>.<lane>_R{1,2}.fastq.gz; this task concatenates the lane files of
 // each sample, in lane-name order, into demux/<sample>_R{1,2}.fastq.gz. Plain `cat` of the gzip files: a multi-member gzip
-// is a valid gzip file (RFC 1952; Trimmomatic, FastQC, pigz and python's gzip read it). Nothing is recompressed.
+// is a valid gzip file (RFC 1952; cutadapt, FastQC, pigz and python's gzip read it). Nothing is recompressed.
 // Every sample must have exactly n_lanes (input) files per read (DEMUX writes an empty gzip for a sample without reads).
 // Own environment.yml: coreutils only (cat, mkdir), pinned as in DEMUX. Not reported as a version (as DEMUX's coreutils):
 // an eval of `cat --version` fails with the BSD cat of the laptop's local runs. task.cpus files are written at a time.

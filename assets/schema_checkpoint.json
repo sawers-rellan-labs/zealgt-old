@@ -22,15 +22,15 @@
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^/\\S+\\.paired\\.trim_1\\.fastq\\.gz$",
-                "errorMessage": "fastq_1: absolute path of the trimmed R1 (<sample>.paired.trim_1.fastq.gz), which must exist"
+                "pattern": "^/\\S+_1\\.trim\\.fastq\\.gz$",
+                "errorMessage": "fastq_1: absolute path of the trimmed R1 (<sample>_1.trim.fastq.gz), which must exist"
             },
             "fastq_2": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^/\\S+\\.paired\\.trim_2\\.fastq\\.gz$",
-                "errorMessage": "fastq_2: absolute path of the trimmed R2 (<sample>.paired.trim_2.fastq.gz), which must exist"
+                "pattern": "^/\\S+_2\\.trim\\.fastq\\.gz$",
+                "errorMessage": "fastq_2: absolute path of the trimmed R2 (<sample>_2.trim.fastq.gz), which must exist"
             },
             "source": {
                 "type": "string",
@@ -216,17 +216,24 @@
                 "type": "string",
                 "meta": ["demux_args"]
             },
-            "trim_illuminaclip": {
+            "trim_tool": {
                 "type": "string",
-                "meta": ["trim_illuminaclip"]
+                "enum": ["cutadapt"],
+                "meta": ["trim_tool"]
+            },
+            "trim_adapter_r1": {
+                "type": "string",
+                "pattern": "^[ACGTN]+$",
+                "meta": ["trim_adapter_r1"]
+            },
+            "trim_adapter_r2": {
+                "type": "string",
+                "pattern": "^[ACGTN]+$",
+                "meta": ["trim_adapter_r2"]
             },
             "trim_args": {
                 "type": "string",
                 "meta": ["trim_args"]
-            },
-            "trim_adapters": {
-                "type": "string",
-                "meta": ["trim_adapters"]
             },
             "raw_location": {
                 "type": "string",
@@ -273,7 +280,7 @@
                 "errorMessage": "stage1_tool_versions: tool=version;tool=version"
             }
         },
-        "required": ["sample", "library", "fastq_1", "fastq_2", "source", "registry_file", "read_group", "read_structure", "layout", "barcode_r1", "demux_args", "trim_illuminaclip", "trim_args", "trim_adapters", "raw_location", "raw_files_r1", "raw_files_r2", "subsample", "stage1_session_id", "stage1_code_version", "stage1_tool_versions"]
+        "required": ["sample", "library", "fastq_1", "fastq_2", "source", "registry_file", "read_group", "read_structure", "layout", "barcode_r1", "demux_args", "trim_tool", "trim_adapter_r1", "trim_adapter_r2", "raw_location", "raw_files_r1", "raw_files_r2", "subsample", "stage1_session_id", "stage1_code_version", "stage1_tool_versions"]
     },
     "uniqueEntries": ["sample"]
 }

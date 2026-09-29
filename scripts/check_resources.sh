@@ -107,7 +107,7 @@ process DEMUX {
     script:
     "true"
 }
-process TRIMMOMATIC {
+process CUTADAPT {
     tag "${meta}"
     input:
     tuple val(meta), path(reads)
@@ -145,7 +145,7 @@ process PICARD_COLLECTWGSMETRICS {
 workflow {
     def d = params.probe_in
     DEMUX(channel.of([tag: 'batch1', source: 'bc2s3_batch1']))
-    TRIMMOMATIC(channel.of('100M', '310M').map { s -> [s, [file("${d}/${s}_raw_1.fastq.gz"), file("${d}/${s}_raw_2.fastq.gz")]] })
+    CUTADAPT(channel.of('100M', '310M').map { s -> [s, [file("${d}/${s}_raw_1.fastq.gz"), file("${d}/${s}_raw_2.fastq.gz")]] })
     FASTQC(channel.of('100M', '310M').map { s -> [s, [file("${d}/${s}_trim_1.fastq.gz"), file("${d}/${s}_trim_2.fastq.gz")]] })
     ALIGN_MARKDUP(channel.of('100M', '310M').map { s -> [s, [file("${d}/${s}_trim_1.fastq.gz"), file("${d}/${s}_trim_2.fastq.gz")]] })
     SAMTOOLS_STATS(channel.of('100M', '310M').map { s -> [s, file("${d}/${s}_x.cram"), file("${d}/${s}_x.cram.crai")] })

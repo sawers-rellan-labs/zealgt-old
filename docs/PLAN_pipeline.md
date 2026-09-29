@@ -48,7 +48,7 @@ non-empty CRAM in the store; then the FASTQs can go (§5, cleanup group A–C).
 - **One pass per library** for any library demuxed from now on: the library is demultiplexed once — one DEMUX task per library ×
   lane on the delivered lane files (cutadapt takes one input file per read; streaming the lanes through a pipe failed, Gate 2 job
   972171, 2026-09-28), then MERGE_LANES concatenates each sample's lane outputs (`cat` of gzip members) — and **all** its
-  samples then go through TRIMMOMATIC → FASTQC → ALIGN_MARKDUP as per-sample processes that write the CRAMs to the store (user,
+  samples then go through CUTADAPT → FASTQC → ALIGN_MARKDUP as per-sample processes that write the CRAMs to the store (user,
   2026-09-27: one process per tool so every module carries its own pinned environment; replaces the single DEMUX+ALIGN task). FASTQs
   pass through `work/` on /share; each sample's trimmed pair is hardlinked into the FASTQ checkpoint and kept there until all the
   library's CRAMs are stored and verified (§3, §5 rules 3–4; user, 2026-09-29). `--samples` never restricts which samples of a demuxed
@@ -149,8 +149,8 @@ Deliberate deviations from the nf-core specifications. The same list, word for w
 - **Permanent store and FASTQ checkpoint outside `--outdir`** (spec: outputs published to `--outdir`). CRAMs, QC,
   provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
   stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
-  TRIMMOMATIC's small trim reports (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o
-  json`, so nf-core lint). Only reports go to `--outdir`.
+  CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
+  lint). Only reports go to `--outdir`.
 - **`versions.yml` files for five local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and MARKDUP_IMPORT
   publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored CRAM (skipped, not
   made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY are python module templates,
@@ -196,22 +196,34 @@ read time (`mpileup -q20 -Q20`, CRISP `--mmq 20`), so a threshold change never n
 | BC2S3 batch 2 | 32 rows (V21A–V24H), `BC2S3_batch_2_dna_raw/` | plain FASTQs | inline, symmetric on R1 and R2 | `meta/bc2s3_batch2_well_map.csv` |
 | BC2S3 batch 1 (CLY2023) | 17 plate pools in `sara/DNA_Sequencing_raw/BZea/NVS188B_*_R{1,2}.tar` (1.5 TB, read-only) | members streamed out of the tars (`tar -xOf`), lanes concatenated; plate pool = 6-bp Illumina index in the header | **8-bp inline barcode on R1 only** (checked 2026-09-24: top-96 5′ 8-mers cover 91.9% of reads vs 6.6% at base 31) | `BZea_Sample_ID.xlsx` (1,632 wells: barcode, plate, plate index, running number, genotype) → a well map; joins to check: plate index → `BZea<n>` files, running number → `PN<plate>_SID<n>` |
 Same steps for every library, one DEMUX task per library × lane, MERGE_LANES per sample, then per-sample processes (§0 Task 2): cutadapt exact-match demux (`-e 0 --no-indels`; R1-only anchoring for batch 1)
-→ Trimmomatic PE with batch 1's original parameters (`ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36`) →
+→ cutadapt 5.2 trimming (nf-core CUTADAPT: the full TruSeq read-through adapter on each read, `-a` / `-A`; `--nextseq-trim=15`;
+`-m 36`; it replaced batch 1's Trimmomatic, see *Trimming* below) →
 minibwa -x sr → read groups → `samtools fixmate -m` → `sort` → `markdup -d 2500` → CRAM; demux FASTQs in `work/` only, trimmed
 pairs also in the FASTQ checkpoint until the library's CRAMs are stored and verified (`work/` peak ≈ 2–3 × the library: demuxed +
 trimmed FASTQs; at most `--max_libraries` libraries per run, all concurrent, §5 rules 3–4). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
 sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comparison.
 
+**Trimming** (user, 2026-09-29): cutadapt 5.2 (nf-core CUTADAPT) replaces Trimmomatic after MERGE_LANES. Batch 1 (Nirwan) and
+zealgt until then: Trimmomatic 0.39 `PE -phred33 ILLUMINACLIP:<adapters>:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36`,
+unpaired reads discarded. Now: the full TruSeq read-through adapter on each read (`-a` / `-A`, params `trim_adapter_r1` /
+`trim_adapter_r2`), 3′ quality trimming with G as low quality (`--nextseq-trim=15`: two-colour NovaSeq X / 6000 reads, whose
+poly-G tails pass Trimmomatic's quality steps), pairs dropped when a read is < 36 bp (`-m 36`); `trim_args` holds the last two.
+Not replicated: LEADING:3 and SLIDINGWINDOW (cutadapt trims 3′ BWA-style); the palindrome clip becomes an adapter search per read.
+Why (comparison on 8 M pairs of 5 BC1 1A samples, docs/REQUIREMENTS.md §4, meta/PROVENANCE.md): residual adapter 13-mer 0.06 vs
+1.25 % of reads, 3′ partial adapter 0.003 vs 2.7 %, ~2 % more pairs kept, the same mapping, no poly-G tails, ~16× faster; plus
+one tool family with DEMUX, a maintained nf-core module, a MultiQC-native log, no Java heap tuning. Output gz +17 % (cutadapt 5's
+default gzip level 1), so the checkpoint footprint grows by that share.
+
 **Two CRAM-workflow stages and the FASTQ checkpoint** (user, 2026-09-29; branch `simplify`, 2026-09-28). Stage 1 `read_demultiplexing`
 ends in a published checkpoint: each sample's trimmed pair is hardlinked (`publishDir mode: 'link'`, same GPFS as `work/`) to
-`/share/maize/frodrig4/fastq_checkpoint/<library>/` (`params.fastq_checkpoint`), together with the trim reports (`<sample>.summary`,
-`<sample>_out.log`; decided 2026-09-28: they stay there, not in `<outdir>/trimmomatic/`, because a second `publishDir` whose path
-uses `meta` breaks `nextflow config -o json` and so nf-core lint; MultiQC in `<outdir>` keeps their numbers, and the cleanup counts
-only the FASTQs), and `<library>/samplesheet.csv` is written once every sample of the library is trimmed: the absolute checkpoint
+`/share/maize/frodrig4/fastq_checkpoint/<library>/` (`params.fastq_checkpoint`) as `<sample>_{1,2}.trim.fastq.gz`, together with
+the cutadapt log (`<sample>.cutadapt.log`; decided 2026-09-28 for the trim reports: they stay there, not in `<outdir>`, because a
+second `publishDir` whose path uses `meta` breaks `nextflow config -o json` and so nf-core lint; MultiQC in `<outdir>` keeps their
+numbers, and the cleanup counts only the FASTQs), and `<library>/samplesheet.csv` is written once every sample of the library is trimmed: the absolute checkpoint
 paths plus everything stage 2 needs — sample, library, source, role, donor, taxon, read group, read structure (crops already
 applied), layout, barcodes, demux args, trimming settings and adapters, raw location / files / tar members, subsample, stage-1 run
 id, session id, code version and tool versions (columns in `docs/usage.md`) — validated by nf-schema against
-`assets/schema_checkpoint.json` (FASTQs must exist). By default the same run chains into stage 2 on TRIMMOMATIC's channel (not the
+`assets/schema_checkpoint.json` (FASTQs must exist). By default the same run chains into stage 2 on CUTADAPT's channel (not the
 published files: publishing is asynchronous), one command per request. Stage 2 `read_alignment` can also run alone
 (`--libraries A,B`), reading only those samplesheets, e.g. after a fix to ALIGN_MARKDUP or QC; it never demultiplexes and adds no
 library to the checkpoint. Both skip every sample whose CRAM is stored and verified (§2 principle 3). Guards as for the store:
@@ -223,7 +235,7 @@ rule 3).
 | # | workflow | entry | modules | per | main output (store) |
 |---|---|---|---|---|---|
 | 1 | CRAM | `read_demultiplexing` (stage 1; chains into stage 2 by default) | FETCH_LIBRARY (source adapter) → DEMUX (cutadapt exact inline, one task per lane) → MERGE_LANES (per sample, `cat`) → DEMUX_QC (sums the lane reports; a stored table is used in its place) | library × lane → sample | demux FASTQs (`work/` only), `demux_qc/<library>.tsv` |
-| 1b | CRAM | (step of `read_demultiplexing`; subworkflow READ_TRIMMING — the old FASTQ entry was removed 2026-09-28, its inputs no longer exist) | TRIMMOMATIC (batch-1 parameters) → FASTQC → **checkpoint**: trimmed pairs hardlinked to `fastq_checkpoint/<library>/` + `samplesheet.csv` | sample | checkpoint FASTQs + trim reports + samplesheet (on `/share`, until rule 4 of §5), FastQC report |
+| 1b | CRAM | (step of `read_demultiplexing`; subworkflow READ_TRIMMING — the old FASTQ entry was removed 2026-09-28, its inputs no longer exist) | CUTADAPT (nf-core module; TruSeq adapter per read, `--nextseq-trim=15`, `-m 36`) → FASTQC → **checkpoint**: trimmed pairs hardlinked to `fastq_checkpoint/<library>/` + `samplesheet.csv` | sample | checkpoint FASTQs + cutadapt logs + samplesheet (on `/share`, until rule 4 of §5), FastQC report |
 | 2 | CRAM | `read_alignment` (stage 2: chained after stage 1, or alone on the checkpoint samplesheets; subworkflow READ_ALIGNMENT; existing CRAMs enter through `markdup_import`) | ALIGN_MARKDUP, one process with a minibwa + samtools env: ALIGN (minibwa -x sr) → READ_GROUPS → `fixmate -m` → `sort` → **MARK_DUPLICATES** (`samtools markdup -d 2500`) → CRAM (no MAPQ filter) → SAMTOOLS_STATS + markdup stats → COLLECT_WGS_METRICS (Picard; λ = `MEAN_COVERAGE`, missing = 1 − `PCT_1X`, as the zealhmm missing-data model) → PROVENANCE → REGISTRY → MULTIQC; no mosdepth (decided, user, 2026-09-27: nothing downstream reads it); stored CRAMs skipped; the run reports per library whether its checkpoint is removable (`cleanup_status.tsv`, §5 rule 4) | sample | `cram/<sample>.cram` + QC + provenance |
 | 2b | genotype | `sample_quality_control` | MIN_COVERAGE (exclude < 0.05×, below) → QC_PANEL_COUNTS (`mpileup -I` at a blind QC panel, one task per sample) → COVERAGE_QC → RELATEDNESS_QC → DONOR_CONTENT_QC | sample / cohort | `sample_qc.tsv`: pass/fail + reason per sample; discovery and every caller read it |
 | 3 | genotype | `variant_discovery` | WITNESS_POOL → CRISP (BC1 samples + witness only) → BED_CLIP (`bcftools view -T`, §4 #9) → WITNESS_VETO → B73_CONTROL_COUNTS (`mpileup -I`) → POOLED_LIKELIHOOD_TIERS | donor × chr | `step4/<donor>.sites.tsv.gz` |
@@ -442,7 +454,7 @@ Rules for v2:
    is stored only if CRAM + `.crai` exist and the CRAM ends with the CRAM 3 EOF container; a present but unverified CRAM is an error that
    names the file, never overwritten. Each module's `versions.yml` stays next to its CRAM, so the provenance of an already stored CRAM
    can be written without rerunning it.
-3. Demux FASTQs never outlive their library's stage 1 in `work/`: DEMUX (per lane) → MERGE_LANES → TRIMMOMATIC pass FASTQs through
+3. Demux FASTQs never outlive their library's stage 1 in `work/`: DEMUX (per lane) → MERGE_LANES → CUTADAPT pass FASTQs through
    `work/` (§0, Task 2, user 2026-09-27), and each sample's trimmed pair is **hardlinked into the FASTQ checkpoint**
    `/share/maize/frodrig4/fastq_checkpoint/<library>/` (user, 2026-09-29; §3). **Checkpoint footprint ≈ N libraries × ~1 ×
    raw** (trimmed pairs; Gate 1 estimate for full 1A: trimmed ≈ 200 GB vs demux FASTQs ≈ 237 GB, `docs/REQUIREMENTS.md` §4), and hardlinked, so while `work/` holds the same file it costs
@@ -466,7 +478,7 @@ Rules for v2:
    demux outputs + merged + trimmed FASTQs; Gate 2 measures it) and ~900 files, so N is set from the Gate 2 numbers so that the peak
    stays under ~5 TB of `/share` and the group stays under 90 % of its file quota (default N = 4: ≈ 1.5–4 TB). The guard sees only
    checkpoint dirs, not the `work/` of earlier runs: those are cleaned after each run (rule 4). A chained run's stage 2 reads
-   TRIMMOMATIC's `work/` files, not the checkpoint, so a library's stage-1 task dirs can be cleaned (with consent) only **after the
+   CUTADAPT's `work/` files, not the checkpoint, so a library's stage-1 task dirs can be cleaned (with consent) only **after the
    run has ended** — then `read_alignment` reads the checkpoint, and a `-resume` of that session would redo stage 1. Cleaning them
    frees no space while the checkpoint holds the hardlinked pairs (the space moves to the checkpoint), only the demux FASTQs.
    More than N libraries (Gate 3) therefore run as **waves** of ≤ N libraries, one run each, with the user's consented cleanup
@@ -480,7 +492,7 @@ Rules for v2:
    **`<outdir>/pipeline_info/cleanup_<run_id or session>.sh`** (also printed in the log), which the pipeline never runs: a header
    saying so and that it must be read before use; per removable library, listing / measuring commands (`ls`, `du`, `find
    -maxdepth … | wc -l`, `cat cleanup_status.tsv`) for its checkpoint dir and for the run's `work/` task dirs that hold its FASTQs
-   (DEMUX, MERGE_LANES, TRIMMOMATIC, FASTQC; path, size, file count, hardlinked bytes, measured by the pipeline at the end of the
+   (DEMUX, MERGE_LANES, CUTADAPT, FASTQC; path, size, file count, hardlinked bytes, measured by the pipeline at the end of the
    run, depth-bounded), then the removal lines commented out under `# CONSENT:`; per library that is not complete, `keep: k of n
    CRAMs missing` and no removal line; and, when every library of the run is removable, a `nextflow clean -n` / `-f <run name>`
    alternative for the whole run's `work/` (never the checkpoint). The task dirs are taken from those processes' output channels

@@ -94,8 +94,8 @@ Spec index: https://nf-co.re/docs/specifications/overview
   - **Permanent store and FASTQ checkpoint outside `--outdir`** (spec: outputs published to `--outdir`). CRAMs, QC,
     provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
     stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
-    TRIMMOMATIC's small trim reports (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o
-    json`, so nf-core lint). Only reports go to `--outdir`.
+    CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
+    lint). Only reports go to `--outdir`.
   - **`versions.yml` files for five local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and
     MARKDUP_IMPORT publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored
     CRAM (skipped, not made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY are
@@ -114,4 +114,6 @@ Spec index: https://nf-co.re/docs/specifications/overview
   `<first dependency>-<sha8 of the content>`, shared by identical envs; `scripts/build_envs.sh --prefixes`; see
   `hazel-debug-loop`). Every module has its own `environment.yml` (never a borrowed one); an identical copy costs no extra prefix.
 - Script names are verb_object (`build_envs.sh`, `write_provenance.py`); nf-core module names stay tool/subtool.
-- Example functional patch: TRIMMOMATIC without `-trimlog` (~282 GB of unread `work/` per library; `trim_log` kept optional).
+- Functional patches: none remain (the TRIMMOMATIC patches, no `-trimlog` and `-phred33` before the inputs, went with the
+  module when CUTADAPT replaced it, 2026-09-29). A past example of a valid one: dropping an output that costs ~282 GB of
+  unread `work/` per library (Trimmomatic's `-trimlog`).

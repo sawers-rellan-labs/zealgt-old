@@ -25,8 +25,8 @@ nf_core_version: 4.1.0
 #   - **Permanent store and FASTQ checkpoint outside `--outdir`** (spec: outputs published to `--outdir`). CRAMs, QC,
 #     provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
 #     stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
-#     TRIMMOMATIC's small trim reports (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o
-#     json`, so nf-core lint). Only reports go to `--outdir`.
+#     CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
+#     lint). Only reports go to `--outdir`.
 #   - **`versions.yml` files for five local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and
 #     MARKDUP_IMPORT publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored
 #     CRAM (skipped, not made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY are
@@ -72,7 +72,6 @@ lint:
         - params.import_sheet
         - params.registry
         - params.registry_seed
-        - params.trim_adapters
     # zealgt: resources are set per label (conf/base.config, closures x task.attempt) and per process (conf/hazel.config,
     # checked by scripts/check_resources.sh), not as plain process.cpus / memory / time defaults.
     - process.cpus

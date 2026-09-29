@@ -34,8 +34,8 @@ J2Teo generation columns `gen` … `TC`, `j2teo_batch`, `j2teo_seed_origin`, `fi
 `correction_ids` (meta/corrections.csv applied), kept apart so they never replace a raw value; `note`; a sample not in the registry
 has `row` and `resolved` null and a note), its `origin` (demux: raw location and files, tar
 members, cutadapt args, read structure, layout, barcodes, subsample, the checkpoint FASTQs `fastq_checkpoint`, and the stage-1
-run `stage1_run_id`, `stage1_session_id`, `stage1_code_version`, `stage1_tool_versions` (DEMUX and TRIMMOMATIC tool versions);
-import: input path, maker, input filters, and `import_sheet_row`, the import sheet's row as strings), for demultiplexed samples `trimming` and `alignment` settings, and, added by the module, `cram_file`, `cram_bytes`,
+run `stage1_run_id`, `stage1_session_id`, `stage1_code_version`, `stage1_tool_versions` (DEMUX and CUTADAPT tool versions, keyed `PROCESS.tool`);
+import: input path, maker, input filters, and `import_sheet_row`, the import sheet's row as strings), for demultiplexed samples `trimming` (`tool`, `adapter_r1`, `adapter_r2`, `args`) and `alignment` settings, and, added by the module, `cram_file`, `cram_bytes`,
 `tool_versions_yml` (the versions.yml of the steps that made the CRAM), `record_written_utc`. `read_demultiplexing` (stage 2
 chained) and `read_alignment` (stage 2 alone) build the record from the same checkpoint row, so for one sample the two differ
 only in the run fields (the registry snapshot is identical). No line or nil id is written into a CRAM header: the read group is
@@ -45,20 +45,20 @@ only in the run fields (the registry snapshot is identical). No line or nil id i
 
 | path | written by | files |
 |---|---|---|
-| `<lib>/` | TRIMMOMATIC (`publishDir` mode `link`: hardlinks of the `work/` files) | `<sample>.paired.trim_1.fastq.gz`, `<sample>.paired.trim_2.fastq.gz`, and the trim reports `<sample>.summary`, `<sample>_out.log` (also in MultiQC; the per-read trim log is not written) |
+| `<lib>/` | CUTADAPT (`publishDir` mode `link`: hardlinks of the `work/` files) | `<sample>_1.trim.fastq.gz`, `<sample>_2.trim.fastq.gz`, and the cutadapt log `<sample>.cutadapt.log` (also in MultiQC) |
 | `<lib>/samplesheet.csv` | the CRAM workflow, once every sample of the library is trimmed | one row per sample, everything stage 2 needs (columns in docs/usage.md; `assets/schema_checkpoint.json`); the input of `--entry read_alignment` |
 | `<lib>/cleanup_status.tsv` | every run with stage 2 (at its end) | per sample `sample`, `cram`, `cram_bytes`, `verified` (yes/no), `fastq_1`, `fastq_1_bytes`, `fastq_2`, `fastq_2_bytes`; last line `# checkpoint <dir>: removable (N files, X GB) — remove only with the user's consent` or `# checkpoint <dir>: keep: k of n CRAMs missing` (also in the log) |
 
 Nothing is removed by the pipeline. Every `<lib>/` directory counts against `--max_libraries` until it is removed (with the
 user's consent, once `cleanup_status.tsv` says removable, using the commands in `<outdir>/pipeline_info/cleanup_*.sh`;
-docs/usage.md "Store rules" and "Waves of libraries"). The trim reports live here, not in
+docs/usage.md "Store rules" and "Waves of libraries"). The cutadapt logs live here, not in
 `--outdir` (one `publishDir` per process: docs/usage.md "Deliberate deviations"). A `--subsample N` run uses a checkpoint named
 `subsample_<N>`; a stub run `checkpoint_stub*`.
 
 ## Results directory (`--outdir`)
 
 - `multiqc/<library>_multiqc_report.html` (+ `_data/`, `_plots/`): one report per library (per import set for
-  `markdup_import`): cutadapt, Trimmomatic, FastQC, samtools stats / markdup, Picard (`read_alignment`: the stage-2 reports only).
+  `markdup_import`): cutadapt (demultiplexing and trimming), FastQC, samtools stats / markdup, Picard (`read_alignment`: the stage-2 reports only).
 - `fastqc/<library>/`: FastQC reports of the trimmed reads.
 - `pipeline_info/`: Nextflow execution report, timeline, trace, DAG, `params_*.json`, and
   `zealgt_software_mqc_versions.yml` (every tool version of the run).
@@ -67,7 +67,7 @@ docs/usage.md "Store rules" and "Waves of libraries"). The trim reports live her
   **cleanup commands for the user, never run by the pipeline**. It starts with a header saying so (read the whole file before
   using any line). Per library of the run:
   - *removable* (every CRAM stored and verified, as in `cleanup_status.tsv`): the checkpoint dir with its size and file count, then
-    the run's `work/` task dirs that hold the library's FASTQs (DEMUX, MERGE_LANES, TRIMMOMATIC, FASTQC; each with process, path,
+    the run's `work/` task dirs that hold the library's FASTQs (DEMUX, MERGE_LANES, CUTADAPT, FASTQC; each with process, path,
     file count, size and hardlinked bytes, measured at the end of the run), as active listing lines (`ls -la`, `du -sh`,
     `find -maxdepth … ! -type d | wc -l`, `cat cleanup_status.tsv`), followed by one `# rm -r -- '<path>'` line per task dir and
     one for the checkpoint dir, **commented out** under a `# CONSENT:` line. A `read_alignment` run has no stage-1 task dirs;

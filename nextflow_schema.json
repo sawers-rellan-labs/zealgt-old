@@ -198,22 +198,22 @@
                     "default": "-e 0 --no-indels --discard-untrimmed -Z",
                     "description": "cutadapt flags of DEMUX (exact match)."
                 },
-                "trim_adapters": {
+                "trim_adapter_r1": {
                     "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "default": "${projectDir}/assets/adapters/TruSeq3-PE-2.fa",
-                    "description": "Adapter FASTA for Trimmomatic ILLUMINACLIP (TruSeq3-PE-2.fa as shipped with trimmomatic 0.39)."
+                    "pattern": "^[ACGTN]+$",
+                    "default": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+                    "description": "3' adapter of R1 for CUTADAPT (-a; full TruSeq read-through adapter)."
                 },
-                "trim_illuminaclip": {
+                "trim_adapter_r2": {
                     "type": "string",
-                    "default": "2:30:10",
-                    "description": "ILLUMINACLIP seed mismatches : palindrome : simple thresholds."
+                    "pattern": "^[ACGTN]+$",
+                    "default": "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT",
+                    "description": "3' adapter of R2 for CUTADAPT (-A; full TruSeq read-through adapter)."
                 },
                 "trim_args": {
                     "type": "string",
-                    "default": "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36",
-                    "description": "Trimmomatic steps after ILLUMINACLIP (batch 1's parameters, PLAN §3 row 1b)."
+                    "default": "--nextseq-trim=15 -m 36",
+                    "description": "Further CUTADAPT flags after the adapters (poly-G-aware 3' quality trim, minimum length; PLAN §3 row 1b)."
                 },
                 "align_args": {
                     "type": "string",

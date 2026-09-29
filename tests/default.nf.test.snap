@@ -25,10 +25,10 @@
             [
                 "checkpoint_stub",
                 "checkpoint_stub/LIBX",
-                "checkpoint_stub/LIBX/LX_1.paired.trim_1.fastq.gz",
-                "checkpoint_stub/LIBX/LX_1.paired.trim_2.fastq.gz",
-                "checkpoint_stub/LIBX/LX_2.paired.trim_1.fastq.gz",
-                "checkpoint_stub/LIBX/LX_2.paired.trim_2.fastq.gz",
+                "checkpoint_stub/LIBX/LX_1_1.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_1_2.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_2_1.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_2_2.trim.fastq.gz",
                 "checkpoint_stub/LIBX/cleanup_status.tsv",
                 "checkpoint_stub/LIBX/samplesheet.csv",
                 "multiqc",
@@ -151,7 +151,7 @@
                 ]
             ]
         ],
-        "timestamp": "2026-09-28T15:54:41.724518",
+        "timestamp": "2026-09-29T13:22:56.423001",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -507,6 +507,9 @@
                     "minibwa": "0.7-r421",
                     "samtools": 1.21
                 },
+                "CUTADAPT": {
+                    "cutadapt": 5.2
+                },
                 "DEMUX": {
                     "cutadapt": 4.9,
                     "pigz": 2.8,
@@ -530,9 +533,6 @@
                 "SAMTOOLS_STATS": {
                     "samtools": 1.24
                 },
-                "TRIMMOMATIC": {
-                    "trimmomatic": 0.39
-                },
                 "Workflow": {
                     "sawers-rellan-labs/zealgt": "v0.1.0dev"
                 }
@@ -540,18 +540,15 @@
             [
                 "checkpoint_stub",
                 "checkpoint_stub/LIBX",
-                "checkpoint_stub/LIBX/LX_1.paired.trim_1.fastq.gz",
-                "checkpoint_stub/LIBX/LX_1.paired.trim_2.fastq.gz",
-                "checkpoint_stub/LIBX/LX_1.summary",
-                "checkpoint_stub/LIBX/LX_1_out.log",
-                "checkpoint_stub/LIBX/LX_2.paired.trim_1.fastq.gz",
-                "checkpoint_stub/LIBX/LX_2.paired.trim_2.fastq.gz",
-                "checkpoint_stub/LIBX/LX_2.summary",
-                "checkpoint_stub/LIBX/LX_2_out.log",
-                "checkpoint_stub/LIBX/LX_3.paired.trim_1.fastq.gz",
-                "checkpoint_stub/LIBX/LX_3.paired.trim_2.fastq.gz",
-                "checkpoint_stub/LIBX/LX_3.summary",
-                "checkpoint_stub/LIBX/LX_3_out.log",
+                "checkpoint_stub/LIBX/LX_1.cutadapt.log",
+                "checkpoint_stub/LIBX/LX_1_1.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_1_2.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_2.cutadapt.log",
+                "checkpoint_stub/LIBX/LX_2_1.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_2_2.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_3.cutadapt.log",
+                "checkpoint_stub/LIBX/LX_3_1.trim.fastq.gz",
+                "checkpoint_stub/LIBX/LX_3_2.trim.fastq.gz",
                 "checkpoint_stub/LIBX/cleanup_status.tsv",
                 "checkpoint_stub/LIBX/samplesheet.csv",
                 "fastqc",
@@ -608,12 +605,9 @@
                 "store_stub/registry/LIBX.registry.versions.yml"
             ],
             [
-                "LX_1.summary:md5,d41d8cd98f00b204e9800998ecf8427e",
-                "LX_1_out.log:md5,d41d8cd98f00b204e9800998ecf8427e",
-                "LX_2.summary:md5,d41d8cd98f00b204e9800998ecf8427e",
-                "LX_2_out.log:md5,d41d8cd98f00b204e9800998ecf8427e",
-                "LX_3.summary:md5,d41d8cd98f00b204e9800998ecf8427e",
-                "LX_3_out.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_1.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_2.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "LX_3.cutadapt.log:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "LX_1.html:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "LX_1.zip:md5,d41d8cd98f00b204e9800998ecf8427e",
                 "LX_2.html:md5,d41d8cd98f00b204e9800998ecf8427e",
@@ -808,7 +802,7 @@
                 ]
             ]
         ],
-        "timestamp": "2026-09-28T15:54:20.81846",
+        "timestamp": "2026-09-29T13:22:35.737242",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

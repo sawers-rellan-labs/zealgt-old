@@ -19,7 +19,7 @@ import os
 import re
 import sys
 
-STAGE1 = ['DEMUX', 'MERGE_LANES', 'DEMUX_QC', 'TRIMMOMATIC', 'FASTQC']
+STAGE1 = ['DEMUX', 'MERGE_LANES', 'DEMUX_QC', 'CUTADAPT', 'FASTQC']
 RUNS = ['r1', 'r2', 'r3']
 DUMP_RE = re.compile(r'TaskHasher - \[(.+?) \((\d+)\)\] cache hash: ([0-9a-f]+); mode: (\w+); entries: (\[\n.*?\n\])\n', re.S)
 ID_RE = re.compile(r'\bid:([^,\]]+)')

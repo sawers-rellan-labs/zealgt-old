@@ -127,7 +127,8 @@ Two different Twist kits; the read structure is a per-source parameter of DEMUX,
 Evidence:
 - **Kit documents:** Twist 96-Plex demultiplexing guide DOC-001283 Rev 1.0 (Fig. 2 p2; read structures p6; barcode list p15) and FlexPrep
   UHT demux guide DOC-001509 (Fig. 3 p4; structure p7); notes and PDF in `agent/20260927_231439_twist_96plex_guide.md`. Neither gives adapter
-  sequences; the plate/UDI indexes are TruSeq-type, so Trimmomatic uses TruSeq3-PE-2.fa (a parameter) until Nirwan's `adapters.fa` is known.
+  sequences; the plate/UDI indexes are TruSeq-type, so zealgt trims the full TruSeq read-through adapters (`trim_adapter_r1` /
+  `trim_adapter_r2`; *Trimming* below); Nirwan's `adapters.fa` is still unread.
 - **Batch 1 = 96-Plex:** Hannah's Slack messages (library prep sheet `BZea Library Prep Sheet Code.xlsx`, 2023-07-13; sent for sequencing
   2023-05-23); the sample sheet's barcodes are Twist's 96-Plex list (A01 `CGTACGTA`); raw reads (plate 5 lane 1, job 969161) are 151 bp, 92.2 %
   start with an exact plate-5 well barcode, R1 bases 9–20 and R2 bases 1–8 are primer-derived: aligned to B73 chr10 (job 969188, minimap2)
@@ -142,6 +143,25 @@ Evidence:
 - **Provider documents:** Slack `agent/20260927_230549_slack_sequencing_provenance.md`; Gmail `agent/20260927_230917_gmail_sequencing_provenance.md`;
   Novogene release in `BZea/BC1_dna_raw/` (`Readme.html`, `02.Report_…zip`, `MD5.txt`; md5 check 243/243, job 651495) —
   `agent/20260927_233737_novogene_download_doc.md`.
+
+## Trimming: cutadapt instead of Nirwan's Trimmomatic (2026-09-29)
+- **Nirwan (batch 1):** Trimmomatic 0.39 `PE -phred33`, `ILLUMINACLIP:<custom adapters.fa, unreadable>:2:30:10 LEADING:3 TRAILING:3
+  SLIDINGWINDOW:4:15 MINLEN:36`; unpaired reads discarded. zealgt until 2026-09-29: the same, with TruSeq3-PE-2.fa.
+- **Now:** cutadapt 5.2 (nf-core CUTADAPT module), for every source:
+  - the full TruSeq read-through adapter on each read, `-a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT`;
+  - 3′ quality trimming with G bases treated as low quality (`--nextseq-trim=15`): the reads are two-colour (NovaSeq X for BC1 and
+    batch 2, NovaSeq 6000 for batch 1), where no signal reads as a high-quality G, so poly-G tails survive Trimmomatic's quality steps;
+  - pairs dropped when either read is < 36 bp (`-m 36`; the same as keeping only Trimmomatic's paired output);
+  - qualities read as phred+33 (cutadapt's default; no encoding auto-detection, so an empty well needs no option).
+- **Not replicated:** LEADING:3 (5′ quality) and the SLIDINGWINDOW algorithm (cutadapt uses BWA-style 3′ trimming); the palindrome
+  clip is replaced by an adapter search on each read.
+- **Measured (docs/REQUIREMENTS.md §4, measurement log `agent/20260929_182000_trim_comparison_summary.txt`):** on 8 M pairs of each of 5 BC1 1A samples, Trimmomatic's clipping
+  left the full adapter 13-mer in 1.25 % of reads and a 3′ partial adapter in 2.7 %; cutadapt leaves 0.06 % / 0.003 %. cutadapt keeps
+  ~2 % more pairs (99.81 vs 97.87 %), maps the same (99.65 vs 99.66 % mapped, 97.52 vs 97.53 % properly paired), removes the poly-G
+  tails (0 vs 0.004 % of reads ending in ≥ 10 G), and is ~16× faster (2.5 vs 39.6 s per M pairs at 8 threads). LEADING:3 has no
+  effect to replace: the binned NovaSeq X qualities never fall below Q3 at the 5′ end (`-q 3,0` gave identical metrics).
+- **Why:** better adapter removal, poly-G handling, one tool family with DEMUX, a maintained nf-core module, multi-core, a
+  MultiQC-native log, and no Java heap tuning.
 
 ## Development import sheet (`meta/dev_import.csv`, 2026-09-24)
 The existing CRAMs zealgt's development entries start from (docs/PLAN_pipeline.md §0), read in place from `ZEAL/results/` (written by

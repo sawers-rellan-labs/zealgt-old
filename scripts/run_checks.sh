@@ -11,7 +11,7 @@
 # Needs on PATH: nextflow (>= 25.10.4; NXF_VER pins it), nf-core (tools 4.1), nf-test (0.9.x). ZG_CHECK_PATH is prepended to
 # PATH when set, e.g. the laptop's local tool dirs. The nf-test stub runs still evaluate the tool versions of the modules
 # (`eval` outputs), so on a machine without the tools ZG_CHECK_PATH must also hold version shims (fastqc, multiqc,
-# picard, samtools, trimmomatic, cutadapt, pigz) that print the pinned versions; the snapshots were recorded with those
+# picard, samtools, cutadapt, pigz) that print the pinned versions; the snapshots were recorded with those
 # (docs/CONTRIBUTING.md). Laptop example:
 #   ZG_CHECK_PATH=$PWD/agent/bin:$PWD/agent/.venv_nfcore/bin:$PWD/agent/stubbin NXF_VER=26.04.6 bash scripts/run_checks.sh
 set -euo pipefail
