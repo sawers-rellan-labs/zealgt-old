@@ -220,5 +220,15 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
 10. **79 landrace BC1S3/BC1S4 lines:** confirm they belong in the ZEAL genotyping. 50 have no J2Teo row.
 11. **BRB-seq:** 3 wells disagree between the prep sheet genotype and J2Teo (above). Pools BZeaRP2–4 (plates 5–15, 998 wells) were prepped
     but have no reads on Drive. The fall-2023 list (`BZeaBRB-F manifest`) has no sequencing record.
+13. **Batch-C lines (`_Q` segments) collide in the nil_id rule** (checked 2026-09-29, `agent/20260929_133000_test_q_as_p.py`).
+    J2Teo has 9,689 cells with a `_Q<n>` segment (BC1 tab 121, BC2 1,010, BC2S1 2,295, BC2S2 1,451, BC2S3 1,317, `All` 3,495). `_Q`
+    is not a typo for `_P`: every Q row is batch **C** (2023 crosses: seed `23CLD1B73x…`, `CLY24A5C-…`, `PV24-…`; old names used `_X`,
+    e.g. `CIM10003_P2_P1_X1`), and renaming Q→P gives 0 rows that describe the same plant but 1,787 names (in `All`) that already belong
+    to a **different** batch-A/B plant, e.g. `Zd.0010_P2_P1_Q1` (batch C, seed 23CLD1B73x475.1) vs `Zd.0010_P2_P1_P1` (batch A, seed
+    13CL6081×6082-1). `_Q` appears only at the BC1 or BC2 segment, never first, so the donor (`<accession>_P<n>`) is unaffected. The
+    nil_id rule (`NIL_ID_README.md`) reads those segments by number only, so a batch-C line and a batch-A/B line with the same numbers
+    get the **same nil_id**. No sequenced sample is batch C today (registry: 0 `_Q` pedigrees), so nothing here is affected; before any
+    batch-C line is sequenced or registered, the rule's owner (zealhmm register, Rubén's naming) must encode the letter. The builder
+    refuses any pedigree it cannot give a donor.
 12. **MolBreeding 45K:** the target-sequencing tubes (`Molbreeding samples` / `Molbreeding_manifest`) are keyed by batch-1 Seq_ID and are
     not joined yet. zealtiger found that the target-seq tube labelled PN4_SID330 is PN4_SID322 (`pn4_sid330_mislabel.qmd`).
