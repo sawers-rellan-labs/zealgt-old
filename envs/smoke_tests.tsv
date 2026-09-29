@@ -12,3 +12,4 @@ markdup_import	samtools --version | head -1 && gawk --version | head -1
 provenance	python3 --version
 registry	python3 --version
 merge_lanes	cat --version | head -1
+cutadapt	cutadapt --version
