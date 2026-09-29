@@ -175,6 +175,76 @@ nextflow_process {
         }
     }
 
+    // --subsample on a corrupt input: pipefail is off around `... | head` (head's early exit SIGPIPEs the producers), so the
+    // module checks PIPESTATUS itself. A truncated gzip member (tests/fixtures/raw/LIBB1_BAD/R1.tar: LIBB1's L001 R1 member
+    // cut to half, agent/20260929_123000_make_corrupt_member_fixture.py) and a missing member must fail the task, not give a
+    // short or empty lane. --subsample 200 = 100 pairs per lane, more than the lane holds, so head reads to the corrupt end.
+    test("LIBB1_BAD lane L001, truncated R1 member, --subsample 200 - real, fails") {
+
+        tag "demux_real"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LIBB1.LIBB1_S1_L001', library:'LIBB1', source:'bc2s3_batch1', layout:'r1_only', n_samples:4, pu:'TESTFCB1.1,TESTFCB1.2', n_lanes:2 ],
+                    file("${projectDir}/tests/fixtures/raw/LIBB1_BAD/R1.tar", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/raw/LIBB1/R2.tar", checkIfExists: true),
+                    [ ['PB1_SID1', 'CGTACGTA', ''], ['PB1_SID2', 'AGGAACGT', ''], ['PB1_SID3', 'CTAGCTAG', ''], ['PB1_SID4', 'CTCTCAGT', ''] ],
+                    [ '8B12S+T', '8S+T' ],
+                    [ 'LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz', 'LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz' ],
+                    2
+                ])
+                input[1] = 200
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.failed },
+                // stage 2 of 4 (the decompressor) exited non-zero
+                { assert process.stdout.any { l -> l.contains('--subsample input of R1 failed: stage 2 of 4') } }
+            )
+        }
+    }
+
+    test("LIBB1 lane L001, R1 member missing from the tar, --subsample 20 - real, fails") {
+
+        tag "demux_real"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'LIBB1.LIBB1_S1_L001', library:'LIBB1', source:'bc2s3_batch1', layout:'r1_only', n_samples:4, pu:'TESTFCB1.1,TESTFCB1.2', n_lanes:2 ],
+                    file("${projectDir}/tests/fixtures/raw/LIBB1/R1.tar", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/raw/LIBB1/R2.tar", checkIfExists: true),
+                    [ ['PB1_SID1', 'CGTACGTA', ''], ['PB1_SID2', 'AGGAACGT', ''], ['PB1_SID3', 'CTAGCTAG', ''], ['PB1_SID4', 'CTCTCAGT', ''] ],
+                    [ '8B12S+T', '8S+T' ],
+                    [ 'LIBB1_R1/LIBB1_S1_L009_R1_001.fastq.gz', 'LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz' ],
+                    2
+                ])
+                input[1] = 20
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.failed },
+                // stage 1 of 4 (tar) exited non-zero
+                { assert process.stdout.any { l -> l.contains('--subsample input of R1 failed: stage 1 of 4') } }
+            )
+        }
+    }
+
     // The BC1 plain-FASTQ path under --subsample: the same head + re-compress code as the tar path.
     test("LIBX lane L1 of 2, 6B2S+T symmetric, --subsample 100 (50 pairs per lane) - real") {
 

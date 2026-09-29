@@ -22,6 +22,9 @@
 // ceil(N / n_lanes) pairs (head on the decompressed lane, re-compressed with pigz -1 into the task dir), so the library total
 // is N rounded up to a multiple of the lane count. cutadapt therefore always reads a real .fastq.gz file, as in the full run
 // (PLAN §6: Gate 1 takes the full run's I/O path; batch-1 audit G2), for plain-FASTQ and tar libraries alike.
+// head closes the pipe early, so the stages before it (tar / cat, pigz -dc) may die of SIGPIPE (exit 141): pipefail is off
+// around that pipe and zg_pipe_ok checks PIPESTATUS instead: the producer stages must exit 0 or 141, head and the compressor
+// 0. A corrupt or missing tar member / gzip therefore fails the task instead of giving a short or empty lane.
 // Threads: cutadapt -j / pigz -p task.cpus (standard nf-core; not hashed on Nextflow >= 26.04.6); flags (-e 0 --no-indels ...)
 // from ext.args.
 // Reads without a barcode match are discarded (ext.args --discard-untrimmed); their count is in the JSON report.
@@ -84,10 +87,30 @@ process DEMUX {
     fi
 
     trap 'rm -f ${lane}_R1.fastq.gz ${lane}_R2.fastq.gz' EXIT
+    zg_pipe_ok() {
+        local read=\$1 n i s
+        shift
+        n=\$#
+        i=0
+        for s in "\$@"; do
+            i=\$(( i + 1 ))
+            if [ "\$i" -le \$(( n - 2 )) ] && [ "\$s" -eq 141 ]; then
+                continue
+            fi
+            if [ "\$s" -ne 0 ]; then
+                echo "DEMUX ${prefix}: --subsample input of \$read failed: stage \$i of \$n exited \$s (PIPESTATUS \$*)" >&2
+                return 1
+            fi
+        done
+    }
     if [ "${lane_pairs}" -gt 0 ]; then
         n_lines=\$(( ${lane_pairs} * 4 ))
-        ( set +o pipefail; ${read_r1} | pigz -dc | head -n "\$n_lines" | pigz -1 -p ${task.cpus} ) > ${lane}_R1.fastq.gz
-        ( set +o pipefail; ${read_r2} | pigz -dc | head -n "\$n_lines" | pigz -1 -p ${task.cpus} ) > ${lane}_R2.fastq.gz
+        ( set +o pipefail
+          ${read_r1} | pigz -dc | head -n "\$n_lines" | pigz -1 -p ${task.cpus} > ${lane}_R1.fastq.gz
+          zg_pipe_ok R1 "\${PIPESTATUS[@]}" ) || exit 1
+        ( set +o pipefail
+          ${read_r2} | pigz -dc | head -n "\$n_lines" | pigz -1 -p ${task.cpus} > ${lane}_R2.fastq.gz
+          zg_pipe_ok R2 "\${PIPESTATUS[@]}" ) || exit 1
         in1=${lane}_R1.fastq.gz
         in2=${lane}_R2.fastq.gz
     elif [ -n "${member_r1}" ]; then

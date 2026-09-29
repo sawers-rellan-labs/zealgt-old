@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the DEMUX env (conda "${moduleDir}/../demux/environment.yml",
-# envs/process_aliases.tsv MERGE_LANES -> demux), so no new hazel prefix is built.
+# zealgt local module, with its own environment.yml (coreutils only).
 name: merge_lanes
 description: Join the per-lane DEMUX outputs of one library into one FASTQ pair per sample by plain concatenation of the gzip files (a multi-member gzip is valid gzip); nothing is recompressed.
 keywords:
@@ -11,7 +10,7 @@ keywords:
   - fastq
 tools:
   - coreutils:
-      description: GNU core utilities (cat), pinned in the DEMUX environment.yml and not reported as a version
+      description: GNU core utilities (cat, mkdir), pinned in environment.yml and not reported as a version
       homepage: https://www.gnu.org/software/coreutils/
       documentation: https://www.gnu.org/software/coreutils/manual/
       licence: ["GPL-3.0-or-later"]

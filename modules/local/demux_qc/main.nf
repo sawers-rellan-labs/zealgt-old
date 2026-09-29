@@ -4,7 +4,9 @@
 // Reports per-sample assigned pairs and the assignment rate (from the cutadapt JSON), and for the Gate 1 read-structure check
 // the base composition of the first bases of the demuxed reads plus the TruSeq read-through share
 // (templates/summarize_demux.py, a module template: hashed by content). The cutadapt JSON and text report are kept next to
-// the tables. The python version goes into a versions.yml kept next to them in the store (a stored library's record).
+// the tables. The python version goes into a versions.yml kept next to them in the store (a stored library's record), not an
+// `eval` topic tuple: a python module template, and Nextflow 26.04.6 refuses `eval` outputs for non-Bash scripts
+// ("Process output of type 'eval' is only allowed with Bash process scripts").
 // ext.args = summarize_demux.py options (--check-reads N --positions N).
 process DEMUX_QC {
     tag "${meta.id}"

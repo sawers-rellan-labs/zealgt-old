@@ -4,7 +4,8 @@
 // for a library already registered. PIPELINE_INITIALISATION reads <store>/registry/*.registry.tsv plus
 // assets/registry_seed.csv (the libraries PLAN §0 lists as demultiplexed) before any DEMUX and refuses a registered library
 // unless --force_demux <library>. The template has no options, so there is no task.ext.args; the python version goes into a
-// versions.yml kept next to the entry.
+// versions.yml kept next to the entry, not an `eval` topic tuple: a python module template, and Nextflow 26.04.6 refuses
+// eval outputs for non-Bash scripts ("Process output of type 'eval' is only allowed with Bash process scripts").
 process REGISTRY {
     tag "${meta.id}"
     label 'process_single'

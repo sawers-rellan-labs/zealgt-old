@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module (step-named; the name keys the hazel conda prefix). Wraps minibwa + samtools in one pipe.
+# zealgt local module (step-named: a custom-script step; the hazel conda prefix is keyed on the environment.yml content). Wraps minibwa + samtools in one pipe.
 name: align_markdup
 description: Trimmed read pair -> analysis-ready CRAM; minibwa map with the read group on every record, samtools fixmate -> sort -> markdup (duplicates flagged, not removed) -> CRAM + .crai; published to <store>/cram.
 keywords:

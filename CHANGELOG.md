@@ -51,6 +51,12 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
 - Batch-1 test fixture `tests/fixtures/raw/LIBB1/R{1,2}.tar` (one plate pool, 2 lane members per read, R1-only 8-bp barcodes,
   `8B12S+T 8S+T`, one empty well) with `tests/fixtures/registry_test.csv`; DEMUX nf-tests (stub, and `demux_real` tests that check
   R1 = raw[20:], R2 = raw[8:], per-well counts and the subsample path) and a pipeline stub test for `--libraries LIBB1`.
+- `scripts/build_envs.sh --prefixes` (prefix -> processes, state on disk), `--list-stale [--all-refs | <ref>...]` (prefixes under
+  the env root that neither this checkout nor the named branches reference; listing only) and `--inodes [<prefix>...]` (own
+  inodes per prefix, `find <prefix> ! -type f -o -type f -links 1 | wc -l`, and all entries); `scripts/run_checks.sh` checks that
+  `conf/env_prefixes.config` is current.
+- DEMUX nf-tests (`demux_real`) that a truncated tar member and a missing member fail a `--subsample` task
+  (`tests/fixtures/raw/LIBB1_BAD/R1.tar`).
 
 ### `Changed`
 
@@ -59,6 +65,21 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
 - Store outputs written by `publishDir` (`overwrite: false`) with explicit skip-if-stored logic instead of `storeDir`
   (deprecated in the Nextflow 26.10 docs); a stored CRAM must pass an index + EOF check and is never overwritten.
 - PLAN §2 hash table corrected from the Nextflow 26.04.6 hash test.
+- Conda prefixes keyed on content only: `<first dependency>-<sha8>` of the environment.yml without comments / blank lines /
+  `name:` (+ build.sh), so identical envs share one prefix (DEMUX_QC, PROVENANCE, REGISTRY: one python prefix) in every branch
+  built into the same root, and a comment edit no longer forces a rebuild. Every prefix name changes once (hazel rebuild; old
+  prefixes are kept until the user removes them). `conf/env_prefixes.config` has one line per process.
+- MERGE_LANES has its own `environment.yml` (coreutils, pinned as DEMUX's) instead of borrowing DEMUX's;
+  `envs/process_aliases.tsv` is removed (the alias mechanism stays in `scripts/build_envs.sh` for `include { X as Y }`).
+- Versions: DEMUX_QC, PROVENANCE and REGISTRY keep their versions.yml (python module templates; Nextflow 26.04.6 refuses an
+  `eval` output for a non-Bash script), ALIGN_MARKDUP / MARKDUP_IMPORT theirs next to the CRAM (provenance of an already stored
+  CRAM reads it); recorded as a deliberate deviation. No change to the version outputs.
+- Deliberate deviations from nf-core: one list, word for word, in `.nf-core.yml`, `docs/usage.md`, `docs/PLAN_pipeline.md` §2
+  and the nfcore-compliance skill (step-named local modules, storeDir and the Slurm helper are no longer on it).
+- PLAN §6 testing ladder per workflow: CRAM minimal gates (stub, subsample through the full code path, cache tests, memory
+  test) → CRAM Gate 2 on the genotype development donors' libraries at full depth into the production store (BC1 2A, 2B, 2F,
+  2H, 3B, 3C, 3D, 3E with `--force_demux`; batch-1 BZea5, BZea6, BZea8, BZea9; B73 controls via `markdup_import`; waves of 4,
+  checkpoint kept until the genotype Gate 2) → genotype Gate 1 / 2 on those CRAMs → the full dataset in waves on the user's go.
 
 ### `Fixed`
 
@@ -75,6 +96,9 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
   be the two reads of one lane (`_R1_<nnn>` / `_R2_<nnn>`) instead of pairing by position only.
 - `read_alignment` read the registry columns of the checkpoint samplesheet through nf-schema's type inference (`FALSE` →
   `false`); the samplesheet's text is now used, so both entries record the registry's own spelling.
+- DEMUX `--subsample`: pipefail was off around `… | head`, so a failing `tar` / decompression before `head` gave a short or
+  empty lane silently. The producer stages' exit codes are now checked (`PIPESTATUS`: 0 or 141 = SIGPIPE from head's early
+  exit; head and the compressor 0), so a corrupt or missing input fails the task.
 
 ### `Dependencies`
 
