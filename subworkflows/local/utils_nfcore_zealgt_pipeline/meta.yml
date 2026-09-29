@@ -36,15 +36,22 @@ input:
   - show_hidden:
       type: boolean
       description: Show hidden parameters in the help message
+  - ch_task_dirs:
+      type: list
+      description: |
+        (PIPELINE_COMPLETION) channel: [ library, process, task work dir ] of the run's DEMUX, MERGE_LANES, CUTADAPT and
+        FASTQC tasks, for the end-of-run cleanup commands <outdir>/pipeline_info/cleanup_<run_id or session>.sh (never run
+        by the pipeline)
 output:
   - libraries:
       type: file
       description: |
         channel: [ val(lmeta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ] (read_demultiplexing)
-  - samples:
+  - checkpoint:
       type: map
       description: |
-        channel: [ val(meta), val(read_group) ], every sample of the run (read_demultiplexing)
+        channel: [ val(meta), val(checkpoint row) ], every sample of the stage-2 libraries (read_demultiplexing: the row it
+        writes to <fastq_checkpoint>/<library>/samplesheet.csv; read_alignment: the row read from it, assets/schema_checkpoint.json)
   - imports:
       type: file
       description: |

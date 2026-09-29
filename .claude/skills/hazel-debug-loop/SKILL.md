@@ -16,8 +16,10 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 - `ZEAL` = `/rsstu/users/r/rrellan/BZea/ZEAL` (persistent). zealgt checkout on hazel: **`ZEAL/zealgt`** (next to zealbc1's
   `ZEAL/code` and `ZEAL/code-phg`; never edit those from here).
 - Nextflow `workDir`: `/share/maize/frodrig4/nf_work/<run>` (2 TB, **not persistent**), never under `/rsstu`.
-- Durable outputs: `storeDir` under `ZEAL/store/` (CRAMs, demux QC, step-4 tables, reference variants); published results under
-  `ZEAL/results/`.
+- Durable outputs: the store `ZEAL/store/` (CRAMs, demux QC, provenance, registry; later step-4 tables, reference variants),
+  written by `publishDir` (copy, never overwritten) and skipped when stored — no `storeDir`; published results under
+  `ZEAL/results/`. FASTQ checkpoint `/share/maize/frodrig4/fastq_checkpoint/<library>/` (hardlinks from `work/`; `--max_libraries`
+  counts its library dirs, PLAN §5 rule 3).
 - Old nilhmm `ZEAL/results/work` (demuxed per-sample FASTQs) is **gone**: PLAN §0 Task 1 ("align from existing FASTQs") is void;
   every library demuxes again from raw.
 
@@ -35,11 +37,10 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   spurious mode-only "modified" scripts). Set once after cloning.
 - **Invoke scripts through their interpreter with an explicit path** — `Rscript "${projectDir}/bin/x.R"`, `bash "${projectDir}/bin/x.sh"`,
   `python "${projectDir}/bin/x.py"` — never rely on `+x` + PATH. zealgt's task scripts avoid `${projectDir}` in the script text
-  (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`), and the resource helper is
-  sourced by name, `source export_slurm_resources.sh` (`bin/`) — bash `source` searches the task PATH (Nextflow adds `bin/`) and
-  needs no exec bit. **Cache consequence (tested 2026-09-28, `nextflow-cache` skill):** a non-executable or interpreter-called `bin/`
+  (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`); resources come from
+  `${task.cpus}` / `task.memory` in the script (not hashed on 26.04.6), and `bin/` is empty. **Cache consequence (tested 2026-09-28, `nextflow-cache` skill):** a non-executable or interpreter-called `bin/`
   script is not part of any task hash, so editing it reruns nothing and keeps stale outputs — in the hazel checkout every `bin/` script
-  is non-executable. Output-affecting helper code goes in module templates (hashed by content). Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`).
+  is non-executable. Output-affecting helper code goes in module templates (hashed by content). Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`, `check_resources.sh`).
 
 ## How commands run
 - Each hazel action is one **non-interactive, one-line** `ssh hazel '<cmd>'`, self-contained (`cd`, `conda activate`). No state
@@ -51,7 +52,9 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   pasted. Anything that must outlive the session (sbatch wrappers, pipeline code) is tracked in the repo and reaches hazel by git.
 - **Only trivial commands run over ssh directly**: `git pull`, `squeue`, `scancel <id>`, `cat`/`tail` logs, `seff`, `sacct`, `ls`, `du`.
 - **Everything that computes goes through Slurm**: `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h; `short` is
-  not allowed on the default `compute` partition). Full-library runs use compute/normal (`-profile hazel,normal`). Downloads and env
+  not allowed on the default `compute` partition). Full-library runs use `-profile hazel,normal`: each task
+  goes to short QOS when its (input-size-scaled) time request is <= 1 h 45, else to compute/normal (conf/normal.config); the head
+  job then needs `sbatch --qos=normal --partition=compute --time=3-00:00:00 scripts/submit_head_job.sbatch ...`. Downloads and env
   builds use `--partition=xfer`. Never run nextflow or any heavy process on the login node — even a stub run is a tiny job.
 - **Before any `rm`, `ls` the exact path** — `rm -f`/`rm -rf` on a wrong path fails silently. Removals still need user consent.
 
@@ -65,16 +68,26 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 
 ## Node sizes
 - Smallest compute / compute_partners nodes: **20 cpu / 125000 MB** → `resourceLimits` 16 cpu / 120 GB so a task fits any node.
+- **A job is OOM-killed at 95 % of its `--mem`** (`AllowedRAMSpace = 95 %`, `ConstrainRAMSpace = yes`, no swap; sacct MaxRSS of
+  every Gate 2 OOM = 0.95 × ReqMem): size memory so the modelled peak stays below 0.95 × the request.
 - xfer: 32 cpu / 188000 MB, no time limit (QOS `xfer` auto-set). Partition time limits show infinite; the QOS sets the real one.
 
 ## Conda envs
 - Built by **`scripts/build_envs.sh` as an xfer job** (`sbatch scripts/build_envs.sbatch [<id>]`, submitted from the checkout so
-  `SLURM_SUBMIT_DIR` is the repo) from each module's pinned `environment.yml` (+ `build.sh` for non-conda tools) into
-  `/share/maize/frodrig4/conda/zealgt/<module>-<sha8>` (sha8 = content hash of environment.yml + build.sh).
+  `SLURM_SUBMIT_DIR` is the repo, or with `ZG_REPO=<checkout> sbatch --export=ALL <checkout>/scripts/build_envs.sbatch`) from each
+  module's pinned `environment.yml` (+ `build.sh` for non-conda tools) into `/share/maize/frodrig4/conda/zealgt/<first
+  dependency>-<sha8>`: keyed on content only (sha8 of the yml without comments / blank lines / `name:`, + build.sh bytes), so
+  identical envs share one prefix (DEMUX_QC, PROVENANCE, REGISTRY: one python prefix), across branches too.
+  `scripts/build_envs.sh --list` (process -> prefix), `--prefixes` (prefix -> processes, state on disk).
 - Never on `/rsstu` (too slow), never at task time (compute nodes are offline): `conf/env_prefixes.config` (generated,
-  `--write-config`) points every process at its prefix; a `.nextflow.log` line "Creating env" means a missing entry.
-- Editing an `environment.yml`/`build.sh` or renaming a `modules/local` dir changes the prefix: rebuild before running.
-- A failed build leaves its prefix in place; removing it is the user's call.
+  `--write-config`; checked by `scripts/run_checks.sh`) points every process at its prefix; a `.nextflow.log` line "Creating env"
+  means a missing entry.
+- A dependency / channel / build.sh change gives a new prefix (a comment edit does not): rebuild before running. The prefix path
+  is part of every task hash (conda enabled), so a new prefix also reruns that process's tasks on `-resume`.
+- Nothing is ever deleted by the script. Old prefixes: `bash scripts/build_envs.sh --list-stale --all-refs` (in the hazel checkout
+  after `git fetch`; dirs no branch of the clone references) and `--inodes [<prefix>...]` (own inodes: `find <prefix> ! -type f -o
+  -type f -links 1 | wc -l`, i.e. not hardlinked from the pkgs cache). A failed build leaves its prefix in place. Removing any
+  prefix is the user's call.
 
 ## Inner fix loop when a task fails
 1. `ssh hazel 'cat /share/maize/frodrig4/nf_work/<run>/<hash>/.command.err'` (also `.command.out`, `.command.log`, `.command.sh`).
@@ -93,8 +106,12 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 - **Propagate a killed stage's exit code** from pipes (OOM 137/140), or memory-escalation retries never fire. E.g. an OOM-killed
   `samtools sort` surfaced as markdup's exit 1 until `|| zg_pipe_fail "${PIPESTATUS[@]}"` was added.
 - Tools can reject valid-but-filtered input: Picard needs `VALIDATION_STRINGENCY SILENT` on MAPQ-filtered imported CRAMs.
-- Cache: resource-only changes keep the task hash (scripts read Slurm values, not `task.*`); `ext.args` changes rerun the task.
-  Check with `-dump-hashes json` and `-resume <id>`.
+- Cache: resource-only changes keep the task hash (directives and `${task.cpus}` / `task.memory` in a script are not hashed on
+  26.04.6); `ext.args` changes, or `task.*` inside an `ext.args` closure, rerun the task. Check with `-dump-hashes json` and
+  `-resume <id>`.
+- **Check the resolved resources, not the config text:** a later `withName` block can lose to an earlier combined selector
+  (Gate 2: TRIMMOMATIC's 12 h never applied). `scripts/check_resources.sh` compares a stub run's trace with
+  `tests/expected_resources.tsv`.
 - Record measured resources (trace, `sacct`/`seff`) in `docs/REQUIREMENTS.md` and extrapolate `work/` size and file count before
   scaling up.
 
@@ -117,3 +134,10 @@ With the slurm executor each process is its own Slurm job next to the head; `sca
   turns it into `rm -rf /dev/null`-style mistakes — seen 2026-09-28, refused by the permission rules).
 - **Cleanup and any multi-line command only as a script in `agent/`**, never typed inline, so every removal is visible, reviewable and
   kept; print the exact paths (`ls`) before the removal line.
+- **End-of-run cleanup file:** every run with stage 2 writes `<outdir>/pipeline_info/cleanup_<run_id or session>.sh` (also printed at
+  the end of the log): per library whose CRAMs are all stored and verified, `ls` / `du` / `find | wc -l` of its checkpoint dir and of
+  the run's DEMUX / MERGE_LANES / CUTADAPT / FASTQC task dirs, then commented `# rm -r -- '<path>'` lines marked `CONSENT:`, and a
+  `nextflow clean` alternative when every library is removable. The pipeline never runs it. Between Gate 3 waves: copy it to
+  `agent/`, run its listing lines, show the user the sizes, and uncomment a removal line only after the user approved that path
+  (docs/usage.md "Waves of libraries"; PLAN §5 rule 4). Failed / retried attempts are not listed (`nextflow log <run> -f
+  name,status,workdir`).

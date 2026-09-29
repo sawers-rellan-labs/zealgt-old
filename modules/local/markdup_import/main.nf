@@ -8,11 +8,20 @@
 //                            whenever the sheet RG is used, the input's @RG header lines are dropped first (gawk), so no stale
 //                            sample remains in the header.
 // The inputs keep their zealbc1 MAPQ 20 / -F 0x904 filter (the provenance record says so); reads whose mate was filtered are
-// marked as single-end by markdup. storeDir <store>/cram_import (conf/modules.config), separate from new CRAMs (<store>/cram).
-// Threads / memory from bin/export_slurm_resources.sh; sort memory = half of ZG_MEM_MB split over up to 4 threads, >= 768 MB
-// each (Gate 1, job 969706: (ZG_MEM_MB - 2 GB) for sort left too little for collate / fixmate / markdup and was OOM-killed
-// at 12 GB). Checked against the Gate 2 ALIGN_MARKDUP memory model: no index in this pipe, so a bounded half for the sort is
-// the same kind of share (Gate 1 S_2A_11 peaked at 7.5 of 12 GB); kept. A stage killed by a signal (OOM) makes the task exit with that status (zg_pipe_fail), so it is retried. storeDir forbids `eval` outputs, so the versions go into one versions.yml (samtools, gawk).
+// marked as single-end by markdup. Published to <store>/cram_import (conf/modules.config: copy, never overwritten), separate
+// from new CRAMs (<store>/cram); the CRAM workflow does not import a sample whose CRAM there is stored and verified.
+// Threads / memory from task.cpus / task.memory (standard nf-core; not hashed on Nextflow >= 26.04.6). samtools sort gets
+// threads = min(task.cpus, 4) and the bounded share rule of ALIGN_MARKDUP with its own reserve:
+//   sort_mem_mb = max(768, floor((task.memory in MB - reserve_mb) x share / threads))
+// reserve_mb = params.import_mem_reserve_gb (2 GB: no minibwa index here; view / gawk / addreplacerg / collate / fixmate /
+// markdup stream with small buffers) and share = params.align_sort_mem_share (0.75, the same samtools sort, which fills its
+// -m x threads budget and overshoots it by ~5-10 %: Gate 2 (gate2_3A), main checkout agent/20260929_032000_align_rss.tsv +
+// agent/handover_*_gate2.md). At the 12 GB first attempt: 7.5 GB for sort (was 6 GB, half of memory), >= 3.7 GB for the
+// rest. Gate 1, job 969706: (memory - 2 GB) = 10 GB for sort (no share) was OOM-killed at 12 GB. Both params are referenced
+// here, so they enter the task hash by value (deliberate re-tunes only). A stage killed by a signal (OOM) makes the task exit with that
+// status (zg_pipe_fail: the signal status, 137 preferred over the SIGPIPE 141 it causes upstream, else the first non-zero
+// status; errorStrategy retries 130-145 with more memory), so it is retried. The versions go into one versions.yml
+// (samtools, gawk), published next to the CRAM: PROVENANCE of an already-stored CRAM reads it from there.
 // ext.args = markdup flags (-d 2500), ext.args2 = fixmate, ext.args3 = sort.
 process MARKDUP_IMPORT {
     tag "${meta.id}"
@@ -42,16 +51,16 @@ process MARKDUP_IMPORT {
     if (!rg || !rg.startsWith('@RG\\tID:')) {
         error("MARKDUP_IMPORT ${prefix}: read_group must be an escaped @RG line ('@RG\\\\tID:...'), got '${rg}'")
     }
+    def memory_mb   = task.memory ? task.memory.toMega() : 0
+    def threads     = Math.min(task.cpus as int, 4)
+    def reserve_mb  = (params.import_mem_reserve_gb.toString().toBigDecimal() * 1024).longValue()
+    def share       = params.align_sort_mem_share.toString().toBigDecimal()
+    def sort_mem_mb = Math.max(768L, ((memory_mb - reserve_mb) * share).longValue().intdiv(threads))
     """
-    source export_slurm_resources.sh
+    threads=${threads}
+    sort_mem_mb=${sort_mem_mb}
+    echo "markdup_import cpus=${task.cpus} memory_mb=${memory_mb} reserve_mb=${reserve_mb} sort_share=${share} threads=${threads} sort_mem_mb=${sort_mem_mb}" >&2
 
-    threads=\$(( ZG_CPUS < 4 ? ZG_CPUS : 4 ))
-    sort_mem_mb=\$(( ZG_MEM_MB / 2 / threads ))
-    [ "\$sort_mem_mb" -ge 768 ] || sort_mem_mb=768
-
-    # exit with the pipe's signal status (137 = OOM kill preferred over the SIGPIPE 141 it causes upstream; errorStrategy
-    # retries 130-145 with more memory), else
-    # with its first non-zero status; without this, pipefail + set -e report the last stage's error (markdup: exit 1)
     zg_pipe_fail() {
         local s sig=0 first=0
         for s in "\$@"; do
@@ -133,9 +142,11 @@ process MARKDUP_IMPORT {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Stub versions are the environment.yml pins (the tools are not run in a stub).
+    // Stub versions are the environment.yml pins (the tools are not run in a stub). The stub CRAM is the 38-byte CRAM 3 EOF
+    // container, so a stored stub CRAM passes the store check (zgCramEofOk) like a real one.
     """
-    touch ${prefix}.cram ${prefix}.cram.crai ${prefix}.markdup.stats ${prefix}.read_group.txt
+    printf '\\x0f\\x00\\x00\\x00\\xff\\xff\\xff\\xff\\x0f\\xe0\\x45\\x4f\\x46\\x00\\x00\\x00\\x00\\x01\\x00\\x05\\xbd\\xd9\\x4f\\x00\\x01\\x00\\x06\\x06\\x01\\x00\\x01\\x00\\x01\\x00\\xee\\x63\\x01\\x4b' > ${prefix}.cram
+    touch ${prefix}.cram.crai ${prefix}.markdup.stats ${prefix}.read_group.txt
 
     cat <<-END_VERSIONS > ${prefix}.markdup_import.versions.yml
     "${task.process}":

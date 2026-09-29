@@ -12,7 +12,7 @@ nextflow_workflow {
     tag "provenance"
     tag "stub"
 
-    test("LX_1 new, LX_2 with stored stats - stub") {
+    test("LX_1 new, LX_2 with stored stats and provenance - stub") {
 
         options "-stub"
 
@@ -34,10 +34,12 @@ nextflow_workflow {
                     [ file("\${ref}.l2b", checkIfExists: true), file("\${ref}.mbw", checkIfExists: true) ]
                 ])
                 input[2] = channel.of([ 'LX_1', [ sample:'LX_1' ] ], [ 'LX_2', [ sample:'LX_2' ] ])
-                // LX_2's samtools stats is "already stored": SAMTOOLS_STATS must run for LX_1 only
+                // LX_2's samtools stats and provenance record are "already stored": SAMTOOLS_STATS and PROVENANCE run for LX_1 only
                 def stored = file("\${workDir}/LX_2.stats")
                 stored.text = 'SN\\tstored\\n'
-                input[3] = channel.of([ 'LX_1', [] ], [ 'LX_2', [ stored ] ])
+                def stored_prov = file("\${workDir}/LX_2.provenance.json")
+                stored_prov.text = '{"sample": "LX_2", "stored": true}\\n'
+                input[3] = channel.of([ 'LX_1', [] ], [ 'LX_2', [ stored, stored_prov ] ])
                 """
             }
         }
@@ -46,6 +48,8 @@ nextflow_workflow {
             assertAll(
                 { assert workflow.success },
                 { assert workflow.trace.tasks().findAll { t -> t.name.contains('SAMTOOLS_STATS') }.size() == 1 },
+                { assert workflow.trace.tasks().findAll { t -> t.name.contains(':PROVENANCE ') }.size() == 1 },
+                { assert !workflow.out.qc.any { _meta, f -> file(f).name.endsWith('.provenance.json') } },
                 { assert snapshot(
                     workflow.out.qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
                     workflow.out.provenance.collect { meta, json -> [meta.id, file(json).name, file(json).text.trim()] }.sort { a -> a[0] },

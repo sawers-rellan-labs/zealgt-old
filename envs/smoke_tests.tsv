@@ -2,7 +2,6 @@
 nextflow	NXF_HOME=$CONDA_PREFIX/share/nextflow/home NXF_OFFLINE=true nextflow -version 2>&1 | grep -m1 -i version
 fastqc	fastqc --version
 multiqc	multiqc --version
-trimmomatic	trimmomatic -version
 samtools_stats	samtools --version | head -1
 picard_collectwgsmetrics	picard CollectWgsMetrics --version 2>&1 | grep -m1 -i version
 demux	cutadapt --version && pigz --version 2>&1 && head --version | head -1 && tar --version | head -1
@@ -11,3 +10,5 @@ align_markdup	minibwa version && samtools --version | head -1
 markdup_import	samtools --version | head -1 && gawk --version | head -1
 provenance	python3 --version
 registry	python3 --version
+merge_lanes	cat --version | head -1
+cutadapt	cutadapt --version

@@ -11,26 +11,245 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "$outputDir"
-                store  = "$outputDir/store_stub"
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
             }
         }
 
         then {
             // stable_path: All files + folders in ${params.outdir}/ with a stable path (including file name)
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
             // stable_content: All files in ${params.outdir}/ with stable content
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            // the registry snapshot of every provenance record (the rest of the record holds run fields; .nftignore)
+            def registry = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+                .collect { f -> def r = new groovy.json.JsonSlurper().parse(f).registry; [f.name, "registry file: ${r.file}", r.row, r.resolved, r.note] }
+            // end-of-run cleanup commands (name has the session id: path and content outside the snapshot)
+            def cleanup = new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }
+            def cl = cleanup ? cleanup[0].readLines() : []
             assertAll(
                 { assert workflow.success },
                 { assert workflow.trace.succeeded().size() == 24 }, // DEMUX x 2 lanes, MERGE_LANES, DEMUX_QC, 3 x 6 per-sample tasks, REGISTRY, MULTIQC
+                // FASTQ checkpoint: the trimmed pairs, the samplesheet (written once all 3 samples are trimmed), the cleanup report
+                { assert file("$outputDir/checkpoint_stub/LIBX/samplesheet.csv").readLines().size() == 4 },
+                { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (6 files') },
+                // cleanup commands: one file, header first, LIBX removable with its 9 stage-1 task dirs (DEMUX x 2, MERGE_LANES,
+                // CUTADAPT x 3, FASTQC x 3) + the checkpoint as consent-marked (commented) removal lines, no active rm
+                { assert cleanup.size() == 1 },
+                { assert cl[2].contains('NEVER RUN BY THE PIPELINE') },
+                { assert cl.contains('# ==== library LIBX: removable: all 3 CRAMs stored and verified ====') },
+                { assert cl.any { l -> l.startsWith('# work/ task dirs of this run holding LIBX') && l.contains('9 dirs (DEMUX 2, MERGE_LANES 1, CUTADAPT 3, FASTQC 3)') } },
+                { assert cl.count { l -> l.startsWith('# rm -r -- ') } == 10 },
+                { assert !cl.any { l -> l.trim().startsWith('rm ') } },
+                { assert cl.any { l -> l.startsWith('# CONSENT: nextflow clean -f ') } },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
                     // All stable path name, with a relative path
                     stable_path,
                     // All files with stable contents
-                    stable_content
+                    stable_content,
+                    // registry snapshots of the provenance records
+                    registry
+                ).match() }
+            )
+        }
+    }
+
+    // Batch-1 path (audit G8): the fixture plate LIBB1 (tests/fixtures/raw/LIBB1/R{1,2}.tar, 2 lane members per read, R1-only
+    // 8-bp barcodes, one empty well), PU from the sheet's rg_pu, tar members named in the provenance records
+    test("-profile test, --entry read_demultiplexing, batch-1 library LIBB1 (tar members, r1_only) - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                libraries        = 'LIBB1'
+            }
+        }
+
+        then {
+            def records = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+                .collect { f -> new groovy.json.JsonSlurper().parse(f) }
+            def registry = records.collect { r -> [r.sample, "registry file: ${r.registry.file}", r.registry.row, r.registry.resolved, r.registry.note] }
+            def demux = workflow.trace.tasks().collect { t -> t.name }.findAll { n -> n.contains(':DEMUX (') }.sort()
+            def sheet = file("$outputDir/checkpoint_stub/LIBB1/samplesheet.csv").readLines()
+            assertAll(
+                { assert workflow.success },
+                // DEMUX x 2 lanes, MERGE_LANES, DEMUX_QC, 4 x 6 per-sample tasks, REGISTRY, MULTIQC
+                { assert workflow.trace.succeeded().size() == 30 },
+                // one DEMUX task per tar member pair, lane named without _R1_001
+                { assert demux.collect { n -> n.replaceAll(/.*\(|\)/, '') } == ['LIBB1.LIBB1_S1_L001', 'LIBB1.LIBB1_S1_L002'] },
+                { assert sheet.size() == 5 },
+                { assert records.size() == 4 },
+                { assert records.every { r -> r.read_group == '@RG\\tID:' + r.sample + '\\tSM:' + r.sample + '\\tLB:LIBB1\\tPL:ILLUMINA\\tPU:TESTFCB1.1,TESTFCB1.2' } },
+                { assert records.every { r -> r.origin.tar_members_r1 == ['LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz', 'LIBB1_R1/LIBB1_S1_L002_R1_001.fastq.gz'] && r.origin.raw_files_r1 == ['R1.tar'] } },
+                { assert records.every { r -> r.origin.read_structure == '8B12S+T 8S+T' && r.origin.layout == 'r1_only' } },
+                // trimming settings (values = the params; not frozen here) and the stage-1 tool versions, keyed by process
+                // (DEMUX's and CUTADAPT's cutadapt come from different envs)
+                { assert records.every { r -> r.trimming.keySet() == ['tool', 'adapter_r1', 'adapter_r2', 'args'] as Set && r.trimming.tool == 'cutadapt' && r.trimming.adapter_r1 ==~ /[ACGTN]+/ && r.trimming.adapter_r2 ==~ /[ACGTN]+/ } },
+                { assert records.every { r -> r.origin.stage1_tool_versions.keySet() == ['CUTADAPT.cutadapt', 'DEMUX.cutadapt', 'DEMUX.pigz', 'DEMUX.tar'] as Set } },
+                { assert sheet[0].contains(',demux_args,trim_tool,trim_adapter_r1,trim_adapter_r2,trim_args,raw_location,') },
+                // raw registry values (the registry's spelling) and the resolved ones apart: PB1_SID3 carries a correction
+                { assert records[2].registry.row.pedigree == 'Zx.TEST_P2_P1_P3.1.1.1' && records[2].registry.resolved.pedigree_resolved == 'Zx.TEST_P3_P1_P3.1.1.1' },
+                { assert records[3].registry.row.is_check == 'TRUE' && records[3].registry.row.role == 'check' },
+                { assert snapshot(registry).match() }
+            )
+        }
+    }
+
+    test("-profile test, --entry read_demultiplexing, --max_libraries 1 with another library's checkpoint - refused - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                max_libraries    = 1
+                // LIBZ: a checkpoint left by an earlier run (its FASTQs are still on disk)
+                def ck = new File("$outputDir/checkpoint_stub/LIBZ")
+                ck.mkdirs()
+                new File(ck, 'cleanup_status.tsv').text = '# checkpoint LIBZ: keep: 1 of 1 CRAMs missing\n'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                // refused by the run guards before any task: LIBX + LIBZ = 2 > 1, LIBZ and its cleanup report named
+                { assert workflow.trace.tasks().size() == 0 },
+                { assert workflow.stdout.any { l -> l.contains('more than --max_libraries 1') } },
+                { assert workflow.stdout.any { l -> l.contains('LIBZ: ') && l.contains('checkpoint_stub/LIBZ/cleanup_status.tsv') } }
+            )
+        }
+    }
+
+    test("-profile test, --entry read_demultiplexing, two libraries, --max_libraries 2 - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                libraries        = 'LIBX,LIBY'
+                max_libraries    = 2
+                // LIBY: two more samples on the fixture lanes of LIBX (the stub never reads them)
+                def sheet = new File("$outputDir/samples_two_libs.csv")
+                def fx = new File("${baseDir}/tests/fixtures/samples_test.csv").readLines()
+                sheet.text = (fx + [
+                    'LY_1,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,GCCATA,GCCATA,symmetric,,1,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P1,FALSE,LIBY,ILLUMINA,',
+                    'LY_2,bc1,bc1_sample,LIBY,,tests/fixtures/raw/LIBX,,,TCTGGT,TCTGGT,symmetric,,2,Zx.TEST_P2,mexicana,,Zx.TEST_P2_P2,FALSE,LIBY,ILLUMINA,',
+                ]).join('\n') + '\n'
+                input = sheet.toString()
+            }
+        }
+
+        then {
+            // task ids in creation order (the run's trace, next to the test's output dir)
+            def ids = new File("$outputDir/../meta/trace.csv").readLines().drop(1).collect { l -> l.split('\t') }.collect { f -> [f[0] as int, f[3]] }
+            def libx_align = ids.findAll { _id, n -> n.contains(':ALIGN_MARKDUP (LX_') }*.getAt(0)
+            def liby_demux = ids.findAll { _id, n -> n.contains(':DEMUX (LIBY.') }*.getAt(0)
+            assertAll(
+                { assert workflow.success },
+                // LIBX: 24 tasks as above; LIBY: DEMUX x 2, MERGE_LANES, DEMUX_QC, 2 x 6 per-sample tasks, REGISTRY, MULTIQC
+                { assert workflow.trace.succeeded().size() == 42 },
+                // both libraries run concurrently: LIBY's DEMUX tasks are created before any of LIBX's ALIGN_MARKDUP tasks
+                { assert libx_align.size() == 3 && liby_demux.size() == 2 },
+                { assert liby_demux.max() < libx_align.min() },
+                { assert file("$outputDir/checkpoint_stub/LIBX/samplesheet.csv").readLines().size() == 4 },
+                { assert file("$outputDir/checkpoint_stub/LIBY/samplesheet.csv").readLines().size() == 3 }
+            )
+        }
+    }
+
+    test("-profile test, --entry read_alignment - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir           = "$outputDir"
+                store            = "$outputDir/store_stub"
+                fastq_checkpoint = "$outputDir/checkpoint_stub"
+                entry            = 'read_alignment'
+                // a checkpoint of two samples (touch-file FASTQs) as stage 1 writes it, and the library's demux QC table
+                def ck = new File("$outputDir/checkpoint_stub/LIBX")
+                ck.mkdirs()
+                // registry snapshot columns (zgRegistryFields + zgRegistryResolvedFields, as reg_<column>)
+                def reg_fields = ['sample_id', 'source', 'role', 'library', 'plate', 'well', 'lab_seq_id', 'delivered_name', 'accession', 'taxa_code',
+                                  'taxon', 'donor', 'line_id', 'old_line_id', 'pedigree', 'nil_id', 'nil_id_in_register', 'is_check',
+                                  'gen', 'F1', 'BC1', 'BC2', 'S1', 'S2', 'S3', 'S4', 'blk', 'TC', 'j2teo_batch', 'j2teo_seed_origin',
+                                  'field', 'field_plot', 'seed_packet', 'mother_plant', 'replicate_of', 'exclude', 'exclude_reason', 'flags',
+                                  'pedigree_resolved', 'nil_id_resolved', 'donor_resolved', 'correction_ids']
+                def cols = ['sample', 'library', 'fastq_1', 'fastq_2', 'source', 'role', 'donor', 'taxon', 'registry_file', 'registry_note'] +
+                           reg_fields.collect { f -> "reg_${f}".toString() } +
+                           ['read_group', 'read_structure', 'layout', 'barcode_r1', 'barcode_r2', 'demux_args', 'trim_tool', 'trim_adapter_r1',
+                            'trim_adapter_r2', 'trim_args', 'raw_location', 'raw_files_r1', 'raw_files_r2', 'tar_members_r1', 'tar_members_r2', 'subsample',
+                            'stage1_run_id', 'stage1_session_id', 'stage1_code_version', 'stage1_tool_versions']
+                // LX_1: a registry row with a nil_id and a correction (resolved values differ); LX_2: not in the registry
+                def reg = [LX_1: [sample_id: 'LX_1', source: 'bc1', role: 'bc1_sample', library: 'LIBX', well: '1', donor: 'Zx.TEST_P1',
+                                  taxon: 'mexicana', pedigree: 'Zx.TEST_P1_P1', nil_id: 'Zx9000001', is_check: 'FALSE', S1: '1', exclude: 'FALSE',
+                                  flags: 'a=1;b', pedigree_resolved: 'Zx.TEST_P9_P1', nil_id_resolved: 'Zx9000009', donor_resolved: 'Zx.TEST_P9',
+                                  correction_ids: 'C9001'],
+                           LX_2: null]
+                def rows = [['LX_1', 'GCCATA'], ['LX_2', 'TCTGGT']].collect { s, bc ->
+                    [1, 2].each { r -> new File(ck, "${s}_${r}.trim.fastq.gz").text = '' }
+                    def row = [sample: s, library: 'LIBX', fastq_1: "${ck}/${s}_1.trim.fastq.gz", fastq_2: "${ck}/${s}_2.trim.fastq.gz",
+                               source: 'bc1', role: 'bc1_sample', donor: 'Zx.TEST_P1', taxon: 'mexicana', registry_file: 'tests/fixtures/registry_test.csv',
+                               registry_note: reg[s] ? '' : 'sample_id not in the registry'] +
+                              reg_fields.collectEntries { f -> ["reg_${f}".toString(), reg[s]?.get(f) ?: ''] } +
+                              [read_group: "\"@RG\\tID:${s}\\tSM:${s}\\tLB:LIBX\\tPL:ILLUMINA\\tPU:TESTFC01.1,TESTFC01.2\"", read_structure: '6B2S+T 6B2S+T',
+                               layout: 'symmetric', barcode_r1: bc, barcode_r2: bc, demux_args: '-e 0 --no-indels --discard-untrimmed -Z',
+                               trim_tool: 'cutadapt', trim_adapter_r1: 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCA',
+                               trim_adapter_r2: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT', trim_args: '--nextseq-trim=15 -m 36 --compression-level 4', raw_location: '/raw/LIBX',
+                               raw_files_r1: 'LIBX_TESTFC01_L1_1.fq.gz;LIBX_TESTFC01_L2_1.fq.gz', raw_files_r2: 'LIBX_TESTFC01_L1_2.fq.gz;LIBX_TESTFC01_L2_2.fq.gz',
+                               tar_members_r1: '', tar_members_r2: '', subsample: '0', stage1_run_id: '',
+                               stage1_session_id: '00000000-0000-0000-0000-000000000000', stage1_code_version: 'test',
+                               stage1_tool_versions: 'CUTADAPT.cutadapt=5.2;DEMUX.cutadapt=4.9;DEMUX.pigz=2.8;DEMUX.tar=1.35']
+                    cols.collect { c -> row[c] }.join(',')
+                }
+                new File(ck, 'samplesheet.csv').text = ([cols.join(',')] + rows).join('\n') + '\n'
+                def dq = new File("$outputDir/store_stub/demux_qc")
+                dq.mkdirs()
+                new File(dq, 'LIBX.tsv').text = 'sample_id\tread_pairs\nLX_1\t10\nLX_2\t10\n'
+            }
+        }
+
+        then {
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
+            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            // registry snapshots rebuilt from the checkpoint samplesheet (code_version: the sheet's stage1_code_version)
+            def records = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+                .collect { f -> new groovy.json.JsonSlurper().parse(f) }
+            def registry = records.collect { r -> [r.sample, r.registry + [file: "registry file: ${r.registry.file}"]] }
+            assertAll(
+                { assert workflow.success },
+                // stage 2 only: 2 x (ALIGN_MARKDUP, SAMTOOLS_STATS, PICARD, PROVENANCE), REGISTRY, MULTIQC; no stage-1 task
+                { assert workflow.trace.succeeded().size() == 10 },
+                { assert !workflow.trace.tasks().any { t -> t.name =~ /DEMUX|MERGE_LANES|CUTADAPT|FASTQC/ } },
+                { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (4 files') },
+                // cleanup commands: no stage-1 task in this run, so only the checkpoint's (commented) removal line
+                { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.with { cls -> cls.size() == 1 } },
+                { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.every { cl ->
+                    cl.any { l -> l.startsWith('# work/: this run used no stage-1 task of LIBX') } && cl.count { l -> l.startsWith('# rm -r -- ') } == 1 } },
+                { assert records.size() == 2 && records.every { r -> r.registry.code_version == 'test' } },
+                // raw values as written (text: FALSE, 1), resolved values separately; LX_2 has no registry row
+                { assert records[0].registry.row.nil_id == 'Zx9000001' && records[0].registry.row.is_check == 'FALSE' && records[0].registry.row.flags == 'a=1;b' },
+                { assert records[0].registry.resolved == [pedigree_resolved: 'Zx.TEST_P9_P1', nil_id_resolved: 'Zx9000009', donor_resolved: 'Zx.TEST_P9', correction_ids: 'C9001'] },
+                { assert records[1].registry.row == null && records[1].registry.resolved == null && records[1].registry.note == 'sample_id not in the registry' },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
+                    stable_path,
+                    stable_content,
+                    registry
                 ).match() }
             )
         }
@@ -61,15 +280,21 @@ nextflow_pipeline {
         }
 
         then {
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            // import records: the import sheet's row (origin.import_sheet_row, path / index dropped: under $outputDir) and the
+            // registry snapshot (IMP_* are not in the fixture registry: row null with a note)
+            def records = new File("$outputDir/store_stub/cram_import").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+                .collect { f -> new groovy.json.JsonSlurper().parse(f) }
+            def rows = records.collect { r -> [r.sample, r.origin.import_sheet_row.findAll { k, _v -> !(k in ['path', 'index']) }, "registry file: ${r.registry.file}", r.registry.row, r.registry.note] }
             assertAll(
                 { assert workflow.success },
                 { assert workflow.trace.succeeded().size() == 9 },
                 { assert snapshot(
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
                     stable_path,
-                    stable_content
+                    stable_content,
+                    rows
                 ).match() }
             )
         }

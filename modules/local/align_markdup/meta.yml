@@ -1,8 +1,8 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module (step-named; the name keys the hazel conda prefix). Wraps minibwa + samtools in one pipe.
+# zealgt local module (step-named: a custom-script step; the hazel conda prefix is keyed on the environment.yml content). Wraps minibwa + samtools in one pipe.
 name: align_markdup
-description: Trimmed read pair -> analysis-ready CRAM; minibwa map with the read group on every record, samtools fixmate -> sort -> markdup (duplicates flagged, not removed) -> CRAM + .crai; storeDir <store>/cram.
+description: Trimmed read pair -> analysis-ready CRAM; minibwa map with the read group on every record, samtools fixmate -> sort -> markdup (duplicates flagged, not removed) -> CRAM + .crai; published to <store>/cram.
 keywords:
   - alignment
   - duplicate marking
@@ -90,7 +90,7 @@ output:
   versions:
     - "*.align_markdup.versions.yml":
         type: file
-        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        description: Tool versions (one line per tool), kept next to the output in the store (read back for an already-stored output)
         pattern: "*.align_markdup.versions.yml"
         ontologies: []
 authors:

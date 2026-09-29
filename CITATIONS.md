@@ -10,13 +10,9 @@
 
 ## Pipeline tools
 
-- [cutadapt](https://doi.org/10.14806/ej.17.1.200) (DEMUX)
+- [cutadapt](https://doi.org/10.14806/ej.17.1.200) (DEMUX, CUTADAPT)
 
 > Martin M. Cutadapt removes adapter sequences from high-throughput sequencing reads. EMBnet.journal. 2011;17(1):10-12. doi: 10.14806/ej.17.1.200.
-
-- [Trimmomatic](https://pubmed.ncbi.nlm.nih.gov/24695404/)
-
-> Bolger AM, Lohse M, Usadel B. Trimmomatic: a flexible trimmer for Illumina sequence data. Bioinformatics. 2014 Aug 1;30(15):2114-20. doi: 10.1093/bioinformatics/btu170. PubMed PMID: 24695404.
 
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 

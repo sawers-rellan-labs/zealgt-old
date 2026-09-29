@@ -2,15 +2,15 @@
 //
 // DEMUX runs once per library x lane and writes <sample>.<lane>_R{1,2}.fastq.gz; this task concatenates the lane files of
 // each sample, in lane-name order, into demux/<sample>_R{1,2}.fastq.gz. Plain `cat` of the gzip files: a multi-member gzip
-// is a valid gzip file (RFC 1952; Trimmomatic, FastQC, pigz and python's gzip read it). Nothing is recompressed.
+// is a valid gzip file (RFC 1952; cutadapt, FastQC, pigz and python's gzip read it). Nothing is recompressed.
 // Every sample must have exactly n_lanes (input) files per read (DEMUX writes an empty gzip for a sample without reads).
-// No own environment.yml: it runs in the DEMUX env (coreutils cat; envs/process_aliases.tsv maps MERGE_LANES -> demux), so no
-// new hazel prefix is built. coreutils is pinned there and not reported. ZG_CPUS files are written at a time.
+// Own environment.yml: coreutils only (cat, mkdir), pinned as in DEMUX. Not reported as a version (as DEMUX's coreutils):
+// an eval of `cat --version` fails with the BSD cat of the laptop's local runs. task.cpus files are written at a time.
 process MERGE_LANES {
     tag "${meta.id}"
     label 'process_low'
 
-    conda "${moduleDir}/../demux/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(reads, stageAs: 'lanes/*'), val(barcodes), val(n_lanes)
@@ -24,7 +24,6 @@ process MERGE_LANES {
     script:
     def samples = barcodes.collect { entry -> entry[0] }.join(' ')
     """
-    source export_slurm_resources.sh
     mkdir demux
 
     for s in ${samples}; do
@@ -41,7 +40,7 @@ process MERGE_LANES {
             cat lanes/"\${s}".*_"\${r}".fastq.gz > demux/"\${s}_\${r}".fastq.gz &
             pids="\$pids \$!"
             n=\$(( n + 1 ))
-            if [ "\$n" -ge "\$ZG_CPUS" ]; then
+            if [ "\$n" -ge ${task.cpus} ]; then
                 for p in \$pids; do wait "\$p"; done
                 pids=""
                 n=0

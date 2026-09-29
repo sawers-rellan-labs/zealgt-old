@@ -4,7 +4,7 @@
 # Versions: the modules publish their versions to the `versions` topic (collated in workflows/cram.nf);
 # `versions` here re-emits the eval tuples [ process, tool, version ] of the nf-core-style modules.
 name: cram_qc_provenance
-description: SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS for CRAMs without stored QC, and the PROVENANCE record of every CRAM
+description: SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS for CRAMs without stored QC, and the PROVENANCE record of every CRAM without a stored one
 keywords:
   - zealgt
   - cram workflow
@@ -29,7 +29,7 @@ input:
   - ch_stored_qc:
       type: file
       description: |
-        channel: [ sample_id, [ QC files already in the store ] ]
+        channel: [ sample_id, [ QC files and provenance.json already in the store ] ]
 output:
   - qc:
       type: file

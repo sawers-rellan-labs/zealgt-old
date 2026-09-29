@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs inside the new nextflow env (bin/build_envs.sh, xfer node with internet). Fetches the plugins the pipeline declares
+# Runs inside the new nextflow env (scripts/build_envs.sh, xfer node with internet). Fetches the plugins the pipeline declares
 # in nextflow.config (`plugins { id 'nf-schema@2.5.1' }`) into the prefix, so the head job runs with NXF_OFFLINE=true and
 #   NXF_PLUGINS_DIR=$CONDA_PREFIX/share/nextflow/plugins
 # Keep the version here equal to nextflow.config; changing it changes this file and so the env's sha (a new prefix).
