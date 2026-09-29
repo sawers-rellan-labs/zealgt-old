@@ -44,6 +44,9 @@ nf_core_version: 4.1.0
 # zealgt END deliberate deviations
 lint:
   container_configs: false
+  # Pinned binary source export (meta/sources/SOURCES.tsv) contains a literal "{{" in its cell data; not a template string.
+  template_strings:
+    - meta/sources/drive/23_ncs_psu_langebio_fields.xlsx
   files_unchanged:
     - .prettierignore
     - docs/CONTRIBUTING.md
