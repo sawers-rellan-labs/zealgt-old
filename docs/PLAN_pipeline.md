@@ -373,8 +373,11 @@ Per run: own launch dir and `workDir`; a post-run check (work size, failed tasks
 watched with the session kept open (`/loop`), acting only as the run card allows.
 
 ### Testing ladder (gates, from zealbc1; climb only when the current gate passes)
-- **Gate −1 · CodeRabbit** (optional, local, before push, substantive changes only): `coderabbit review --committed --base main --agent`.
-  It catches code/API bugs, not environment/data bugs; every finding is checked against the code before it is applied.
+- **Gate −1 · CodeRabbit** (user rule, 2026-09-29): `coderabbit review --committed --base-commit <last reviewed> --agent` must pass on
+  the exact commit before any **costly** run (Gate 2 and up, full libraries, production, > ~20 CPU-h); cheap diagnostics (Gate 0/1,
+  subsample tests) do not wait. Scope: only code that executes (modules, subworkflows, workflows, conf, nextflow.config, templates,
+  bin, scripts, tests) — not agent/ scratch, docs or meta data. It catches code/API bugs, not environment/data bugs; every finding is
+  checked against the code before it is applied.
 - **Gate 0 · `-stub-run`** (short QOS): every module's `stub:` touches its outputs, so the whole DAG runs in seconds and proves wiring,
   channel joins and filenames. Stub `work/` is cleaned afterwards (§5 rule 4, with the user's consent).
 - **Gate 1 · tiny real subset** (short QOS): real tools on toy inputs (~1M read pairs of one library, a few samples, one donor × a

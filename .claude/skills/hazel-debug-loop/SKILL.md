@@ -79,8 +79,9 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 ## Inner fix loop when a task fails
 1. `ssh hazel 'cat /share/maize/frodrig4/nf_work/<run>/<hash>/.command.err'` (also `.command.out`, `.command.log`, `.command.sh`).
 2. Fix the **module `.nf`** (not `main.nf`, which rehashes every task).
-3. Run the local checks, then **CodeRabbit on the exact commit** (user rule: before any real-data run and after every fix; findings
-   fixed or rejected in writing in `agent/`). Stub runs may go first.
+3. Run the local checks. **CodeRabbit on the exact commit only before a costly run** (user rule, 2026-09-29: Gate 2 and up, full
+   libraries, production, > ~20 CPU-h — also after a fix, before resubmitting a costly run); cheap diagnostics (stub, Gate 1, subsample
+   tests) go ahead. Review only executing code (see the `nfcore-compliance` skill's review gate); findings fixed or rejected in writing.
 4. commit → push → `git pull` on hazel (after the run has stopped).
 5. Re-run with **`-resume <session-id>`** (explicit id; a bare `-resume` can attach to an empty stub session).
 
