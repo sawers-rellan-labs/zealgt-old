@@ -16,7 +16,7 @@ Rules (meta/PROVENANCE.md "Sources" and "Joins"):
   - sample_id values are those already in the CRAMs (BC1 S_<pool>_<col>, batch 2 P<plot>, batch 1 PN<plate>_SID<n>); BRB-seq wells
     are BRB_<Seq_ID> because their lab ids (PN<plate>_SID<n>) reuse the batch-1 names for other plants.
 
-Usage: python3 meta/build_samples.py           write the three tables and print the report (exit 1 on a failed check)
+Usage: python3 meta/build_samples.py           print the report and write the three tables (on a failed check: exit 1, nothing written)
        python3 meta/build_samples.py --check   rebuild in memory and diff against the committed tables (exit 1 on any difference)
 """
 import csv, os, re, sys, io, hashlib, collections
@@ -83,6 +83,9 @@ def canon(x):                        # line pedigree: drop the bulk marks (.B, -
     x = (x or '').strip(); x = re.sub(r'\.B$', '', x); return re.sub(r'-(blk|bulk)$', '', x, flags=re.I).strip()
 
 def donor_of(ped):
+    # donor = <accession>_P<F1 plant> (J2Teo naming_convention). Batch C lines "use Q instead of P" and NIL_ID_README also lists _X,
+    # but the convention does not say whether <acc>_Q<n> / _X<n> is its own donor or the F1 plant <acc>_P<n>: '' here, and the
+    # derived-column check below fails the build for any line pedigree left without a donor (no current pedigree has _Q / _X).
     m = re.match(r'^(Z[a-z]\.\d+_P\d+)_', ped or ''); return m.group(1) if m else ''
 
 def accession_of(ped):
@@ -291,6 +294,9 @@ for d in rows:
     d['correction_ids'] = ';'.join(ids); d['pedigree_resolved'] = rped
     d['nil_id_resolved'] = nil_id_of(rped) if d['nil_id'] or rped != ped else ''
     d['donor_resolved'] = donor_of(rped) if d['source'] != 'bc1' else d['donor']
+no_donor = sorted({(k, d[k]) for d in rows for k in ('pedigree', 'pedigree_resolved')
+                   if re.match(r'^Z[a-z]\.\d+_[A-Za-z]\d+_', d[k]) and not donor_of(d[k])})
+if no_donor: fail.append(f'line pedigree with no donor (first selection not _P: donor undefined by the J2Teo naming_convention): {no_donor[:5]}')
 unknown = [c['sample_id'] for c in corr if c['sample_id'] and c['sample_id'] not in {d['sample_id'] for d in rows}]
 if unknown: fail.append(f'corrections for unknown sample_id: {unknown}')
 
@@ -365,8 +371,6 @@ if CHECK:
         print(f'[build_samples --check] FAILED: rebuilt tables differ from the committed ones: {diff}' if diff else '', *fail[:10], sep='\n  ')
         sys.exit(1)
     print(f'[build_samples --check] {len(listed)} sources verified; registry.csv, samples.csv, accessions.csv reproduce exactly'); sys.exit(0)
-for name, text in outs.items():
-    with open(os.path.join(HERE, name), 'w', newline='') as f: f.write(text)
 
 print(f'[build_samples] {len(listed)} sources verified (sha256); {len(rows)} registry rows -> meta/registry.csv, '
       f'{len(wf)} -> meta/samples.csv, {len(accs)} accessions -> meta/accessions.csv')
@@ -388,5 +392,10 @@ print(f'  PV23 nursery book: PV23-BZea = Sheet12 female parent for {len(s12) - l
 print(f'  PN18 wells in the Sample List (plated, no sequencing record, not in the registry): {len(pn18)}')
 print(f'  accessions used by samples but missing from J2Teo metadata: {acc_missing}')
 if fail:
-    print('[build_samples] FAILED:'); [print('  ' + x) for x in fail[:20]]; sys.exit(1)
-print('[build_samples] all checks passed')
+    print('[build_samples] FAILED (nothing written):'); [print('  ' + x) for x in fail[:20]]; sys.exit(1)
+# write only after every check passed: each table goes to a temp file first, then all are renamed into place
+tmp = {name: os.path.join(HERE, f'.{name}.tmp') for name in outs}
+for name, text in outs.items():
+    with open(tmp[name], 'w', newline='') as f: f.write(text)
+for name in outs: os.replace(tmp[name], os.path.join(HERE, name))
+print('[build_samples] all checks passed; tables written')
