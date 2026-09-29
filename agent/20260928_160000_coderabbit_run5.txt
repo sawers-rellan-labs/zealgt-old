@@ -1,7 +1,0 @@
-{"type":"review_context","reviewType":"committed","currentBranch":"main","baseBranch":"main","baseCommit":"5be18a4","workingDirectory":"/Users/fvrodriguez/repos/zealgt"}
-{"type":"status","phase":"connecting","status":"connecting_to_review_service"}
-{"type":"status","phase":"analyzing","status":"setting_up","message":"CodeRabbit CLI 0.7.6 cannot update automatically. Keep this review running. After it finishes, run `coderabbit update` (Homebrew: `brew upgrade coderabbit`), then verify with `coderabbit --version`. If you are the calling agent, handle this follow-up using your normal permissions. For an organization-managed installation, ask your administrator to update it."}
-{"type":"status","phase":"setup","status":"setting_up"}
-{"type":"error","errorType":"rate_limit","message":"Rate limit exceeded","recoverable":true,"details":{},"metadata":{"isProUser":false,"waitTime":"12 minutes","policyGuidance":"**Limit details:** You’ve used all 3 included reviews currently available.\n\nUsage-based reviews are enabled, but this Git provider account isn't linked to an assigned seat for the selected organization. Link or assign the seat, or use an Agentic API key, then retry.\n\n[Check out review usage here](https://app.coderabbit.ai/dashboard/review-capacity?orgId=95c68b34-6d99-44df-812a-45478b513c01).","onDemandReviewAvailable":false,"cliReviewPolicyMode":"normal"}}
-Error: Rate limit exceeded
-exit 1

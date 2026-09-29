@@ -66,7 +66,11 @@ Spec index: https://nf-co.re/docs/specifications/overview
 ## This repository (zealgt)
 - One command for 1–4: `ZG_CHECK_PATH=$PWD/agent/bin:$PWD/agent/.venv_nfcore/bin:$PWD/agent/stubbin NXF_VER=26.04.6 bash scripts/run_checks.sh`
   (`--quick` = lints only). `agent/bin` has nextflow + nf-test, `agent/.venv_nfcore` nf-core tools, `agent/stubbin` version shims.
-- Review gate: `coderabbit review --committed --base-commit <base> --agent` (log in `agent/`), before any hazel data run.
+- Review gate (user rule, 2026-09-29): `coderabbit review --committed --base-commit <last reviewed> --agent`, required on the exact
+  commit before a **costly** run (Gate 2 and up, full libraries, production, > ~20 CPU-h); cheap diagnostics (Gate 0/1, subsample tests,
+  comparisons) do not wait. **Scope: only code that executes** — `modules/`, `subworkflows/`, `workflows/`, `conf/`, `nextflow.config`,
+  templates, `bin/`, `scripts/` submitted to hazel, tests; never `agent/` (untracked scratch), `docs/`, `meta/` data or handovers.
+  Review small and often (right after code commits) so diffs stay small; findings fixed or rejected in writing (log in `agent/`).
 - Deliberate deviations, recorded with reasons in `.nf-core.yml` and `docs/usage.md` "Deliberate deviations": no Docker/containers
   (offline cluster), no GitHub CI (`scripts/run_checks.sh` instead), resources read from Slurm (`bin/export_slurm_resources.sh`),
   storeDir store, per-source read-structure params, prebuilt build-pinned per-module conda prefixes (`conf/env_prefixes.config`),
