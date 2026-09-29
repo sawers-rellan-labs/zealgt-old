@@ -503,9 +503,11 @@ watched with the session kept open (`/loop`), acting only as the run card allows
 ### Testing ladder (gates, from zealbc1; climb only when the current gate passes)
 The ladder is climbed per workflow, in this order (user, 2026-09-29): the CRAM workflow's minimal gates → CRAM Gate 2 on the genotype
 development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on those CRAMs → the full dataset in waves on the user's go.
-- **Gate −1 · CodeRabbit** (local, before push, substantive changes only; before any real-data run, user rule):
-  `coderabbit review --committed --base main --agent`. It catches code/API bugs, not environment/data bugs; every finding is checked
-  against the code before it is applied.
+- **Gate −1 · CodeRabbit** (user rule, 2026-09-29): `coderabbit review --committed --base-commit <last reviewed> --agent` must pass on
+  the exact commit before any **costly** run (Gate 2 and up, full libraries, production, > ~20 CPU-h); cheap diagnostics (Gate 0/1,
+  subsample tests) do not wait. Scope: only code that executes (modules, subworkflows, workflows, conf, nextflow.config, templates,
+  bin, scripts, tests) — not agent/ scratch, docs or meta data. It catches code/API bugs, not environment/data bugs; every finding is
+  checked against the code before it is applied.
 - **CRAM workflow, minimal gates** (short QOS):
   - **Gate 0 · `-stub-run`**: every module's `stub:` touches its outputs, so the whole DAG runs in seconds and proves wiring,
     channel joins and filenames. Stub `work/` is cleaned afterwards (§5 rule 4, with the user's consent).

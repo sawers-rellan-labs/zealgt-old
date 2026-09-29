@@ -234,6 +234,20 @@ for r in rd('bc2s3_batch1_sample_sheet.csv'):
     d.update(j2cols(jr)); rows.append(d)
 pn18 = sorted(k for k in slist if k.startswith('PN18_'))
 
+# --- PV23 nursery book (23_NCS_PSU_LANGEBIO_FIELDS): check only, never a value source -----------------------------------
+N23 = 'drive/23_ncs_psu_langebio_fields.xlsx'
+pv23 = {r[0].strip(): r for r in sheet(N23, 'PV23-BZea')[1:] if r and r[0].strip()}   # = RR-23-Fields Sheet12 (packet -> female)
+pv23_mdiff = [k for k, v in s12.items() if (pv23.get(k[5:]) or [''] * 5)[4].strip() != v]
+if pv23_mdiff: fail.append(f'PV23-BZea female parent differs from RR-23-Fields Sheet12: {pv23_mdiff[:5]}')
+b4 = {r[0].strip(): r for r in sheet(N23, 'PV23-block4-BZea-Bulk')[1:] if r and r[0].strip()}   # batch-1 tissue plots
+b4_line_bad, b4_check_diff = [], []
+for d in rows:
+    if d['source'] != 'bc2s3_batch1': continue
+    r = b4.get(d['field_plot'][5:])
+    ok = bool(r) and r[3].strip() == d['seed_packet'] and canon(r[2]) == canon(d['delivered_name'])
+    if not ok: (b4_check_diff if d['role'] == 'check' else b4_line_bad).append(d['sample_id'])
+if b4_line_bad: fail.append(f'PV23-block4 plot disagrees with the prep sheet (packet or name): {b4_line_bad[:5]}')
+
 # --- BRB-seq (summer 2023, CLY23-D4 rep 3; RNA) -------------------------------------------------------------------------
 BRBP = 'drive/bzeabrb_library_prep_sheet_code.xlsx'
 brb_plot = {}
@@ -375,6 +389,9 @@ print(f'  flags (non-excluded rows): {dict(fc)}')
 print(f'  batch-1 vs superseded skim map: {dict(skim_cmp)}; differing: {skim_diff[:6]}')
 print(f'  batch-2 nil_id vs superseded well map: {len(wm_nil)} differ {wm_nil[:6]}')
 print(f'  replicate plots (batch 2): {sorted({tuple(sorted([d["sample_id"]] + d["replicate_of"].split(";"))) for d in b2 if d["replicate_of"]})}')
+print(f'  PV23 nursery book: PV23-BZea = Sheet12 female parent for {len(s12) - len(pv23_mdiff)}/{len(s12)} packets; '
+      f'PV23-block4 plot -> packet + name = prep sheet for all batch-1 lines, differs for {len(b4_check_diff)} checks {b4_check_diff[:4]}; '
+      f'block4 PV23-8396 = {(b4.get("8396") or ["", "", ""])[2]!r}')
 print(f'  PN18 wells in the Sample List (plated, no sequencing record, not in the registry): {len(pn18)}')
 print(f'  accessions used by samples but missing from J2Teo metadata: {acc_missing}')
 if fail:
