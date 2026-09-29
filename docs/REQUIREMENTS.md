@@ -30,7 +30,7 @@ chromosomes, with only `marker_union` and the PHG database as barriers.
 |---|---|---|
 | cutadapt | exact inline demux (`-e 0 --no-indels`) | `/share/maize/frodrig4/conda/env/assembly` |
 | minibwa, samtools | `-x sr`; MAPQ 20, `-F 0x904` | `.../conda/env/assembly`; PHG's samtools in `ZEAL/envs/phgv2-conda` |
-| cutadapt (trimming), FastQC | 5.2 (`-a`/`-A` TruSeq, `--nextseq-trim=15 -m 36`; PLAN §3 row 1b), 0.12.1 | zealgt module envs (nf-core cutadapt / fastqc); Trimmomatic 0.39 (batch-1 parameters) until 2026-09-29, replaced (comparison in §4) |
+| cutadapt (trimming), FastQC | 5.2 (`-a`/`-A` TruSeq, `--nextseq-trim=15 -m 36 --compression-level 4`; PLAN §3 row 1b), 0.12.1 | zealgt module envs (nf-core cutadapt / fastqc); Trimmomatic 0.39 (batch-1 parameters) until 2026-09-29, replaced (comparison in §4) |
 | duplicate marking | `samtools markdup -d 2500` (decided, PLAN §4 #1) | `.../conda/env/assembly` |
 | Picard CollectWgsMetrics, MultiQC | picard 3.5.0, multiqc 1.25 | `.../conda/env/qc` |
 | bcftools / htslib | mpileup `-I -q20 -Q20 -a AD` | `.../conda/env/nilhmm` |
@@ -111,7 +111,7 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
 | MERGE_LANES (cat of lane gzips) | 1 | 4 → 2.7 | < 10 MB | 3 min 51 | 124.7 GB written (a second copy of the demux FASTQs) |
 | DEMUX_QC | 1 | 1 → 0.8 | 0.1 GB | 20 s | |
 | TRIMMOMATIC | 12 | 8 → 2.9–3.7 | 0.6–0.8 GB | 10 min – 1 h 15 (**25–31 k pairs/s**) | the Gate 1 estimate (10 k/s) was 3× pessimistic; 4 h limit is ample (replaced by CUTADAPT since, below) |
-| CUTADAPT (trimming, since 2026-09-29) | — | not yet run at full size in a CRAM gate | — | — | from the comparison below: 4.8 s per M pairs at 4 cores, 95 MB; CRAM Gate 2 confirms |
+| CUTADAPT (trimming, since 2026-09-29) | — | not yet run at full size in a CRAM gate | — | — | from the comparison below: 6.3 s per M pairs at 4 cores with level-4 output, ≤ 0.12 GB; CRAM Gate 2 confirms |
 | FASTQC | 12 | 2 → 1.9 | 0.7–0.8 GB | 3–17 min | |
 | ALIGN_MARKDUP (completed attempts) | 12 | 8 → 7.0–7.5 | 23.1 (24 GB) / 23.9–46.5 (48 GB) / 48.2 (72 GB) GB | 21 min – 2 h 57 (~0.6 M pairs/min) | see the memory model below |
 | SAMTOOLS_STATS | 12 | 2 → 1.2–1.7 | 0.4 GB | 2–11 min | |
@@ -154,8 +154,9 @@ the lane task dirs are cleaned).
   in the Gate 1 table is superseded. `-trimlog` is no longer written (functional TRIMMOMATIC patch), which removes the trimlog share
   of the `work/` peak. (History: TRIMMOMATIC was replaced by CUTADAPT on 2026-09-29, next bullet.)
 - **CUTADAPT** (replaces TRIMMOMATIC; comparison below): 4.1–5.8 s per M pairs at 4 cores (mean 4.8), 1.9–2.9 at 8, linear in
-  the pairs; peak RSS 86–104 MB. Request (branch `simplify`): 4 cpus, 1 GB × attempt, 0.1 + 0.02 h per GiB of the merged input
-  pair (~0.125 GiB per M pairs; × 1.25 margin and × 1.4 node spread), floor 15 min, × attempt → 22 min for 100 M pairs, 54 min for
+  the pairs; peak RSS 86–104 MB (gzip level 1). At the chosen level 4 (compression retest below): 6.1–6.4 s per M pairs at 4
+  cores (≈ 50 s per GiB). Request (branch `simplify`): 4 cpus, 1 GB × attempt, 0.1 + 0.025 h per GiB of the merged input pair
+  (~0.125 GiB per M pairs; × 1.25 margin and × 1.4 node spread), floor 15 min, × attempt → 25 min for 100 M pairs, 1 h 05 for
   ~310 M (short QOS on `normal`); CRAM Gate 2 confirms at full size.
 - **Right-sized requests (branch `simplify`, from these 12 samples; main checkout `agent/20260928_145500_gate3_projection.md` §1b,
   cross-check fit in `agent/handover_20260928_233000_rightsize_time.md`):** the right size plus a margin, never a maximum for every
@@ -186,16 +187,29 @@ samtools stats. Means over the 5 samples:
 | primary MAPQ ≥ 20 | 62.43 % | 62.49 % | 62.46 % |
 | mismatch rate | 0.00580 | 0.00546 | 0.00581 (cutadapt keeps more 3′ bases; SLIDINGWINDOW:4:15 cuts more) |
 | aligned bases per read | 132.8 | 132.5 | 132.5 |
-| runtime, 8 threads | — | 39.6 s per M pairs | 2.5 s per M pairs (~16×) |
-| runtime, 4 threads | — | 39.5 s per M pairs | 4.8 s per M pairs (4.1–5.8) |
-| peak RSS | — | 423 MB | 95 MB |
-| output gz per 8 M pairs | — | 0.93 GB | 1.09 GB (+17 %) |
 
-- nt15 = `--nextseq-trim=15 -m 36` with `-a` / `-A` the full TruSeq read-through adapters. The +17 % output comes from cutadapt 5's
-  default gzip level 1 (`-Z` gave identical sizes); the checkpoint footprint grows by the same share.
+Runtime, memory and output size: see the compression retest below (it replaces the first comparison's runtime and size
+lines, which were measured at cutadapt's default gzip level 1).
+
+- nt15 = `--nextseq-trim=15 -m 36` with `-a` / `-A` the full TruSeq read-through adapters (production adds `--compression-level 4`, below).
 - Variants: `-q 3,15` (no G handling) keeps 0.2 pp more bases but leaves poly-G tails (0.009 / 0.023 %); nt15 + `-q 3,0` is
   byte-identical in its metrics to nt15 (the binned NovaSeq X qualities never fall below Q3 at the 5′ end, so LEADING:3 has no
   effect to replace; cutadapt accepts `--nextseq-trim` together with `-q`); `-Z` changes nothing.
+
+**Compression retest (2026-09-29; hazel jobs of `zg_trimgz`; log `agent/20260929_195500_compression_retest_raw.tsv`).** The same 8 M-pair subsamples of the 5 1A samples,
+4 cpus each; means per method (output = both reads, per 8 M input pairs):
+
+| method | s per M pairs (wall) | CPU s per M pairs (user + sys) | output |
+|---|---|---|---|
+| Trimmomatic, gzip output (its Java Deflater; the size matches zlib level 6: recompressed 453.3 MB vs 453.6 MB at L6) | 38.6 | 105 | 933 MB |
+| Trimmomatic, uncompressed | 9.3 | 34 | 5.38 GB |
+| cutadapt nt15, level 1 (cutadapt 5.2 default) | 4.3 | 16 | 1089 MB (+17 % vs Trimmomatic) |
+| cutadapt nt15, **level 4 (chosen)** | 6.3 | 24 | 997 MB (+6.8 % vs Trimmomatic, for ~2 % more pairs and ~1.9 % more bases kept) |
+| cutadapt nt15, uncompressed | 3.7 | 14 | 5.48 GB |
+
+- Compression is ~76 % of Trimmomatic's wall time; trimming alone, cutadapt is ~2.5× faster (3.7 vs 9.3 s per M pairs); end to
+  end, level 4 vs Trimmomatic is ~6× faster. Level 4 costs +2 s per M pairs over level 1 and recovers ~60 % of the size increase.
+- Peak RSS: cutadapt 0.07–0.12 GB, Trimmomatic 0.41 GB.
 
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for
 BC1 alignment of deep libraries; downloads on `--partition=xfer --mem=8G`. Genome-wide ≈ chr10 × 14 for the per-chromosome stages;

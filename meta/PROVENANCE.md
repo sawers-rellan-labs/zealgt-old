@@ -152,14 +152,19 @@ Evidence:
   - 3′ quality trimming with G bases treated as low quality (`--nextseq-trim=15`): the reads are two-colour (NovaSeq X for BC1 and
     batch 2, NovaSeq 6000 for batch 1), where no signal reads as a high-quality G, so poly-G tails survive Trimmomatic's quality steps;
   - pairs dropped when either read is < 36 bp (`-m 36`; the same as keeping only Trimmomatic's paired output);
-  - qualities read as phred+33 (cutadapt's default; no encoding auto-detection, so an empty well needs no option).
+  - qualities read as phred+33 (cutadapt's default; no encoding auto-detection, so an empty well needs no option);
+  - output gzip level 4 (`--compression-level 4`, in `trim_args`; cutadapt 5's default is level 1).
 - **Not replicated:** LEADING:3 (5′ quality) and the SLIDINGWINDOW algorithm (cutadapt uses BWA-style 3′ trimming); the palindrome
   clip is replaced by an adapter search on each read.
 - **Measured (docs/REQUIREMENTS.md §4, measurement log `agent/20260929_182000_trim_comparison_summary.txt`):** on 8 M pairs of each of 5 BC1 1A samples, Trimmomatic's clipping
   left the full adapter 13-mer in 1.25 % of reads and a 3′ partial adapter in 2.7 %; cutadapt leaves 0.06 % / 0.003 %. cutadapt keeps
   ~2 % more pairs (99.81 vs 97.87 %), maps the same (99.65 vs 99.66 % mapped, 97.52 vs 97.53 % properly paired), removes the poly-G
-  tails (0 vs 0.004 % of reads ending in ≥ 10 G), and is ~16× faster (2.5 vs 39.6 s per M pairs at 8 threads). LEADING:3 has no
-  effect to replace: the binned NovaSeq X qualities never fall below Q3 at the 5′ end (`-q 3,0` gave identical metrics).
+  tails (0 vs 0.004 % of reads ending in ≥ 10 G). LEADING:3 has no effect to replace: the binned NovaSeq X qualities never fall
+  below Q3 at the 5′ end (`-q 3,0` gave identical metrics).
+- **Speed and size (compression retest, 4 cpus, log `agent/20260929_195500_compression_retest_raw.tsv`):** end to end ~6× faster at level 4 (6.3 vs 38.6 s per M
+  pairs; trimming alone ~2.5×, 3.7 vs 9.3 s: compression is ~76 % of Trimmomatic's wall time, its Java Deflater ≈ zlib
+  level 6); output 997 vs 933 MB per 8 M input pairs (+6.8 %, for ~2 % more pairs and ~1.9 % more bases kept; level 1 was
+  +17 %); peak RSS 0.07–0.12 vs 0.41 GB.
 - **Why:** better adapter removal, poly-G handling, one tool family with DEMUX, a maintained nf-core module, multi-core, a
   MultiQC-native log, and no Java heap tuning.
 

@@ -34,7 +34,7 @@ entries end at the CRAM stop point and write one MultiQC report per library (per
   `registry_file` (the `--registry` the snapshot was read from), `registry_note` (empty, or `sample_id not in the registry`),
   `reg_<column>` (the sample's `meta/registry.csv` row for the provenance record's registry snapshot: 38 raw identity and biology
   columns plus `pedigree_resolved`, `nil_id_resolved`, `donor_resolved`, `correction_ids`; read back as text), `read_group`, `read_structure` (crops already applied), `layout`, `barcode_r1`, `barcode_r2`, `demux_args`,
-  `trim_tool` (`cutadapt`), `trim_adapter_r1`, `trim_adapter_r2`, `trim_args`, `raw_location`, `raw_files_r1`, `raw_files_r2`, `tar_members_r1`,
+  `trim_tool` (`cutadapt`), `trim_adapter_r1`, `trim_adapter_r2`, `trim_args` (default `--nextseq-trim=15 -m 36 --compression-level 4`), `raw_location`, `raw_files_r1`, `raw_files_r2`, `tar_members_r1`,
   `tar_members_r2` (`;`-joined lists), `subsample`, `stage1_run_id`, `stage1_session_id`, `stage1_code_version`,
   `stage1_tool_versions` (`PROCESS.tool=version;...` of DEMUX and CUTADAPT, e.g. `CUTADAPT.cutadapt=5.2;DEMUX.cutadapt=4.9;...`). Both stage-2 entries build meta, read group and the
   provenance record from these columns with the same function, so the records differ only in the run fields.

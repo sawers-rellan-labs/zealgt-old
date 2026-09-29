@@ -207,12 +207,12 @@ sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comp
 zealgt until then: Trimmomatic 0.39 `PE -phred33 ILLUMINACLIP:<adapters>:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36`,
 unpaired reads discarded. Now: the full TruSeq read-through adapter on each read (`-a` / `-A`, params `trim_adapter_r1` /
 `trim_adapter_r2`), 3′ quality trimming with G as low quality (`--nextseq-trim=15`: two-colour NovaSeq X / 6000 reads, whose
-poly-G tails pass Trimmomatic's quality steps), pairs dropped when a read is < 36 bp (`-m 36`); `trim_args` holds the last two.
+poly-G tails pass Trimmomatic's quality steps), pairs dropped when a read is < 36 bp (`-m 36`), output at gzip level 4 (`--compression-level 4`); `trim_args` holds the last three.
 Not replicated: LEADING:3 and SLIDINGWINDOW (cutadapt trims 3′ BWA-style); the palindrome clip becomes an adapter search per read.
 Why (comparison on 8 M pairs of 5 BC1 1A samples, docs/REQUIREMENTS.md §4, meta/PROVENANCE.md): residual adapter 13-mer 0.06 vs
-1.25 % of reads, 3′ partial adapter 0.003 vs 2.7 %, ~2 % more pairs kept, the same mapping, no poly-G tails, ~16× faster; plus
-one tool family with DEMUX, a maintained nf-core module, a MultiQC-native log, no Java heap tuning. Output gz +17 % (cutadapt 5's
-default gzip level 1), so the checkpoint footprint grows by that share.
+1.25 % of reads, 3′ partial adapter 0.003 vs 2.7 %, ~2 % more pairs kept, the same mapping, no poly-G tails, ~6× faster end to end (level 4); plus
+one tool family with DEMUX, a maintained nf-core module, a MultiQC-native log, no Java heap tuning. Output at level 4 +6.8 % vs
+Trimmomatic's (level 1, cutadapt 5's default, was +17 %), so the checkpoint footprint grows by that share.
 
 **Two CRAM-workflow stages and the FASTQ checkpoint** (user, 2026-09-29; branch `simplify`, 2026-09-28). Stage 1 `read_demultiplexing`
 ends in a published checkpoint: each sample's trimmed pair is hardlinked (`publishDir mode: 'link'`, same GPFS as `work/`) to

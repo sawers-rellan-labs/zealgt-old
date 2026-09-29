@@ -212,8 +212,8 @@
                 },
                 "trim_args": {
                     "type": "string",
-                    "default": "--nextseq-trim=15 -m 36",
-                    "description": "Further CUTADAPT flags after the adapters (poly-G-aware 3' quality trim, minimum length; PLAN §3 row 1b)."
+                    "default": "--nextseq-trim=15 -m 36 --compression-level 4",
+                    "description": "Further CUTADAPT flags after the adapters (poly-G-aware 3' quality trim, minimum length, gzip level of the output; PLAN §3 row 1b)."
                 },
                 "align_args": {
                     "type": "string",

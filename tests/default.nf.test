@@ -209,7 +209,7 @@ nextflow_pipeline {
                               [read_group: "\"@RG\\tID:${s}\\tSM:${s}\\tLB:LIBX\\tPL:ILLUMINA\\tPU:TESTFC01.1,TESTFC01.2\"", read_structure: '6B2S+T 6B2S+T',
                                layout: 'symmetric', barcode_r1: bc, barcode_r2: bc, demux_args: '-e 0 --no-indels --discard-untrimmed -Z',
                                trim_tool: 'cutadapt', trim_adapter_r1: 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCA',
-                               trim_adapter_r2: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT', trim_args: '--nextseq-trim=15 -m 36', raw_location: '/raw/LIBX',
+                               trim_adapter_r2: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT', trim_args: '--nextseq-trim=15 -m 36 --compression-level 4', raw_location: '/raw/LIBX',
                                raw_files_r1: 'LIBX_TESTFC01_L1_1.fq.gz;LIBX_TESTFC01_L2_1.fq.gz', raw_files_r2: 'LIBX_TESTFC01_L1_2.fq.gz;LIBX_TESTFC01_L2_2.fq.gz',
                                tar_members_r1: '', tar_members_r2: '', subsample: '0', stage1_run_id: '',
                                stage1_session_id: '00000000-0000-0000-0000-000000000000', stage1_code_version: 'test',

@@ -10,13 +10,13 @@ Initial release of sawers-rellan-labs/zealgt, created with the [nf-core](https:/
 ### `Changed`
 
 - Trimming: CUTADAPT (nf-core module, cutadapt 5.2) replaces TRIMMOMATIC after MERGE_LANES: the full TruSeq adapter on each
-  read (`--trim_adapter_r1` / `--trim_adapter_r2`), `--trim_args '--nextseq-trim=15 -m 36'` (poly-G-aware 3′ quality trim,
-  pairs with a read < 36 bp dropped); chosen by a Trimmomatic-vs-cutadapt comparison (meta/PROVENANCE.md, REQUIREMENTS §4).
+  read (`--trim_adapter_r1` / `--trim_adapter_r2`), `--trim_args '--nextseq-trim=15 -m 36 --compression-level 4'` (poly-G-aware 3′
+  quality trim, pairs with a read < 36 bp dropped, gzip level 4 output); chosen by a Trimmomatic-vs-cutadapt comparison (meta/PROVENANCE.md, REQUIREMENTS §4).
   Checkpoint files `<sample>_{1,2}.trim.fastq.gz` + `<sample>.cutadapt.log`; samplesheet columns `trim_tool`,
   `trim_adapter_r1`, `trim_adapter_r2`, `trim_args` replace `trim_illuminaclip`, `trim_args`, `trim_adapters`; provenance
   `trimming = {tool, adapter_r1, adapter_r2, args}` (no `phred`); `stage1_tool_versions` keyed `PROCESS.tool`. Removed: the
   trimmomatic module and its patch, `--trim_adapters`, `--trim_illuminaclip`, `assets/adapters/TruSeq3-PE-2.fa`, the
-  trimmomatic env. hazel: CUTADAPT 4 cpus, 1 GB, 0.1 + 0.02 h per input GiB. Checkpoint samplesheets written before this
+  trimmomatic env. hazel: CUTADAPT 4 cpus, 1 GB, 0.1 + 0.025 h per input GiB. Checkpoint samplesheets written before this
   change no longer validate (other columns and file names).
 
 ### `Added`
