@@ -59,7 +59,7 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,152088e5d62df97f4d7f7c1ccb2e6377"
+                        "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,34ed522af9013d913ad146b5a448683d"
                     ]
                 ],
                 "6": [
@@ -92,7 +92,7 @@
                             "donor": "Zx.0001_P1",
                             "region": "chrA_1-5000"
                         },
-                        "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,152088e5d62df97f4d7f7c1ccb2e6377"
+                        "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,34ed522af9013d913ad146b5a448683d"
                     ]
                 ],
                 "line_qc": [
@@ -130,7 +130,7 @@
                 ]
             }
         ],
-        "timestamp": "2026-09-28T14:35:13.018985",
+        "timestamp": "2026-09-29T12:59:29.174831",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

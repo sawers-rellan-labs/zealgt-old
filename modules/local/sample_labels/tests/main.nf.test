@@ -28,8 +28,8 @@ nextflow_process {
                     'Zx.0001_P1',
                     ['B73_X']
                 ])
-                input[1] = file(d + 'samples.csv', checkIfExists: true)
-                input[2] = 'tests/data/samples.csv'
+                input[1] = file(d + 'registry.csv', checkIfExists: true)
+                input[2] = 'tests/data/registry.csv'
                 input[3] = 'abc123'
                 """
             }

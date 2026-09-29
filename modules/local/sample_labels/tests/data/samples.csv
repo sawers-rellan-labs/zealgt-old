@@ -1,7 +1,0 @@
-sample_id,source,role,donor,taxon,nil_id,pedigree
-PN1_SID1,bc2s3_batch1,line,Zx.0001_P1,mexicana,Zx00011111,Zx.0001_P1-1
-PN1_SID2,bc2s3_batch1,line,Zx.0001_P1,mexicana,Zx00012222,Zx.0001_P1-2
-PN1_SID3,bc2s3_batch1,line,Zx.0001_P1,mexicana,Zx00012222,Zx.0001_P1-2
-PN1_SID4,bc2s3_batch1,line,Zx.0001_P1,mexicana,,Zx.0001_P1-bulk
-S_1A_1,bc1,bc1_sample,Zx.0001_P1,mexicana,,Zx.0001_P1_P1
-PN9_SID9,bc2s3_batch1,line,Zx.0009_P1,mexicana,Zx00091111,Zx.0009_P1-1

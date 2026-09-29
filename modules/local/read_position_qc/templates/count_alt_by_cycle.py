@@ -132,6 +132,10 @@ def count_sample(job):
     nrec = 0
     for line in proc.stdout:
         t = line.rstrip(NL).split(TAB, 11)
+        if len(t) < 11:
+            # not a SAM record (e.g. a samtools wrapper that printed something else): fail with the line, not an IndexError
+            proc.kill()
+            raise RuntimeError(f"READ_POSITION_QC: samtools view gave a line that is not a SAM record for {sample}: {line[:200]!r}")
         nrec += 1
         for mate, cycle, cls in record_bases(int(t[1]), int(t[3]), t[5], t[9], t[10], sites, min_bq):
             b = bin_of(cycle, bins)

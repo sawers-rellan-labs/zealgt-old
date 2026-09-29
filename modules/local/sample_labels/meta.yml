@@ -3,7 +3,7 @@
 # zealgt local module. No own environment.yml: it runs in the shared python env of the genotype python modules
 # (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv SAMPLE_LABELS -> pooled_likelihood_tiers).
 name: sample_labels
-description: Edge translation of one donor x region (meta/PROVENANCE.md "Identifiers") - one join of the internal sample_id on the registry (meta/samples.csv) giving the short label (nil_id, else pedigree, else sample_id; replicate-well collisions suffixed with the sample_id) in the final genotype tables, the exclusion table and the segments / line_qc read by the reports, plus a labels table recording the registry path, sha256 and repo commit.
+description: Edge translation of one donor x region (meta/PROVENANCE.md "Identifiers") - one join of the internal sample_id on the registry (meta/registry.csv, resolved columns) giving the short label (nil_id_resolved, else pedigree_resolved, else sample_id; excluded wells refused; replicate-well collisions suffixed with the sample_id) in the final genotype tables, the exclusion table and the segments / line_qc read by the reports, plus a labels table recording the registry path, sha256 and repo commit.
 keywords:
   - genotyping
   - reporting
@@ -56,7 +56,7 @@ input:
         description: The unit's sheet samples (donor samples and B73 controls), listed in the labels table even when absent from the tables
   - registry:
       type: file
-      description: Sample registry meta/samples.csv (columns sample_id, nil_id, pedigree, donor, taxon, role)
+      description: Sample registry meta/registry.csv (columns sample_id, nil_id_resolved, pedigree_resolved, donor_resolved, taxon, role, correction_ids, exclude)
       pattern: "*.csv"
       ontologies: []
   - registry_source:
@@ -117,7 +117,7 @@ output:
           description: Groovy Map with the donor x region
       - "*.sample_labels.tsv":
           type: file
-          description: "Per sample: sample_id label label_source collision nil_id pedigree donor taxon role registry registry_sha256 code_version"
+          description: "Per sample: sample_id label label_source collision nil_id pedigree donor (resolved values) taxon role correction_ids registry registry_sha256 code_version"
           pattern: "*.sample_labels.tsv"
           ontologies: []
   versions:

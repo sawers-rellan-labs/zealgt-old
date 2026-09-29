@@ -1,6 +1,8 @@
 """Unit tests of templates/count_alt_by_cycle.py: cycles in sequencing orientation (python3 -m unittest discover -s <dir>)."""
+import os
 import pathlib
 import re
+import tempfile
 import types
 import unittest
 
@@ -54,6 +56,24 @@ class Cycles(unittest.TestCase):
         self.assertEqual(M.bin_of(1, bins), "1-2")
         self.assertEqual(M.bin_of(12, bins), "9-12")
         self.assertEqual(M.bin_of(150, bins), "81-")
+
+
+class NotSam(unittest.TestCase):
+    def test_non_sam_line_fails_clearly(self):
+        # a samtools wrapper that prints a version line for every call (the laptop stub shim) gave an IndexError before
+        with tempfile.TemporaryDirectory() as tmp:
+            shim = os.path.join(tmp, "samtools")
+            with open(shim, "w") as fh:
+                fh.write("#!/bin/sh" + chr(10) + "echo 'samtools 1.24'" + chr(10))
+            os.chmod(shim, 0o755)
+            old = os.environ["PATH"]
+            os.environ["PATH"] = tmp + os.pathsep + old
+            try:
+                job = ("S1", "S1.bam", "ref.fa", "sites.bed", [], SITES, 20, M.parse_bins(M.DEFAULT_BINS))
+                with self.assertRaisesRegex(RuntimeError, "not a SAM record for S1"):
+                    M.count_sample(job)
+            finally:
+                os.environ["PATH"] = old
 
 
 if __name__ == "__main__":

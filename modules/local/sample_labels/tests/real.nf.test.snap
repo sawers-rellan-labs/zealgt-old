@@ -58,11 +58,11 @@
                         "donor": "Zx.0001_P1",
                         "region": "chrA_1-5000"
                     },
-                    "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,4f192119f049260c32c0ed01f8d843cb"
+                    "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,eb69498acfbf47d52777c5cb4b948a52"
                 ]
             ]
         ],
-        "timestamp": "2026-09-28T14:35:15.747798",
+        "timestamp": "2026-09-29T12:59:31.877031",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

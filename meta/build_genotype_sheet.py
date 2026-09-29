@@ -16,17 +16,19 @@ are INFERRED for these imports, not recorded by the pipeline that made them:
   B73_skim10           12 /  0  merge of 10 batch-1 B73 checks (made like the batch-1 lines).
   B73_ERR3288215        0 /  0  SRA reads, no inline barcode or randomer.
   (CRAMs demultiplexed by zealgt are cropped at demux and carry 0 / 0; they are not in this sheet.)
-Biology from the registry (meta/PROVENANCE.md "Identifiers: one physical key, biology in the registry"): donor, role and taxon
-come from meta/samples.csv joined on sample_id; dev_import.csv supplies only the import fields (source, include; masks by
-source). Documented exception: the two B73 controls (B73_ERR3288215, B73_skim10) have no registry row; they keep role
-b73_control from dev_import.csv and no donor / taxon. Any other row missing from the registry is refused.
+Biology from the registry (meta/PROVENANCE.md "Identifiers: one physical key, biology in the registry"): role, taxon and the
+donor come from meta/registry.csv joined on sample_id, the donor from `donor_resolved` (meta/corrections.csv applied; a
+corrected well groups with its resolved donor); dev_import.csv supplies only the import fields (source, include; masks by
+source). A registry row with exclude = TRUE is refused. Documented exception: the two B73 controls (B73_ERR3288215,
+B73_skim10) have no registry row; they keep role b73_control from dev_import.csv and no donor / taxon. Any other row missing
+from the registry is refused.
 
 Usage: python3 meta/build_genotype_sheet.py   (writes meta/genotype_dev.csv; exits 1 on a failed check)"""
 import csv, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, 'dev_import.csv')
-REGISTRY = os.path.join(HERE, 'samples.csv')
+REGISTRY = os.path.join(HERE, 'registry.csv')
 OUT = os.path.join(HERE, 'genotype_dev.csv')
 ROLES = {'bc1_sample', 'line', 'b73_control'}
 COLS = ['sample_id', 'role', 'donor', 'taxon', 'source', 'store_dir', 'mask_r1', 'mask_r2', 'include', 'mask_source']
@@ -50,8 +52,11 @@ def build():
     for r in rows:
         sid = r['sample_id']
         reg = registry.get(sid)
+        if reg is not None and reg['exclude'].strip().upper() == 'TRUE':
+            errors.append(f'{sid}: excluded in the registry {REGISTRY} ({reg["exclude_reason"]})')
+            continue
         if reg is not None:
-            role, donor, taxon = reg['role'], reg['donor'], reg['taxon']
+            role, donor, taxon = reg['role'], reg['donor_resolved'], reg['taxon']
         elif r['role'] == 'b73_control':
             role, donor, taxon = 'b73_control', '', ''
         else:

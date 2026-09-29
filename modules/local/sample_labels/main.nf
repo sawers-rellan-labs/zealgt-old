@@ -1,8 +1,9 @@
 // SAMPLE_LABELS — stage 8, first reporting task of one donor x region: the edge translation of meta/PROVENANCE.md
 // "Identifiers: one physical key, biology in the registry". Internal tables are keyed by the well-level sample_id; this task
-// joins them ONCE on the current registry (meta/samples.csv) and writes the final genotype tables (long + matrix), the
-// exclusion table and the segments / line_qc that GENOTYPE_SUMMARY and CHROMOSOME_PAINTING read with the short label:
-// nil_id, else pedigree (line id), else the sample_id (B73 controls have no registry row). Replicate wells that share a
+// joins them ONCE on the current registry (meta/registry.csv, resolved columns = meta/corrections.csv applied) and writes the
+// final genotype tables (long + matrix), the exclusion table and the segments / line_qc that GENOTYPE_SUMMARY and
+// CHROMOSOME_PAINTING read with the short label: nil_id_resolved, else pedigree_resolved (line id), else the sample_id (B73
+// controls have no registry row; a row with exclude = TRUE is refused). Replicate wells that share a
 // nil_id are suffixed _<sample_id> and listed in <unit>.sample_labels.tsv, which also records the registry path, sha256 and
 // the repo commit (code_version). The registry is recorded, not part of the settings guard.
 // templates/label_samples.py (module template, hashed by content). Published only (no store), but Nextflow allows `eval`
@@ -47,7 +48,7 @@ process SAMPLE_LABELS {
     cp ${segments} ${prefix}.segments.csv
     cp ${line_qc} ${prefix}.line_qc.tsv
     cp ${exclusions} ${prefix}.exclusions.tsv
-    printf 'sample_id\\tlabel\\tlabel_source\\tcollision\\tnil_id\\tpedigree\\tdonor\\ttaxon\\trole\\tregistry\\tregistry_sha256\\tcode_version\\n' > ${prefix}.sample_labels.tsv
+    printf 'sample_id\\tlabel\\tlabel_source\\tcollision\\tnil_id\\tpedigree\\tdonor\\ttaxon\\trole\\tcorrection_ids\\tregistry\\tregistry_sha256\\tcode_version\\n' > ${prefix}.sample_labels.tsv
 
     cat <<-END_VERSIONS > ${prefix}.sample_labels.versions.yml
     "${task.process}":

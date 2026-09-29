@@ -6,9 +6,12 @@ Nextflow module template (modules/local/sample_labels/main.nf): no backslashes o
 tab / newline are chr(9) / chr(10). Every placeholder is read inside main(), so the functions are importable by the unit
 tests (tests/test_label_samples.py). Standard library only.
 
-Label of a sample_id, from ONE join on the current registry (meta/samples.csv):
-  nil_id if non-empty, else pedigree (the line id, e.g. BC1 samples), else the sample_id itself (label_source
-  sample_id_no_label); a sample without a registry row (the B73 controls) keeps its sample_id (sample_id_not_in_registry).
+Label of a sample_id, from ONE join on the current registry (meta/registry.csv), resolved columns only (meta/corrections.csv
+applied by meta/build_samples.py; the raw columns stay as the sources give them):
+  nil_id_resolved if non-empty, else pedigree_resolved (the line id, e.g. BC1 samples), else the sample_id itself
+  (label_source sample_id_no_label); a sample without a registry row (the B73 controls) keeps its sample_id
+  (sample_id_not_in_registry). A registry row marked exclude = TRUE is refused (an excluded well has no genotype).
+  The labels table carries the resolved values in its nil_id / pedigree / donor columns and the row's correction_ids.
   Collision: when two samples of the unit get the same label (replicate wells share a nil_id), every one of them is
   labelled <label>_<sample_id> (deterministic) and the others are listed in the collision column of sample_labels.tsv.
   A registry donor that differs from the unit donor is refused (a relabelled well belongs to another unit).
@@ -18,8 +21,8 @@ Inputs (RASTERIZE, LINE_MARKER_QC, RTIGER, the workflow's exclusion table), rela
   segments CSV [name]          ->  <prefix>.segments.csv             (for GENOTYPE_SUMMARY and CHROMOSOME_PAINTING)
   line_qc.tsv [sample]         ->  <prefix>.line_qc.tsv              (idem)
   exclusions.tsv [sample]      ->  <prefix>.exclusions.tsv           (sample_id column added after sample)
-  <prefix>.sample_labels.tsv   sample_id label label_source collision nil_id pedigree donor taxon role registry
-                               registry_sha256 code_version, one row per sample of the unit (the listed sample ids plus
+  <prefix>.sample_labels.tsv   sample_id label label_source collision nil_id pedigree donor taxon role correction_ids
+                               registry registry_sha256 code_version, one row per sample of the unit (the listed sample ids plus
                                every id in the tables), sorted by sample_id
   <prefix>.sample_labels.versions.yml
 The registry is recorded (path, sha256, repo commit), not guarded: reporting writes nothing to the store and the rule wants
@@ -37,8 +40,11 @@ import sys
 TAB = chr(9)
 NL = chr(10)
 DOT = "."
-COLS = ["sample_id", "label", "label_source", "collision", "nil_id", "pedigree", "donor", "taxon", "role", "registry",
-        "registry_sha256", "code_version"]
+COLS = ["sample_id", "label", "label_source", "collision", "nil_id", "pedigree", "donor", "taxon", "role", "correction_ids",
+        "registry", "registry_sha256", "code_version"]
+# registry column -> labels-table column (the resolved identity; meta/PROVENANCE.md "Corrections are applied at the end")
+RESOLVED = {"nil_id_resolved": "nil_id", "pedigree_resolved": "pedigree", "donor_resolved": "donor"}
+REG_COLS = ["sample_id", "taxon", "role", "correction_ids", "exclude"] + list(RESOLVED)
 
 
 class LabelError(Exception):
@@ -67,10 +73,11 @@ def sha256(path):
 
 
 def read_registry(path):
-    """{sample_id: row} of the registry CSV (needs sample_id, nil_id, pedigree, donor)."""
+    """{sample_id: row} of the registry CSV; row keys are the labels-table names (nil_id, pedigree, donor = the resolved
+    columns), plus taxon, role, correction_ids and exclude (TRUE / FALSE / empty)."""
     with open(path, newline="") as fh:
         rd = csv.DictReader(fh)
-        missing = [c for c in ("sample_id", "nil_id", "pedigree", "donor") if c not in (rd.fieldnames or [])]
+        missing = [c for c in REG_COLS if c not in (rd.fieldnames or [])]
         if missing:
             raise LabelError(f"registry {path}: missing columns {missing}")
         reg = {}
@@ -78,7 +85,7 @@ def read_registry(path):
             sid = r["sample_id"].strip()
             if sid in reg:
                 raise LabelError(f"registry {path}: duplicate sample_id {sid}")
-            reg[sid] = {k: (v or "").strip() for k, v in r.items() if k is not None}
+            reg[sid] = {RESOLVED.get(c, c): (r[c] or "").strip() for c in REG_COLS}
     return reg
 
 
@@ -122,13 +129,15 @@ def assign_labels(ids, registry, donor):
             base, src = r["pedigree"], "pedigree"
         else:
             base, src = sid, "sample_id_no_label"
+        if r.get("exclude", "").upper() == "TRUE":
+            raise LabelError(f"{sid}: excluded in the registry (exclude = TRUE)")
         if donor and r.get("donor") and r["donor"] != donor:
             raise LabelError(f"{sid}: registry donor " + r["donor"] + f" differs from the unit donor {donor}")
         if any(c in base for c in (TAB, NL, chr(13))):
             raise LabelError(f"{sid}: label {base!r} contains a tab or newline")
         rec[sid] = {"sample_id": sid, "label": base, "label_source": src, "collision": DOT,
                     "nil_id": r.get("nil_id", ""), "pedigree": r.get("pedigree", ""), "donor": r.get("donor", ""),
-                    "taxon": r.get("taxon", ""), "role": r.get("role", "")}
+                    "taxon": r.get("taxon", ""), "role": r.get("role", ""), "correction_ids": r.get("correction_ids", "")}
     by = {}
     for sid, x in rec.items():
         by.setdefault(x["label"], []).append(sid)

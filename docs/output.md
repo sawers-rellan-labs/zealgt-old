@@ -44,8 +44,10 @@ The genotype workflow reads `--cram_store` and never writes there. Its reusable 
 **Identifiers** (meta/PROVENANCE.md "Identifiers: one physical key, biology in the registry"): every store table, every
 internal table and every QC table (`sample_qc.tsv`, `line_qc.tsv`, `read_position_qc.tsv`, the VCF pool names) is keyed by the
 well-level `sample_id`. Only the **final reporting outputs** carry the short id: SAMPLE_LABELS joins the `sample_id` once on
-the current registry (`--registry`, default `meta/samples.csv`) and labels each sample with its `nil_id`, else its `pedigree`
-(line id, e.g. BC1 samples), else its `sample_id` (the B73 controls have no registry row). Replicate wells that share a
+the current registry (`--registry`, default `meta/registry.csv`) and labels each sample with its `nil_id_resolved`, else its
+`pedigree_resolved` (line id, e.g. BC1 samples), else its `sample_id` (the B73 controls have no registry row). Only the
+resolved columns are read (`meta/corrections.csv` applied by `meta/build_samples.py`), and a registry row with `exclude` = TRUE
+is refused. Replicate wells that share a
 `nil_id` in one unit are labelled `<nil_id>_<sample_id>` and listed in the `collision` column of `sample_labels.tsv`.
 
 ### Genotype store (`<store>/genotype/<key>/`)
@@ -73,7 +75,8 @@ the current registry (`--registry`, default `meta/samples.csv`) and labels each 
   - `<unit>.genotypes.tsv.gz` (long: line sample_id chrom pos ref alt x D gt dosage_expected, line = label) and
     `<unit>.genotypes.matrix.tsv.gz` (sites × labels): the final genotype tables;
   - `<unit>.sample_labels.tsv`: sample_id label label_source (nil_id \| pedigree \| sample_id_not_in_registry \|
-    sample_id_no_label) collision nil_id pedigree donor taxon role registry registry_sha256 code_version, one row per sample
+    sample_id_no_label) collision nil_id pedigree donor (the resolved values) taxon role correction_ids registry
+    registry_sha256 code_version, one row per sample
     of the unit (the donor's sheet samples, the B73 controls, and every id in the tables); `registry_sha256` and
     `code_version` (the repo commit) record which registry the labels came from (recorded, not part of the settings guard);
   - `<unit>.exclusions.tsv`: sample (label) sample_id role stage reason, every sample dropped at stage 2b or 4;

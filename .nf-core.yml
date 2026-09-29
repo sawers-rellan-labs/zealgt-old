@@ -22,6 +22,10 @@ nf_core_version: 4.1.0
 #     stage), so nf-core lint warns that they include fewer than 2 modules.
 lint:
   container_configs: false
+  # zealgt: pinned binary Drive exports (meta/sources/SOURCES.tsv, sha256-checked); their compressed bytes contain "{{",
+  # which the template_strings test reads as a Jinja string. Never edited, so there is no template text to find.
+  template_strings:
+    - meta/sources/drive/23_ncs_psu_langebio_fields.xlsx
   files_unchanged:
     - .prettierignore
     - docs/CONTRIBUTING.md
