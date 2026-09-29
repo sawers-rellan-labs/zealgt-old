@@ -1,46 +1,119 @@
-# Provenance of the sample metadata (2026-09-24)
+# Provenance of the sample metadata (2026-09-28)
 
-`meta/samples.csv` — the single sample sheet of workflow 1 — is built by `meta/build_samples.py` from the tables in `meta/sources/`,
-copied into this repo on 2026-09-24. This file records where each source came from, how it was made, and what is still unresolved.
-Rebuild with `python3 meta/build_samples.py` (it validates and exits 1 on a failed check).
+`meta/build_samples.py` builds the sample-identity registry from the pinned master documents in `meta/sources/`:
+
+| output | what |
+|---|---|
+| `meta/registry.csv` | one row per sequenced sample of every experiment, key `sample_id`; raw identity columns from the sources, `*_resolved` columns with `meta/corrections.csv` applied |
+| `meta/samples.csv` | the sample sheet of workflow 1 (read processing): the non-excluded `bc1` / `bc2s3_batch1` / `bc2s3_batch2` rows of the registry, first 20 columns (validated by `assets/schema_input.json`) |
+| `meta/accessions.csv` | donor passport data of the 227 accessions (J2Teo `metadata`), `longitude_resolved` with the corrections applied |
+| `meta/corrections.csv` | append-only identity correction log (hand-maintained; never rewritten) |
+
+Rebuild with `python3 meta/build_samples.py`; `python3 meta/build_samples.py --check` rebuilds in memory and diffs against the
+committed tables (run by `scripts/run_checks.sh`, also with `--quick`). The builder is standard-library Python (`meta/xlsx_read.py`
+reads the xlsx exports; cross-checked against readxl on every tab it reads, 0 differing cells, `agent/20260928_174100_compare_xlsx_reader.py`).
 
 ## Result
-2,283 samples in 80 libraries: BC1 384 (32 pools); BC2S3 batch 1 1,515 (16 plate pools: 1,405 lines, 79 landrace lines, 31 checks);
-BC2S3 batch 2 384 wells (32 rows: 362 lines, 13 checks, 9 empty). All sample IDs unique; all barcodes unique within their library;
-every sample has a raw location.
+Registry: 2,784 samples.
+- BC1: 384 (32 pools).
+- BC2S3 batch 1 (CLY2023 skim): 1,632 wells (1,405 lines, 79 landrace lines, 31 checks, plus 117 wells of the other project with
+  `exclude` = TRUE).
+- BC2S3 batch 2: 384 (362 lines, 13 checks, 9 empty).
+- BRB-seq summer 2023: 384 (345 lines, 39 checks).
+
+`samples.csv`: the 2,283 workflow-1 rows (unchanged set and order). All sample IDs are unique, all barcodes are unique within their
+library, and every sample has a raw location.
 
 ## Sources
-| file in `meta/sources/` | what | origin | how it was made |
-|---|---|---|---|
-| `bc1_well_map.csv` | BC1: pool, column, barcode, `Sample_Id` (`S_<pool>_<col>`), BC1 line, donor, taxon (384) | zealbc1 `meta/bc1_well_map.csv` | built in zealbc1 from the BC1 sequencing manifest of `bzea-bc1-reference` (`meta/samples.tsv`, `docs/BZea_BC1_384_sequencing_manifest.csv`; Rubén) and the 12 inline column barcodes; builder not tracked. **Primary source on Drive** (shared drive, `Sequencing/ZeaL BC1s/replate/`): Google Sheet `manual_replate` (https://docs.google.com/spreadsheets/d/1cnPzCN9HFIEaA-mITT013VSaYj1OKZe8EyNEKiVNfbc, modified 2026-07-31; 384 rows: BC1_line_id, F1_line_id, src_plate/src_well → dst_plate/row/col) and the liquid-handler worklist `bc1_replate.csv` (https://drive.google.com/file/d/1rngILJY1wlzxBey65ciqAI3Zy8EhTZHu, 2026-07-31; same transfers as `8_3_26_BC1_Replate.xlsx`, 2026-08-03). Pool = `<dst_plate><dst_row>`, column = dst column. Routing each line from its source well through the worklist reproduces `bc1_well_map.csv` for **384/384** wells (line id, donor = F1_line_id, taxon from the Zx/Zv/Zd/Zl/Zh prefix, barcode per column); the `dst_*` columns of `manual_replate` itself agree for only 56/384, because the worklist orders source wells as unpadded strings (`D10` before `D2`); the map follows the worklist, i.e. what the robot did (`agent/20260927_233403_compare_bc1_manifest.py`, 2026-09-27). **Confirmed by Hannah** (Slack DM, 2026-09-28): "It was `bc1_replate.csv` / `8_3_26_BC1_Replate.xlsx`, not what's in manual replate" (https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616377418009); `manual_replate` was an earlier iteration made under the robot's constraints, and she has deleted it from Drive (https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616874843469), so its link above no longer resolves. `bc1_well_map.csv` stands as is |
-| `bc1_libraries.csv` | BC1 pool → raw directory name (1A = `BC1_1Ar`, a re-delivery) | zealbc1 `meta/` | raw data `BZea/BC1_dna_raw/01.RawData/` (Novogene; 4B re-demultiplexed by the center, 2026-09-03) |
-| `inline_barcodes.tsv` | the 12 BC1 / batch-2 inline column barcodes (6 bp, same on R1 and R2) | zealbc1 `meta/` | Hannah's Google Sheet (sent in Slack 2026-09-21, https://docs.google.com/spreadsheets/d/1aAjkTqVYN4uBqzG-b8sgR2BF6YtXA5WQ9vGTsNj7Fy8/edit?gid=0) downloaded as `zealbc1/meta/ZeaLV2.xlsx`, sheet `REF-inline`; the 12 sequences are Twist FlexPrep UHT's inline barcodes (Twist demux guide DOC-001509, read structure `6B2S+T` on both reads; `agent/20260927_231439_twist_96plex_guide.md`). The same workbook holds the batch-2 manifest but no BC1 pool map (checked 2026-09-28) |
-| `bc2s3_batch2_well_map.csv` | batch 2: row, column, barcode, `Sample_Id` (`P<plot>`), label, nil_id (+ source), check flag, class, taxon, plot, pedigree, donor, plate, cell (384) | zealbc1 `meta/` (decisions 2026-09-21) | Hannah's Google Sheet → `zealbc1/meta/ZeaLV2.xlsx` (sheet ZeaL-V2_manifest) → `bc2s3_batch2_manifest.csv`, restricted on 2026-09-23 to the 4 sequenced plates BZeaV2_1–4 (plate BZeaV2_5 was never and will never be sequenced); nil_id from the zealhmm register, 3 pedigrees missing from it given nil_ids derived by the register's rule |
-| `bc2s3_batch2_libraries.csv` | batch-2 row → raw directory | zealbc1 `meta/` | raw data `BZea/BC2S3_batch_2_dna_raw/01.RawData/` (Novogene X202SC26093287-Z01-F001, delivered 2026-09-15) |
-| `bc2s3_batch1_sample_sheet.csv` | batch 1 (CLY2023): well, barcode (8 bp, R1), library, plate, plate index (TruSeq 6 bp), running number, genotype (1,632 wells) | `sara/DNA_Sequencing_raw/BZea/BZea_Sample_ID.xlsx` (delivery document, Dec 2023; read-only) | converted to CSV on 2026-09-24 (sheet 1, no edits) |
-| `bc2s3_batch1_tar_members.tsv` | the FASTQ members (size, path) of `NVS188B_Rellan_Alvarez_R{1,2}.tar` | `sara/DNA_Sequencing_raw/BZea/` (NovaSeq S4 2×150 run NVS188B, June 2023; owner ntanduk; 753 + 765 GB, read-only) | `tar -tvf` on 2026-09-24: 17 plate pools `BZea1`–`BZea17` × 2 lanes × R1/R2 |
-| `bc2s3_batch1_skim_nil_id.tsv` | batch-1 `PN<plate>_SID<n>` → nil_id, pedigree (1,418) | zealbc1 `agent/skim_sample_nil_id.tsv` | derived from the zealhmm correspondence tables (`data/zeal/correspondence/skim_sample_pedigree.csv`, `sample_metadata_master.csv`); builder not tracked |
+`meta/sources/SOURCES.tsv` lists every file with its class, Drive URL, Drive last-modified time, export date, how it was obtained, sha256,
+use and status. The builder reads only listed files and refuses to run on a sha256 mismatch.
+- **Re-export:** add a new row for the same `file` with the new sha; the last row wins, and git history keeps the old copy.
+- **User-provided exports (2026-09-28):** `CLY25-Fieldbook` and `23_NCS_PSU_LANGEBIO_FIELDS` are too large for the Drive connector;
+  the user's browser exports of 2026-07-08 are pinned byte-for-byte as `drive/cly25_fieldbook.xlsx` and
+  `drive/23_ncs_psu_langebio_fields.xlsx`. CLY25-Fieldbook was edited on Drive on 2026-07-20, after the export, and the pinned copy has
+  not been re-checked against the current Drive version. 23_NCS was last modified on Drive on 2026-01-23, before the export.
+- **Catalogued, not pinned:** CLY23_D4_FieldBook, CLY25, BZeaV2_plates and Molbreeding samples. Their exports are in
+  `agent/idcat/drive_exports/` only. The master-document audit is `agent/20260928_145808_id_source_catalog.md` + `.tsv`.
+
+| file in `meta/sources/` | role in the build |
+|---|---|
+| `drive/j2teo_final_db.xlsx` | **J2Teo_Final_DB** (PI-owned Google Sheet, modified 2026-07-21): the lab's master pedigree database (naming convention, 227 donor accessions with passport data, one tab per generation, `All`, `Finalized`). **`All`**: `seed_origin` → `line_id`, `old_line_id`, `accession_id`, `taxa_code`, generation columns `gen F1 BC1 BC2 S1 S2 S3 S4 blk TC`, `batch`. **`BC1`**: BC1 line → seed_origin. **`metadata`**: `accessions.csv`. CLY23 `REF-all` is an older frozen copy of `All` (8 seed_origins missing, among them PV24-1800/1887/1888 and PV23-2382) and is not read |
+| `drive/bzea_library_prep_sheet_code.xlsx` | Hannah's batch-1 prep sheet (Drive file, 2025-05-19), `Sheet1`: all 1,632 wells with well, barcode, plate index, the name, **`tissue_origin`** (field plot sampled) and **`seed_origin`** (seed packet). Well, barcode and plate index agree with the delivery sheet 1,632/1,632 (checked on every build) |
+| `drive/bzea_sample_list.xlsx` | DNA plating sheet (Drive file, 2026-06-24); check only: `Sample_Origin` = prep `tissue_origin` for every sequenced well except PN13_SID1225 (flagged; C0002); holds 15 PN18 wells that have no sequencing record |
+| `drive/rr_23_fields.xlsx` | RR-23-Fields `Sheet12`: PV23 packet → female parent plant (`mother_plant`, batch 1 and BRB-seq) |
+| `drive/zealv2.xlsx` | ZeaLV2 `ZeaL-V2_manifest`: batch-2 plate, cell, **plot**, **origin packet**, pedigree, pool, inline barcode; plates BZeaV2_1–4 (BZeaV2_5 never sequenced) |
+| `drive/24_ncs_psu_langebio_fields.xlsx` | `PV24-block1`: PV24 packet → female parent plant (batch-2 `mother_plant`); `CLY24-C8A`: the batch-2 field, plot → packet and sowing instruction (checked: packet = manifest origin 384/384) |
+| `drive/bzeabrb_library_prep_sheet_code.xlsx`, `drive/bzeabrb_manifest.xlsx`, `drive/bzeabrb_trimmed_read_statistics.txt` | BRB-seq summer 2023 (RNA, CLY23-D4 rep 3): prep sheet `library_prep_sheet_code` (Seq_ID, well, 14-bp barcode, i7/i5, pool, genotype, origin packet), manifest `Plate_manifest` (plate, well → CLY23-D4 plot), and the per-sample read statistics (only pool BZeaRP1 = plates 1–4 was sequenced; 5 of its 384 wells have no reads, flagged) |
+| `drive/some_bzea_nomenclature_conversions.xlsx` | evidence for correction C0001 only |
+| `drive/23_ncs_psu_langebio_fields.xlsx` | PV23 nursery book (co-PI account, Drive modified 2026-01-23; export 2026-07-08); **check only**. `PV23-BZea` is the master of RR-23-Fields `Sheet12`: packet → origin and female parent agree for 2,590/2,590 packets. `PV23-block4-BZea-Bulk` is the nursery record of the batch-1 tissue plots: for every batch-1 line, plot → packet (`Female parent`) and name (`Description`) equal the prep sheet's `seed_origin` and the delivered name. It differs for 26 check wells only: 25 B73 / Purple Check wells with a different check packet, and PN13_SID1225, whose prep-sheet plot PV23-8397 is a Zd line. Block4 plot PV23-8396 is `Purple Check-bulk`, which supports the Sample List in C0002. The tabs give no value the pinned sources lack, so nothing is read into the registry |
+| `drive/cly25_fieldbook.xlsx` | CLY25-B5 phenotype field book (Drive modified 2026-07-20, after the 2026-07-08 export; not re-checked). Pinned as evidence and **not read**: no sequenced sample in the registry was grown in CLY25. The batch-2 plots are CLY24-C8A (read from `24_NCS…`), and `REF_BC2S3` is in the separate `CLY25` workbook |
+| `register_bc2s3.csv`, `NIL_ID_README.md` | copies of the zealhmm nil_id register and its specification (untracked in zealhmm `agent/gdl_flowering/`, 2026-08-09); the README is the only written pedigree → nil_id rule; the register is a check, never a value source |
+| `bc1_well_map.csv`, `bc1_libraries.csv` | BC1 pool, column, barcode, `Sample_Id`, line, donor, taxon (zealbc1 `meta/`). Built by zealbc1 `nilhmm/bin/make_demux_inputs.R` @ `bd86bda` from the replate worklist `bc1_replate.csv` (Drive `Sequencing/ZeaL BC1s/replate/`, https://drive.google.com/file/d/1rngILJY1wlzxBey65ciqAI3Zy8EhTZHu), which Hannah confirmed is what the robot ran (Slack 2026-09-28, https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616377418009; `manual_replate` was an earlier iteration and is deleted). Routing each line through the worklist reproduces the map for 384/384 wells (`agent/20260927_233403_compare_bc1_manifest.py`) |
+| `bc2s3_batch1_sample_sheet.csv`, `bc2s3_batch1_tar_members.tsv` | NCSU GSL delivery sheet `BZea_Sample_ID.xlsx` (hazel `sara/DNA_Sequencing_raw/BZea/`, Dec 2023, sheet 1 as CSV) and the `tar -tvf` listing of `NVS188B_Rellan_Alvarez_R{1,2}.tar`; batch-1 sample_id, barcodes, plate index, delivered name, raw members |
+| `bc2s3_batch2_libraries.csv`, `inline_barcodes.tsv` | batch-2 pool → raw directory (Novogene X202SC26093287-Z01-F001); the 12 Twist FlexPrep UHT inline barcodes (ZeaLV2 `REF-inline`) |
+| `bc2s3_batch1_skim_nil_id.tsv`, `bc2s3_batch2_well_map.csv` | **superseded** derived tables (zealbc1): compared on every build, never a value source. Batch 1: 1,403 of 1,404 shared samples agree on pedigree and nil_id; the one difference is PN10_SID893, a B73 check. Batch 2: sample_id, pool and barcode agree 384/384, nil_id agrees 384/384 |
+| `evidence/` | kept as evidence only, flagged superseded in SOURCES.tsv, never read by the builder: the laptop `J2Teo_Final_DB.csv` (tab `Finalized`, 2025-05-13), the BzeaSeq `sample_metatada.csv` (hazel; = zealtiger `sample_metadata_master.csv`), and the locally corrected `Bzea_metadata.csv` (evidence for the longitude corrections) |
 
 ## Joins and rules applied
+- **BC1:** `bc1_well_map.csv` as is. The line is looked up in J2Teo `BC1` for the generation columns and `seed_packet` (the line's
+  J2Teo seed_origin). 26 BC1 lines are not in that tab (flag `not_in_j2teo_BC1`).
+- **Batch 1:** the chain is well → field plot → pedigree.
+  - The delivery sheet gives `sample_id` = `PN<Plate_Number>_SID<running number>`.
+  - The prep sheet (same plate + running number) gives `field_plot` (tissue_origin, PV23) and `seed_packet` (seed_origin).
+  - J2Teo `All` row of the field plot gives `line_id` (bulk `.B`), the generation columns, and `pedigree` (the line: `.B` / `-blk` /
+    `-bulk` dropped).
+  - When the plot has no row or two rows, the seed packet's row decides (flag `tissue_plot_j2teo_rows=`). This happens for PN3_SID199
+    (plot PV23-7370 is not in `All`) and PN17_SID1574 (plot PV23-8745 has two rows).
+  - For all 1,405 lines where both rows exist, the plot row and the packet row name the same line.
+  - Checks (B73 / Purple Check) take no J2Teo row.
+  - 50 landrace wells have no J2Teo row and keep the delivered name. The other 29 landrace wells have J2Teo pedigrees (`Zm.…`).
+  - `mother_plant` = RR-23-Fields `Sheet12` female parent of the packet.
+- **Batch 2:** the chain is manifest well → plot (CLY24-C8A) → origin packet → J2Teo `All`.
+  - `role`: `B73`/`NC358` → check, `NA` → empty, otherwise line.
+  - `mother_plant` = `PV24-block1` female parent of the packet.
+  - `replicate_of`: the other sequenced plots sown from the same packet. CLY24-C8A "Bulk Plant to Plant" gives three pairs, each two
+    replicate plots of one NIL: P4065/P4066 (PV24-1800), P4153/P4170 (PV24-1887) and P4154/P4169 (PV24-1888). Both wells of each pair
+    are kept.
+  - J2Teo `All` holds all three pedigrees, so the former "derived" nil_ids are now plain rule results. They are still absent from the
+    register, which was built from CLY23 REF-all + CLY25 REF_BC2S3.
+- **BRB-seq:**
+  - `sample_id` = `BRB_<Seq_ID>`. The lab's Seq_IDs (`PN<plate>_SID<n>`) reuse batch-1 names for other plants, e.g. BRB PN1_SID1 is
+    Zd.0010, batch-1 PN1_SID1 is LANTEO067. The raw Seq_ID is in `lab_seq_id`.
+  - `field_plot` = CLY23-D4 plot (manifest). `seed_packet` = origin. The pedigree comes from J2Teo `All` of the packet.
+  - For 3 wells, J2Teo disagrees with the sheet's genotype (flag `sheet_genotype_differs_from_j2teo`): BRB_PN1_SID34, BRB_PN1_SID86 and
+    BRB_PN4_SID309. For BRB_PN4_SID309, the zealtiger genotype match (Zx.0040, `brbseq_corrected_labels.csv`) agrees with J2Teo
+    (Zx.0040_P1_P4_P1.1.1.1), not with the sheet (Zx.0370). No correction has been decided.
+- **Derived columns:**
+  - `donor` = `<accession>_P<F1 plant>` from the pedigree, `taxon` from its prefix, `accession` = `Zx.NNNN`.
+  - `nil_id` comes from the rule in `NIL_ID_README.md`: taxon + 4-digit donor + base-36 P1 P2 P3 S1. It is set for BC2S3 and later
+    generations only (S2… = 1); checks, empties and BC1 get none.
+- **nil_id rule check:**
+  - The rule reproduces all 2,624 register rows.
+  - Every registry nil_id whose pedigree is in the register equals the register's id (0 mismatches).
+  - 36 rule ids are not in the register: 6 batch-2 (the three pairs) and 30 batch-1. The 30 batch-1 ids are PN17_SID1574 (raw) and 29
+    BC2S4 wells, 26 of them in the excluded plate 1. Their nil_id is `nil_id_in_register` = FALSE.
 - **Batch-1 plate ↔ tar pool:** `BZea<n>` = plate *n*. Plates 1–9 carry TruSeq indexes 1–9; plates 10–17 reuse indexes 2–9 and sit on
   lanes 3–4 (plates 1–9 on lanes 1–2). Checked: `BZea6` reads carry index `GCCAAT` = plate 6's.
-- **Batch-1 sample ID:** `PN<Plate_Number>_SID<Sample_ID running number>`; matches 1,404 of the 1,418 samples of the skim map
-  (spot checks: PN7_SID590 = Zd.0040, PN3_SID220 = Zx.0100, PN15_SID1438 = Zv.0490, PN10_SID893 = B73).
-- **Batch-1 barcode layout:** 8-bp inline barcode at the start of R1 only (checked on `BZea6`: the top 96 5′ 8-mers cover 91.9% of reads
-  vs 6.6% for 6-mers at base 31). BC1 and batch 2: 6-bp inline barcode on both R1 and R2.
-- **Excluded — another project sequenced in the same batch-1 run** (user, 2026-09-24): all of plate 1 (96 wells, `LANTEO…_BC2S4-bulk`)
-  and the 21 `LANTEO…` wells on plates 2–17. None of them is in the skim map.
-- **Roles:** batch 1 — `check` = B73 or purple check; `landrace_line` = names with `_BC1S3` / `_BC1S4` (incl. colour-suffixed `…_BC1S4_black-bulk`) (traditional-variety introgressions, samples
-  119–198 per the delivery README); `line` otherwise. Batch 2 — from its `class` column (`line`, `B73`/`NC358` → check, `empty`).
-- **Donor / taxon** for batch 1 from the skim-map pedigree (`<accession>_P<n>` → Zd/Zx/Zv/Zl/Zh); BC1 and batch 2 from their maps.
+- **Batch-1 barcode layout:** an 8-bp inline barcode at the start of R1 only. Checked on `BZea6`: the top 96 5′ 8-mers cover 91.9% of
+  reads, vs 6.6% for 6-mers at base 31. BC1 and batch 2 carry a 6-bp inline barcode on both R1 and R2.
+- **Excluded — another project sequenced in the same batch-1 run** (user, 2026-09-24): all of plate 1 (96 wells) and the 21 `LANTEO…`
+  wells on plates 2–17. They are in `registry.csv` with `exclude` = TRUE and a reason, and are not in `samples.csv`.
+  - None of them is in `bc2s3_batch1_skim_nil_id.tsv`.
+  - 29 are in the zealhmm/zealtiger `skim_sample_pedigree.csv`, with taxon-coded BC2S4 pedigrees such as PN1_SID37 =
+    Zx.0120_P1_P2_P2.1.1.1.1 (project `lanteo` upstream).
+- **Roles:**
+  - Batch 1: `check` = B73 or purple check; `landrace_line` = names with `_BC1S3` / `_BC1S4` (samples 119–198 per the delivery README);
+    `line` otherwise.
+  - Batch 2 and BRB-seq: as above.
 - **Batch-1 processing history (not used by zealgt, kept for comparison):** Nirwan's pipeline (github.com/nirwan1265/BZea_genotyping):
   sabre demux → Trimmomatic PE (ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36) → `sara/BZea/filtered_S/`
   (plates 2–17) → bwa mem → Picard markdup → ANGSD. zealgt re-demultiplexes batch 1 from the tars (docs/PLAN_pipeline.md §3).
-  Exact commands (github.com/nirwan1265/Mapping, `src/demultiplex_sabre.csh`, `src/qc_trimmomatic.csh`): `sabre pe -f -r -b <plate>.txt
-  -u -w`; Trimmomatic 0.39 `PE -phred33 … ILLUMINACLIP:<custom adapters.fa>:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36`.
-  The custom `adapters.fa` is unreadable on hazel (permission denied); asked for on Slack 2026-09-28. sabre cut 8 bp from the 5′ end of
-  **both** reads (1000/1000 R1, 998/1000 R2, raw vs filtered, job 969161), so `filtered_S/` R1 still starts with the 12 random-primer
-  bases (below) and R2 is clean.
+  - Exact commands (github.com/nirwan1265/Mapping, `src/demultiplex_sabre.csh`, `src/qc_trimmomatic.csh`): `sabre pe -f -r -b
+    <plate>.txt -u -w`; Trimmomatic 0.39 `PE -phred33 … ILLUMINACLIP:<custom adapters.fa>:2:30:10 LEADING:3 TRAILING:3
+    SLIDINGWINDOW:4:15 MINLEN:36`.
+  - The custom `adapters.fa` is unreadable on hazel (permission denied); asked for on Slack 2026-09-28.
+  - sabre cut 8 bp from the 5′ end of **both** reads (1000/1000 R1, 998/1000 R2, raw vs filtered, job 969161). So `filtered_S/` R1
+    still starts with the 12 random-primer bases (below), and R2 is clean.
 
 ## Library kits, sequencing and read structures (2026-09-28)
 Two different Twist kits; the read structure is a per-source parameter of DEMUX, never hard-coded.
@@ -82,36 +155,70 @@ columns), so the import step is MARK_DUPLICATES + read groups, not realignment. 
 uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B73 control read groups not checked.
 
 ## Identifiers: one physical key, biology in the registry (decided, user 2026-09-28)
-- **The key everywhere is the well-level `sample_id`** of `meta/samples.csv`: BC1 `S_<pool>_<column>`, batch 2 `P<plot>`, batch 1
-  `PN<plate>_SID<n>`. It names every file (FASTQ checkpoint, CRAM, QC), the CRAM read group (`ID` and `SM` = `sample_id`, `LB` = library,
-  `PU` = flowcell.lane list) and every internal table. It never changes: it is where the DNA physically was.
-- **Biology lives only in the registry** `meta/samples.csv` (built by `meta/build_samples.py` from `meta/sources/`, tracked in git):
-  `sample_id` → line / `pedigree`, short `nil_id` (zealhmm register), `donor`, `taxon`, `role`, source, batch. A relabelled well, a
-  register update or a pedigree fix is a registry commit; no CRAM is renamed or rewritten. Line or nil ids are never written into CRAM
-  headers (they would go stale).
-- **Traceability:** each CRAM's provenance record (`<sample_id>.provenance.json`) holds a snapshot of its registry row (at least donor,
-  line/pedigree, nil_id, taxon, role) and `code_version` (the repo commit, which also pins the registry version). A later registry change
-  is visible by comparing the snapshot with the current row.
-- **Translate at the edge:** the genotype workflow joins on `sample_id` internally and writes the short `nil_id` (or line id where no
-  nil_id exists, e.g. BC1 samples) only into its final outputs — genotype tables, VCF sample names, paintings, reports — by one join on
-  the current registry at the end, recording the registry commit it used.
-- **Read groups:** one read group per sample (lanes of a library are one pool; `PU` lists the lanes; duplicate marking reads
-  flowcell/lane/tile from the read names). Per-lane read groups only if lane QC ever shows a lane effect.
-- Status (2026-09-28): the CRAM workflow already follows the key and read-group rules; the provenance snapshot has `donor` but not yet
-  the line/pedigree and nil_id (to add on branch `simplify`); the edge translation is a rule for the genotype workflow (branch `genotype`).
+- **The key everywhere is the well-level `sample_id`:**
+  - BC1 `S_<pool>_<column>`, batch 2 `P<plot>`, batch 1 `PN<plate>_SID<n>`, BRB-seq `BRB_<Seq_ID>`.
+  - It names every file (FASTQ checkpoint, CRAM, QC), the CRAM read group (`ID` and `SM` = `sample_id`, `LB` = library, `PU` =
+    flowcell.lane list) and every internal table.
+  - It never changes: it is where the DNA physically was.
+- **Biology lives only in the registry** `meta/registry.csv` (and its workflow-1 projection `meta/samples.csv`), built by
+  `meta/build_samples.py` from `meta/sources/`, tracked in git.
+  - It maps `sample_id` → field plot, seed packet, mother plant, J2Teo line and generation columns, `pedigree`, short `nil_id`,
+    `donor`, `accession`, `taxon`, `role`, source.
+  - A relabelled well, a new export or a pedigree fix is a registry commit. No CRAM is renamed or rewritten, and line or nil ids are
+    never written into CRAM headers (they would go stale).
+- **Corrections are applied at the end:**
+  - `meta/corrections.csv` records sample_id / entity, field, old and new value, `applies_to`, evidence (document + row + URL),
+    date, and who decided.
+  - The builder copies each applicable correction id into `correction_ids`.
+  - Only the `*_resolved` columns (`pedigree_resolved`, `nil_id_resolved`, `donor_resolved`, accessions `longitude_resolved`) carry
+    new values. Raw columns stay as the sources give them, and so do CRAM headers, provenance records and delivered sheets.
+  - `applies_to`:
+    - `resolved`: used in the resolved columns.
+    - `flag`: noted on the row, no value changed.
+    - `drive_owner`: an error in a Drive document that the builder does not read; it is reported to the sheet owner
+      (`agent/20260928_181500_drive_errors_for_owner.md`), and the pinned exports are never patched.
+- **Traceability:** each CRAM's provenance record (`<sample_id>.provenance.json`) holds a snapshot of its registry row (at least
+  donor, line/pedigree, nil_id, taxon, role) and `code_version` (the repo commit, which also pins the registry version). A later
+  registry change is visible by comparing the snapshot with the current row.
+- **Translate at the edge:** the genotype workflow joins on `sample_id` internally. It writes the short `nil_id_resolved` (or the line
+  id where no nil_id exists, e.g. BC1 samples) only into its final outputs: genotype tables, VCF sample names, paintings, reports.
+  This is one join on the current registry at the end, and it records the registry commit it used.
+- **Read groups:** one read group per sample. The lanes of a library are one pool; `PU` lists the lanes; duplicate marking reads
+  flowcell/lane/tile from the read names. Per-lane read groups only if lane QC ever shows a lane effect.
+- **Status (2026-09-28):**
+  - The CRAM workflow already follows the key and read-group rules.
+  - The provenance snapshot has `donor`, but not yet the line/pedigree and nil_id (to add on branch `simplify`).
+  - The edge translation is a rule for the genotype workflow (branch `genotype`); column note:
+    `agent/20260928_182000_samples_csv_change_note.md`.
 
-## Unresolved
-1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another
-   sequencing run? Its raw data location is unknown.
-2. **2 batch-1 teosinte lines without a nil_id** (in the sheet, not in the skim map): PN13_SID1226 (`Zdip-JSG-RMM-LCL-551_P3_P1_P1_P2.5.1.1-bulk`), PN17_SID1574 (`Mesa-JSG-Y-RMM-444_P2_P1_P1_P2.2.1.1-bulk`).
-3. **Landrace BC1S3/BC1S4 lines (79):** part of this delivery; confirm they belong in the ZEAL genotyping.
-4. The builders of `bc1_well_map.csv` and `bc2s3_batch1_skim_nil_id.tsv` are not in any repository. `ZeaLV2.xlsx` (Hannah's sheet) is
-   not the BC1 source: no BC1 pool, line id or donor of `bc1_well_map.csv` appears in it (2026-09-28). BC1 is now traced to Drive
-   (2026-09-27): `manual_replate` (https://docs.google.com/spreadsheets/d/1cnPzCN9HFIEaA-mITT013VSaYj1OKZe8EyNEKiVNfbc, 2026-07-31) routed
-   through the worklist `bc1_replate.csv` (https://drive.google.com/file/d/1rngILJY1wlzxBey65ciqAI3Zy8EhTZHu) matches all 384 wells
-   (line, donor, taxon, barcode; 0 mismatches). (a) Resolved 2026-09-28: the sheet's own `dst_*` layout differs from the worklist for 328
-   wells, and Hannah confirmed the worklist (`bc1_replate.csv` / `8_3_26_BC1_Replate.xlsx`) is what was run on 2026-08-03 and deleted
-   `manual_replate` (https://rsrrjs-labs.slack.com/archives/D02HFJ71AHL/p1790616377418009), so `bc1_well_map.csv`, the demux sample names and
-   the BC1 CRAMs' sample identities need no change; she also offered to make a BC1 barcode manifest (none exists; not requested yet).
-   Still open: (b) Rubén's `BZea_BC1_384_sequencing_manifest` /
-   `BZea_BC1_sequencing_design_memo` were not found on Drive; (c) the `bc2s3_batch1_skim_nil_id.tsv` builder is still untracked.
+## Corrections recorded (meta/corrections.csv, 2026-09-28)
+| id | sample / entity | what | applies |
+|---|---|---|---|
+| C0001 | PN17_SID1574 | pedigree Zx.0390_P1_P2_P2.2.1.1 → **Zx.0350_P1_P2_P2.2.1.1** (nil Zx03501222). Packet PV23-2382 has the same mother plant CLY22B6-D-1055 as PV23-2371 (Zx.0350) (RR-23-Fields `Sheet12`). The prep sheet names the well JSG-RMM-LCL-536 (= Zx.0350), and the Nomenclature Conversions agree. It is a sibling well of PN17_SID1566 | resolved |
+| C0002–C0003 | PN13_SID1225 | the Purple Check carries the neighbour's plot PV23-8397 and packet PV23-1871 in the prep sheet; the Sample List gives PV23-8396 | flag |
+| C0004 | PN13_SID1226 | J2Teo `Finalized` sequencing_id PN13_SID1225 → PN13_SID1226 on PV23-8397. The registry joins by plot, so PN13_SID1226 gets Zd.0020_P3_P1_P2.5.1.1 = Zd00203125 from the data | drive_owner |
+| C0005–C0007 | PN17_SID1574 | J2Teo `Finalized` PV23-8745 = Zx.0390; J2Teo `All` holds PV23-8745 twice; `All` PV23-2382 = Zx.0390 | drive_owner |
+| C0008–C0082 | 75 accessions | J2Teo `metadata` longitude sign flipped (east). The local `Bzea_metadata.csv` fixed it without a log | resolved (accessions.csv) |
+
+## Gaps
+1. **PN18_SID1633–1647** (15 wells) are in the Sample List only, with no delivery sheet, prep row or reads; they are not in the registry.
+2. **Crossing records:** the PV23 nursery book `23_NCS_PSU_LANGEBIO_FIELDS` is pinned (check only, above). Its `CLY23-D1` tab has not
+   been compared yet. RR-23-Fields `CLY23-D1` has an empty row for plot 837, so the D1 genotype of the batch-2 mothers could only be
+   checked through J2Teo. `CLY25-Fieldbook` is pinned from the 2026-07-08 export; the Drive edits of 2026-07-20 are not in it.
+3. **Seed-lot records:** no seed inventory with lot ids or quantities was found for the PV24 packets / CLY24-C8A plots; there are only
+   packet-level records (`PV24-ISO`, `PV24-Tags`, J2Teo `REF_PV24`).
+4. **The written nil_id rule** exists only as the zealhmm `agent/` README (copied here). Nothing on Drive holds short nil_ids.
+5. **J2Teo's origin:** it is a PI-owned Google Sheet (created 2023-12-03), with no change log. `All` = the source of CLY23 REF-all and
+   ZeaLV2 `REF-J2Teo`.
+6. **The three batch-2 replicate pairs** have 2024 sowing records (CLY24-C8A) but no plot-level harvest or selection record; the NIL
+   identity of each pair rests on the shared packet.
+7. **BC1:** 26 BC1 lines are not in the J2Teo `BC1` tab. Rubén's `BZea_BC1_384_sequencing_manifest` / design memo were not found.
+   Hannah offered a BC1 barcode manifest (none exists).
+8. **Field row / position** is not carried: it exists only in the map-grid tabs (RR-23-Fields, CLY24-C8A-map), which would need grid
+   parsing.
+9. **The builder of `bc2s3_batch1_skim_nil_id.tsv`** is lost; the table is superseded here.
+10. **79 landrace BC1S3/BC1S4 lines:** confirm they belong in the ZEAL genotyping. 50 have no J2Teo row.
+11. **BRB-seq:** 3 wells disagree between the prep sheet genotype and J2Teo (above). Pools BZeaRP2–4 (plates 5–15, 998 wells) were prepped
+    but have no reads on Drive. The fall-2023 list (`BZeaBRB-F manifest`) has no sequencing record.
+12. **MolBreeding 45K:** the target-sequencing tubes (`Molbreeding samples` / `Molbreeding_manifest`) are keyed by batch-1 Seq_ID and are
+    not joined yet. zealtiger found that the target-seq tube labelled PN4_SID330 is PN4_SID322 (`pn4_sid330_mislabel.qmd`).
