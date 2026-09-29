@@ -13,6 +13,9 @@ nf_core_version: 4.1.0
 #     docs/CONTRIBUTING.md), so the github / ci template features are skipped and their files are not required.
 lint:
   container_configs: false
+  # Pinned binary source export (meta/sources/SOURCES.tsv) contains a literal "{{" in its cell data; not a template string.
+  template_strings:
+    - meta/sources/drive/23_ncs_psu_langebio_fields.xlsx
   files_unchanged:
     - .prettierignore
     - docs/CONTRIBUTING.md
