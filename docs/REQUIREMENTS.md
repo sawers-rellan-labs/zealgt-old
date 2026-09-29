@@ -111,7 +111,7 @@ FASTQs ≈ 237 GB, trimmed ≈ 200 GB, trimlogs ≈ 282 GB → **`work/` peak �
 | MERGE_LANES (cat of lane gzips) | 1 | 4 → 2.7 | < 10 MB | 3 min 51 | 124.7 GB written (a second copy of the demux FASTQs) |
 | DEMUX_QC | 1 | 1 → 0.8 | 0.1 GB | 20 s | |
 | TRIMMOMATIC | 12 | 8 → 2.9–3.7 | 0.6–0.8 GB | 10 min – 1 h 15 (**25–31 k pairs/s**) | the Gate 1 estimate (10 k/s) was 3× pessimistic; 4 h limit is ample (replaced by CUTADAPT since, below) |
-| CUTADAPT (trimming, since 2026-09-29) | — | not yet run at full size in a CRAM gate | — | — | from the comparison below: 6.3 s per M pairs at 4 cores with level-4 output, ≤ 0.12 GB; CRAM Gate 2 confirms |
+| CUTADAPT (trimming, since 2026-09-29) | — | not yet run at full size in a CRAM gate | — | — | from the comparison below: 6.3 s per M pairs at 4 cores with level-4 output, ≤ 0.12 GB; full size: CRAM Gate 2 wave 1, below (0.40–0.46 GB, ≤ 11 min 39) |
 | FASTQC | 12 | 2 → 1.9 | 0.7–0.8 GB | 3–17 min | |
 | ALIGN_MARKDUP (completed attempts) | 12 | 8 → 7.0–7.5 | 23.1 (24 GB) / 23.9–46.5 (48 GB) / 48.2 (72 GB) GB | 21 min – 2 h 57 (~0.6 M pairs/min) | see the memory model below |
 | SAMTOOLS_STATS | 12 | 2 → 1.2–1.7 | 0.4 GB | 2–11 min | |
@@ -210,6 +210,52 @@ lines, which were measured at cutadapt's default gzip level 1).
 - Compression is ~76 % of Trimmomatic's wall time; trimming alone, cutadapt is ~2.5× faster (3.7 vs 9.3 s per M pairs); end to
   end, level 4 vs Trimmomatic is ~6× faster. Level 4 costs +2 s per M pairs over level 1 and recovers ~60 % of the size increase.
 - Peak RSS: cutadapt 0.07–0.12 GB, Trimmomatic 0.41 GB.
+
+**CRAM Gate 2 wave 1 (2026-09-29; partial: Gate 2 paused, PLAN §6).** Run `cram_gate2_w01` (head 992883, code 1760b4f,
+`-profile hazel,normal`), trace `ZEAL/results/zealgt/cram_gate2_w01/pipeline_info/execution_trace_2026-09-29_17-10-57.txt` read at
+19:40 (summary `agent/20260929_223000_summarise_w01_trace.sh` → `.out`); BC1 2A, 2F, 3B (36 samples) and batch-1 BZea5. Every
+completed row below is attempt 1. Memory: Nextflow's "GB" = GiB; hazel kills at 0.95 × the request.
+
+| process | tasks done | cpus alloc → used | request → peak RSS | realtime | note |
+|---|---|---|---|---|---|
+| DEMUX, BC1 lane | 10 of 10 | 6 → 5.1–5.8 | 2 GB → 0.91–0.99 GB | 3B (4 lanes, ~194 M pairs) 9–11.5 min; 2A / 2F (3 lanes, ~300–325 M) 15–17 min | as Gate 2 3A |
+| DEMUX, batch-1 lane (BZea5, 96 barcodes → 192 gz outputs, cutadapt `-j 4`) | 0 of 2 | 4 → — | **2 GB: OOM, then hung**; 4 GB: MaxRSS 3.99 GB | — | below |
+| MERGE_LANES | 3 | 4 → 2.0–3.4 | 1 GB → 12 MB | 2 min 34 – 5 min 20 | |
+| DEMUX_QC | 3 | 1 | 1 GB → 69 MB | 15 s | |
+| CUTADAPT (L4) | 36 | 4 → 3.8–3.9 | 1 GB → **0.40–0.46 GB** | 3 min 59 – 11 min 39 (S_2A_2, ~106 M pairs: ~6.6 s per M pairs) | all under the 15 min floor; peak 4× the retest's 0.07–0.12 GB (still < half the request) |
+| FASTQC | 36 | 2 → 1.6–2.0 | 3 GB → 0.74–0.97 GB | 5 min 49 – 15 min 52 | |
+| ALIGN_MARKDUP | 22 of 36 | 8 → 7.1–7.4 | **48 GB → 32.4–36.2 GB** (71–79 % of the 45.6 GiB cap) | 36 min 50 – 1 h 55 (S_3B_8, rchar 205 GB) | below |
+| SAMTOOLS_STATS | 19 | 2 → 1.1–1.7 | 1 GB → 0.39–0.43 GB | 4 – 7 min | |
+| PICARD_COLLECTWGSMETRICS | 16 | 1 → 0.98 | 5 GB → 3.8–4.1 GB (the 4 GB `-Xmx`) | 20 min 51 – 31 min 51 | heap-bound, not data-bound |
+| PROVENANCE | 21 | 1 | 1 GB → < 12 MB | < 1.3 s | |
+
+- **ALIGN_MARKDUP at 48 GB:** peak 32.4–36.2 GB for inputs of rchar 96–205 GB (~2× range), so the peak barely depends on depth;
+  with 15 GiB of sort that is M ≈ 17–21 GiB, inside the spilled-sort range above and below the design M = 26 GiB (predicted peak 41
+  GiB: the rule has ~5 GiB more margin than assumed). Expected to hold for 2B / 2H (131–140 M pairs); not yet measured there.
+  %cpu 706–745 of 800. One slow outlier: S_3B_7 1 h 01 for rchar 110 GB (node spread).
+- **Batch-1 DEMUX (BZea5) failed at full size.** Attempt 1 (2 GB; jobs 992922, 992924): OOM-killed ~80 s after cutadapt started
+  (sacct `OUT_OF_MEMORY`, MaxRSS 1.99 GB = 95 %), then the task **hung** with no CPU and no `.exitcode` until its 2 h limit (exit
+  140, 1 h 59; the task dir held 277 KB). Attempt 2 (4 GB, 4 h; jobs 993890, 993891): MaxRSS 3.99 GB (95 %, `sstat`) after ~4 min
+  of cutadapt (AveCPU 16.6 min), ~1.2 GB of demux output per lane, then hung again (0 CPU). Memory grows with the data processed.
+  Gate 1 (`simplify_b1g1`, 4 M pairs per lane, `agent/20260929_164924_trace_b1g1.txt`) had peaked at **1.6 GB of 2 GB** in 52–56 s
+  (~13 µs per pair at 4 cpus) → **~50 min per ~228 M-pair lane** expected once fixed. Fix in progress (`conf/hazel.config` DEMUX
+  TODO); re-measure at full size.
+- **Checkpoint, measured** (`du -s`, 19:40): 2A 107.3 GB, 2F 97.4 GB, 3B 85.8 GB = **0.81 / 0.80 / 0.81 × raw** (290.5 GB for
+  360 GB raw), 3 % under the 0.83 × raw estimate (299.9 GB).
+
+**CRAM Gate 2, B73 controls (`cram_gate2_b73`, head 992885, COMPLETED 1 h 26 wall, 17:10–18:36; trace
+`ZEAL/results/zealgt/cram_gate2_b73/pipeline_info/execution_trace_2026-09-29_17-10-57.txt`).**
+
+| process | sample | cpus alloc → used | request → peak RSS | realtime | I/O |
+|---|---|---|---|---|---|
+| MARKDUP_IMPORT | B73_skim10 (7.3 GB BAM) | 4 → 2.8 | 12 GB → 9.4 GB | 9 min 51 | rchar 160 GB |
+| MARKDUP_IMPORT | B73_ERR3288215 (8.9 GB CRAM) | 4 → 2.9 | 12 GB → **10.6 GB (93 % of the 11.4 GiB cap)** | 25 min 03 | rchar 377 GB |
+| SAMTOOLS_STATS | both | 2 → 1.6–1.7 | 1 GB → 0.39–0.40 GB | 4 min 38; 11 min 08 | |
+| PICARD_COLLECTWGSMETRICS | both | 1 → 0.98 | 5 GB → 3.8–3.9 GB | 25 min 39; **54 min 26** (ERR3288215; the ~2.5 h estimate was 3× high) | |
+| MULTIQC, PROVENANCE | | 1 | < 0.6 GB | < 2 min | |
+
+MARKDUP_IMPORT at 15.5× sits 7 % under the kill line at the 12 GB first attempt (7.5 GiB of sort + ~3 GiB): a deeper import
+would OOM and retry at 24 GB.
 
 Cluster: Slurm, `--account=maize_cpu --partition=compute_partners --qos=short` (≤ 2 h) for everything that fits; compute/normal for
 BC1 alignment of deep libraries; downloads on `--partition=xfer --mem=8G`. Genome-wide ≈ chr10 × 14 for the per-chromosome stages;

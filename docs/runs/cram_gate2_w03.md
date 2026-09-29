@@ -1,7 +1,9 @@
 # cram_gate2_w03 — CRAM Gate 2, wave 3 of 3
 
-**Status:** approved by the user 2026-09-29; w01 + b73 submitted 2026-09-29; **w03 not submitted**: awaits the coordinator's
-review of w01 (and then w02).
+**Status:** approved by the user 2026-09-29; w01 + b73 submitted 2026-09-29; **w03 not submitted**. Gate 2 paused by the user
+2026-09-29 ~19:45 for containerization: w03 is **re-planned after containerization** (PLAN §6 TODO). Its batch-1 DEMUX is
+blocked: BZea5 in w01 was OOM-killed at 2 and 4 GB and hung to the time limit (fix in progress; docs/REQUIREMENTS.md §4
+"CRAM Gate 2 wave 1"); the "~1 h per lane" below becomes ~50 min per ~228 M-pair lane from Gate 1's rate, once fixed.
 
 ## Purpose
 CRAM Gate 2 (docs/PLAN_pipeline.md §6), last wave. After it every Zx.0570_P2 library (2H 3B 3C 3D 3E BZea8 BZea9) is in the

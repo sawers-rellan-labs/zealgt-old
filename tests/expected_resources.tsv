@@ -53,5 +53,5 @@ short_310M	FASTQC	2	3 GB	1h	compute_partners
 short_310M	ALIGN_MARKDUP	8	48 GB	1h	compute_partners
 short_310M	SAMTOOLS_STATS	2	1 GB	49m	compute_partners
 short_310M	PICARD_COLLECTWGSMETRICS	1	5 GB	1h	compute_partners
-normal_batch1	DEMUX	4	2 GB	2h	compute
-short_batch1	DEMUX	4	2 GB	1h	compute_partners
+normal_batch1	DEMUX	4	3 GB	2h	compute
+short_batch1	DEMUX	4	3 GB	1h	compute_partners

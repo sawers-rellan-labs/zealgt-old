@@ -1,6 +1,10 @@
 # cram_gate2_w01 — CRAM Gate 2, wave 1 of 3 (and the ALIGN_MARKDUP memory test)
 
-**Status:** approved by the user 2026-09-29; w01 + b73 submitted 2026-09-29; w02/w03 await the coordinator's review of w01.
+**Status:** approved by the user 2026-09-29; w01 + b73 submitted 2026-09-29 (head 992883). **Gate 2 paused by the user
+2026-09-29 ~19:45** for containerization (PLAN §6 status + TODO). The BC1 part (2A, 2F, 3B) is running into `ZEAL/store` (at 19:40:
+22 of 36 ALIGN_MARKDUP done at attempt 1, peaks 32.4–36.2 of 48 GB; checkpoint 0.80–0.81 × raw); **BZea5 not done** — batch-1
+DEMUX OOM-killed at 2 and 4 GB, then hung to the time limit (fix in progress, `conf/hazel.config` DEMUX TODO). Measurements:
+docs/REQUIREMENTS.md §4 "CRAM Gate 2 wave 1".
 
 ## Purpose
 CRAM Gate 2 (docs/PLAN_pipeline.md §6): the libraries holding the two genotype development donors, at full depth, into the

@@ -1,6 +1,8 @@
 # cram_gate2_b73 — CRAM Gate 2, B73 controls (markdup_import)
 
-**Status:** approved by the user 2026-09-29; w01 + b73 submitted 2026-09-29; w02/w03 await the coordinator's review of w01.
+**Status:** approved by the user 2026-09-29; submitted with w01 2026-09-29; **done**: head 992885 COMPLETED 1 h 26 (17:10–18:36),
+no failed task, both samples stored (docs/REQUIREMENTS.md §4 "CRAM Gate 2, B73 controls"; Picard on ERR3288215 took 54 min, not
+~2.5 h).
 
 ## Purpose
 Put the two B73 controls of the genotype workflow into the production store (`ZEAL/store/cram_import/`) through

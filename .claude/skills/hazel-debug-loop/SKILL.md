@@ -112,6 +112,10 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
 - **Check the resolved resources, not the config text:** a later `withName` block can lose to an earlier combined selector
   (Gate 2: TRIMMOMATIC's 12 h never applied). `scripts/check_resources.sh` compares a stub run's trace with
   `tests/expected_resources.tsv`.
+- **A subsample hides memory that grows with the data; an OOM kill can hang, not fail.** CRAM Gate 2 (2026-09-29): batch-1 DEMUX
+  peaked at 80 % of 2 GB at Gate 1 (4 M pairs), then OOMed at 2 and 4 GB at full size, and each task sat at 0 CPU with no
+  `.exitcode` until its time limit (exit 140). At Gate 1, compare peak RSS at two subsample sizes for any task near its request;
+  in a run, a task at 0 CPU after `OUT_OF_MEMORY` in `sacct`/`sstat` is hung (PLAN §6).
 - Record measured resources (trace, `sacct`/`seff`) in `docs/REQUIREMENTS.md` and extrapolate `work/` size and file count before
   scaling up.
 

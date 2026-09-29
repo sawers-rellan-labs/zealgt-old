@@ -27,6 +27,21 @@
 // 0. A corrupt or missing tar member / gzip therefore fails the task instead of giving a short or empty lane.
 // Threads: cutadapt -j / pigz -p task.cpus (standard nf-core; not hashed on Nextflow >= 26.04.6); flags (-e 0 --no-indels ...)
 // from ext.args.
+// Output compression (CRAM Gate 2 w01, BZea5 OOM + 2 h hang, agent/20260929_194500_demux_batch1_oom_hang.md): cutadapt
+// writes PLAIN FASTQ into one named pipe per output (demux/<sample>.<lane>_R{1,2}.fastq, made by mkfifo for every sample),
+// each drained by its own single-threaded `pigz -1 -p 1` into the .fastq.gz. With .gz outputs cutadapt 4.9 at -j > 1 opens
+// every output through xopen 2.1 / python-isal as an in-process threaded writer (one thread + ~3-4 MB of buffers per
+// output): 192 outputs (96 batch-1 barcodes) hold ~0.8-1.1 GB in the main process, and on hazel the job was OOM-killed at
+// 2 GB and again at 4 GB. Plain outputs keep the main process at ~40 MB whatever the input size; the compressors ~1.5 MB
+// each; no transient uncompressed file touches the disk. Every sample gets a FIFO, so a sample without reads still gets a
+// valid empty .fastq.gz.
+// cutadapt runs in its own process group (set -m around the background job): when its main process dies (the cgroup OOM
+// killer picks it), its forked reader/worker processes are orphaned, deadlock at 0 CPU and keep the stderr pipe of the
+// Nextflow wrapper (`| tee .command.err`) open, so the task sat until the Slurm time limit (exit 140) instead of failing
+// with 137. On a non-zero exit the whole group and the compressors are killed and the exit status is propagated (137
+// -> memory retry). The FIFOs are removed by the EXIT trap.
+// TODO(Gate 2 after containerization): batch-1 DEMUX memory/time unmeasured at full size; measure and correct (w01 BZea5
+// with the old .gz outputs: OOM at 2 GB after ~80 s, at 4 GB after ~4 min; this layout is flat at 3 M and 12 M pairs locally).
 // Reads without a barcode match are discarded (ext.args --discard-untrimmed); their count is in the JSON report.
 // meta.id = <library>.<lane> (READ_DEMULTIPLEXING). Output names: demux/<sample>.<meta.id>_R{1,2}.fastq.gz (the lane keeps the files of one sample apart in MERGE_LANES).
 // Tool versions: one `versions` topic tuple per tool (cutadapt, pigz, tar); coreutils (head) is pinned in environment.yml
@@ -86,7 +101,7 @@ process DEMUX {
         printf '>%s\\n%s\\n' ${fa_r2} > barcodes_r2.fa
     fi
 
-    trap 'rm -f ${lane}_R1.fastq.gz ${lane}_R2.fastq.gz' EXIT
+    trap 'rm -f ${lane}_R1.fastq.gz ${lane}_R2.fastq.gz demux/*.${lane}_R1.fastq demux/*.${lane}_R2.fastq' EXIT
     zg_pipe_ok() {
         local read=\$1 n i s
         shift
@@ -124,21 +139,37 @@ process DEMUX {
     fi
 
     mkdir demux
+    zips=''
+    for s in ${samples}; do
+        for r in R1 R2; do
+            mkfifo "demux/\${s}.${lane}_\${r}.fastq"
+            pigz -1 -p 1 < "demux/\${s}.${lane}_\${r}.fastq" > "demux/\${s}.${lane}_\${r}.fastq.gz" &
+            zips="\$zips \$!"
+        done
+    done
+    set -m
     cutadapt \\
         -j ${task.cpus} \\
         ${args} \\
         ${patterns} \\
         ${cuts} \\
         --json ${prefix}.cutadapt.json \\
-        -o 'demux/{name}.${lane}_R1.fastq.gz' \\
-        -p 'demux/{name}.${lane}_R2.fastq.gz' \\
+        -o 'demux/{name}.${lane}_R1.fastq' \\
+        -p 'demux/{name}.${lane}_R2.fastq' \\
         "\$in1" "\$in2" \\
-        > ${prefix}.cutadapt.log
-
-    for s in ${samples}; do
-        for r in R1 R2; do
-            [ -e "demux/\${s}.${lane}_\${r}.fastq.gz" ] || printf '' | pigz > "demux/\${s}.${lane}_\${r}.fastq.gz"
-        done
+        > ${prefix}.cutadapt.log &
+    cutadapt_pid=\$!
+    set +m
+    cutadapt_status=0
+    wait \$cutadapt_pid || cutadapt_status=\$?
+    if [ "\$cutadapt_status" -ne 0 ]; then
+        kill -KILL -- -"\$cutadapt_pid" 2>/dev/null || true
+        kill \$zips 2>/dev/null || true
+        echo "DEMUX ${prefix}: cutadapt exited \$cutadapt_status" >&2
+        exit "\$cutadapt_status"
+    fi
+    for p in \$zips; do
+        wait "\$p"
     done
     """
 
