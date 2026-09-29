@@ -227,7 +227,10 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
     to a **different** batch-A/B plant, e.g. `Zd.0010_P2_P1_Q1` (batch C, seed 23CLD1B73x475.1) vs `Zd.0010_P2_P1_P1` (batch A, seed
     13CL6081×6082-1). `_Q` appears only at the BC1 or BC2 segment, never first, so the donor (`<accession>_P<n>`) is unaffected. The
     nil_id rule (`NIL_ID_README.md`) reads those segments by number only, so a batch-C line and a batch-A/B line with the same numbers
-    get the **same nil_id**. No sequenced sample is batch C today (registry: 0 `_Q` pedigrees), so nothing here is affected; before any
+    get the **same nil_id**. **Confirmed by Rubén (Slack DM, 2026-09-29):** "Las Q son nuevas BC2s generadas por nosotros y decidimos
+    usar Q en lugar de P para distinguirlas de las BC2s que había generado Jim"; the practical reason: Jim's P numbers are not
+    consecutive within a donor and skip numbers. So `_Q<n>` and `_P<n>` are different plants, and the nil_id must encode the letter
+    (encoding to be decided by the rule's owner). No sequenced sample is batch C today (registry: 0 `_Q` pedigrees), so nothing here is affected; before any
     batch-C line is sequenced or registered, the rule's owner (zealhmm register, Rubén's naming) must encode the letter. The builder
     refuses any pedigree it cannot give a donor.
 12. **MolBreeding 45K:** the target-sequencing tubes (`Molbreeding samples` / `Molbreeding_manifest`) are keyed by batch-1 Seq_ID and are
