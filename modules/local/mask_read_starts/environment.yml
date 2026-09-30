@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
 # MASK_READ_STARTS: samtools view/index and gawk (soft-mask the first bases of every read); the same samtools/htslib/gawk
-# as MARKDUP_IMPORT (modules/local/markdup_import/environment.yml). Exact version + build.
+# as MARKDUP_IMPORT (modules/local/markdup_import/environment.yml). Versions only (nf-core); the container image is built from these specs.
 channels:
   - conda-forge
   - bioconda

@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
 # MARKDUP_IMPORT: samtools (addreplacerg, collate, fixmate, sort, markdup, index), the same samtools as ALIGN_MARKDUP so
 # imported and new CRAMs carry duplicate flags from one markdup version; gawk drops stale @RG header lines of multi-RG
-# inputs. Exact version + build.
+# inputs. Versions only (nf-core); the container image is built from these specs.
 channels:
   - conda-forge
   - bioconda

@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
 # DEMUX: cutadapt 4.9 as zealbc1 ran it (envs/legacy_zealbc1/assembly.list.txt), with the python it ran on; pigz / coreutils
-# (cat, head, mkfifo) / tar for the input stage (lane streaming, --subsample, batch-1 tar members). Exact version + build.
+# (cat, head, mkfifo) / tar for the input stage (lane streaming, --subsample, batch-1 tar members). Versions only (nf-core); the container image is built from these specs.
 channels:
   - conda-forge
   - bioconda
@@ -11,3 +11,4 @@ dependencies:
   - conda-forge::pigz=2.8
   - conda-forge::coreutils=9.11
   - conda-forge::tar=1.35
+  - conda-forge::gzip=1.14

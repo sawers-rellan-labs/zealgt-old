@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
 # CHROMOSOME_PAINTING: Rscript with data.table and ggplot2; the R zealbc1 ran (envs/legacy_zealbc1/nilhmm.list.txt).
-# Exact version + build.
+# Versions only (nf-core); the container image is built from these specs.
 channels:
   - conda-forge
   - bioconda

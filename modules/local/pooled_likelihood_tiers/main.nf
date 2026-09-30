@@ -37,8 +37,8 @@ process POOLED_LIKELIHOOD_TIERS {
 
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/ea/eab5e327131db0b3743e8264de7ea497bf3f9d2d5c4bab89147c89c0bb7cb765/data'
-        : 'community.wave.seqera.io/library/python:3.12.14--e1a45735c4c986d6'}"
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/fa/fa07e248b1e370d7821404c2c9b042d508e30e5147fa2509c4d58f8f103ebaee/data'
+        : 'community.wave.seqera.io/library/python_gzip:6ffdc9aac79f425a'}"
 
     input:
     tuple val(meta), path(calls, stageAs: 'calls/*'), path(extra_counts, stageAs: 'extra/*'), path(sites, stageAs: 'sites/*')
