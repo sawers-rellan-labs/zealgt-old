@@ -21,7 +21,8 @@ paused runs cannot be resumed on either.
 - hazel `nf_work/`: the **logs and traces** of `cram_gate2_w01/`, `cram_gate2_b73/`, `gate2_3A/`, `gate2pre_fixture/`
   (the Gate 2 measurements). Their `work/` dirs can go in cleanup 1 once the zealgt-fe session confirms it does not need
   them (they cannot be resumed after the switch).
-- the Nextflow launcher env `conda/zealgt/nextflow-*` and the `pkgs` files it links (it runs every head job).
+- the Nextflow launcher env `conda/zealgt/nextflow-*` and the `pkgs` files it links (it runs every head job), until it is
+  replaced by the single-file launcher + pinned Java (docs/PLAN_containers.md §6, option B); then it and the rest of `pkgs` go.
 - laptop `~/repos/zealgt/agent/` (demux test data, `*gate2*` scripts and reviews), the worktrees `agent/wt_gate2_bug`
   (branch `gate2-bug`) and `agent/cr_gate2_wt`, branch `gate2-bug`.
 - never in any cleanup: `ZEAL/store/`, `ZEAL/results/`, the raw data.
@@ -98,6 +99,21 @@ Categories:
 - `scripts/run_checks.sh` / `scripts/check_resources.sh`: keep only the latest `agent/check_resources/<timestamp>/` (or
   write into one fixed scratch dir, replaced each run).
 - nf-test: one fixed `NFT_WORKDIR` per checkout (`agent/nftest/`), reused, instead of a new dated dir per run.
+- `scripts/check_resources.sh`, the slowest check (≈ 20 stub runs of the entries under `hazel,normal` and `hazel,short`,
+  one after another; measured 2026-09-30 ≈ 25 of the suite's ≈ 30 min, each run over a minute although its stub tasks only
+  `touch` files and the 16-cpu / 48 GB requests are only recorded, not used: the override's local executor claims 64 cpus
+  and 1 TB).
+  1. **First: fast polling.** `conf/hazel.config` sets `executor.pollInterval = '1 min'` (right for Slurm); the override
+     switches to the local executor but keeps that interval, so every dependency step of a stub run waits up to a minute
+     for tasks that finished in milliseconds. Add `pollInterval = '1 sec'` to the override's `executor` block (polling is
+     not a resource request, so the check measures the same thing); time the check before and after (test the tool's
+     behaviour first).
+  2. **Only if still slow: parallel runs.** The runs are independent: every genotype entry has its own directory and a store
+     freshly seeded from `tests/fixtures/genotype/store_seed`, and the two profiles are separate; only the two CRAM entries
+     of a profile share a launch directory and store (give each its own). Run them as background jobs, 4-6 at a time (each
+     is one Nextflow JVM, ≈ 1 core while starting, ≈ 0.5-1 GB); each writes its own trace rows, concatenated in a fixed
+     order before the comparison with `tests/expected_resources.tsv`; a failed run still stops the check with its log.
+  A small code commit of its own after the switch, checked like any other.
 - Each hazel test run's run card names its run dirs, and the write-up of the run ends with the cleanup listing for them.
 
 ## 6. Order

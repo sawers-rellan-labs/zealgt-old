@@ -63,13 +63,40 @@ after the switch: docs/PLAN_cleanup.md.
 5. **Switch**: containers become the hazel default, between two waves (every task hash changes, so never in the middle of one).
    Rewrite the "No containers" and "Build-pinned conda prefixes" deviations in their 4 places (`.nf-core.yml`,
    `docs/usage.md`, `docs/PLAN_pipeline.md` §2, nfcore-compliance skill). Then, with consent, remove the conda env prefixes and
-   `pkgs` cache and check the quota (`mmlsquota -g maize gpfsHPCcommon2`).
+   `pkgs` cache and check the quota (`mmlsquota -g maize gpfsHPCcommon2`) (docs/PLAN_cleanup.md, cleanup 1).
+   **Logging in the templates** (`CLAUDE.md`, "Logging in task scripts"; user, 2026-09-30), done in the same commit set
+   because the switch changes every task hash anyway, so it costs no extra reruns: the 21 Python templates move to
+   `logging` (timestamped, tagged, stderr), the 2 R templates (RTIGER, CHROMOSOME_PAINTING) to `logger` (`r-logger` added to
+   their environment.yml / the nilHMM Dockerfile, new images), and every step that can run longer than a minute at genome scale (e.g.
+   POOLED_LIKELIHOOD_TIERS, GAP_FILLING_*, RTIGER per line) logs progress with a running ETA about once a minute (time-
+   throttled; less often only if logging becomes an I/O issue). Outputs must stay byte-identical: only
+   stderr changes, checked by rerunning the module nf-tests (snapshots) and one Gate 1 comparison.
 
 ## 6. Later, optional
 
 - **GitHub Actions CI**: lint + nf-test with Docker on the test fixtures (the repository is public, so it is free). Removes the
   "No GitHub Actions CI" deviation. Possible only once step 2 exists.
 - PROVENANCE records the image of each step (useful when the store holds CRAMs made with conda and with containers).
+- **Nextflow launcher without conda** (user, 2026-09-30: option B). After the switch the only conda env left is the
+  launcher (`envs/nextflow`: nextflow 26.04.6 + openjdk 25, ≈ 8,000 files, 2,966 of its own), because the head job runs
+  on the host, outside any container (it submits every task with `sbatch`). Replace it with Nextflow's single-file
+  launcher `nextflow-26.04.6-dist` (all libraries in one executable; sha256 checked) plus a **pinned Java runtime of our
+  own** (e.g. Eclipse Temurin 21 JRE, archive sha256 checked, unpacked once on `/share`, ≈ 300 files), and the nf-schema
+  plugin installed next to it as `envs/nextflow/build.sh` does today; one xfer job. `scripts/submit_head_job.sbatch` puts
+  the launcher on PATH and sets `JAVA_HOME` to that runtime; `NXF_OFFLINE`, `NXF_PLUGINS_DIR` and `NXF_VER` stay. Not
+  hazel's `java/17` module (option A): site modules can change or break (the apptainer module already fails without
+  `TMPDIR`). Not Nextflow in a container (option C): `sbatch` from inside a container needs the host's Slurm binaries,
+  libraries and munge socket. With it the project uses no conda at all.
+  **Test** (only the head job changes: Java, the Nextflow binary, the plugin, submission; the tasks keep their images):
+  1. *No conda:* the new head job drops hazel's miniconda from PATH (today added for activating prefixes), so any hidden
+     conda use fails loudly. A short compute-node job checks `java -version` (the pinned runtime), `nextflow -version`
+     (26.04.6), `command -v conda` (nothing), and `nextflow config -profile hazel,apptainer_hazel` with nf-schema loaded
+     offline from our plugins dir.
+  2. *Gate 0 of every entry* (3 CRAM + 7 genotype, stub) with the new launcher: submission, polling, publishing, the store
+     guards.
+  3. *Cache:* `-resume` a finished Gate 1 run (e.g. `containers_g1`) with the new launcher: every task cached, 0 submitted
+     (same task hashes, so swapping the launcher between waves reruns nothing; `scripts/test_cache.sh` style check).
+  No Gate 1: the tasks' software does not change.
 
 ## 7. Results (2026-09-30)
 
