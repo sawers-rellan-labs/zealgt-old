@@ -126,8 +126,13 @@ Categories:
   `scripts/check_resources.sh` keeps checking what the `hazel` profiles request. Gates only: Gate 2 and production keep one
   Slurm job per task. Expected genotype Gate 1 ≈ 8-10 min (from ≈ 15-20). Measure with the next Gate 0/1.
 - **Nextflow start-up (≈ 40 s per head job)**, profiled 2026-09-30 (docs/REQUIREMENTS.md): (1) test a gate from a checkout
-  on `/share` instead of `/rsstu` (script compilation ≈ 16-19 s); (2) validate `meta/samples.csv` only for `--workflow cram`
-  (≈ 3.5 s per genotype head job; a small code change, with the switch).
+  on `/share` instead of `/rsstu` (script compilation ≈ 16-19 s); (2) **done 2026-09-30, with the switch:** `meta/samples.csv`
+  is no longer validated at start-up (`"schema"` removed from `input` in `nextflow_schema.json`); `samplesheetToList`
+  already validates it where `--entry read_demultiplexing` reads it, so CRAM runs validated it twice and genotype runs
+  (≈ 3.5 s per head job) for nothing. Rejected: `input = null` under `--workflow genotype` in `nextflow.config`. A config
+  default does see a CLI `--workflow` on Nextflow 26.04.6 (reprobed; an earlier probe said otherwise), but nf-schema
+  2.5.1's parameter summary crashes on a null string param whose schema default names `${projectDir}`
+  (`SummaryCreator.groovy:101`, `.contains()` on null).
 
 ## 6. Order
 

@@ -11,8 +11,8 @@ process CHROMOSOME_PAINTING {
 
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/9a/9a2447005c1e16f6af402e592db0c8a01e99eeda4e285d7c456760116ed00e90/data'
-        : 'community.wave.seqera.io/library/r-base_r-data.table_r-ggplot2:bdd47ec06e3bdb42'}"
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/b0/b09013591938d392778433116a85bc84482cdfbab442f21726b315dab0f78f5c/data'
+        : 'community.wave.seqera.io/library/r-base_r-data.table_r-ggplot2_r-logger:11f3862b31a614f8'}"
 
     input:
     tuple val(meta), path(segments), path(line_qc)

@@ -58,7 +58,9 @@ Both sheets are validated and parsed by nf-schema (`samplesheetToList`); the pip
 ### `--input`: meta/samples.csv (assets/schema_input.json)
 
 The single sample sheet of the project, one row per sequenced well, built by `python3 meta/build_samples.py` from
-`meta/sources/` (provenance in `meta/PROVENANCE.md`). It is validated at parameter validation on every run.
+`meta/sources/` (provenance in `meta/PROVENANCE.md`). Parameter validation checks only that it exists; its rows are
+validated against the schema when `--entry read_demultiplexing` reads it (`samplesheetToList`), so the genotype workflow,
+which never reads it, does not pay the ≈ 3.5 s validation of its 2,283 rows.
 
 | column | rule |
 |---|---|

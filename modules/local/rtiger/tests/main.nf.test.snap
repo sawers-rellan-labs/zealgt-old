@@ -13,7 +13,7 @@
                     ]
                 ],
                 "1": [
-                    "D1.chr10_1-50000.rtiger.versions.yml:md5,411379c369850f58fb3e235d9e87a992"
+                    "D1.chr10_1-50000.rtiger.versions.yml:md5,e98b090c8653a726693c2aab4ae4e2ec"
                 ],
                 "segments": [
                     [
@@ -26,11 +26,11 @@
                     ]
                 ],
                 "versions": [
-                    "D1.chr10_1-50000.rtiger.versions.yml:md5,411379c369850f58fb3e235d9e87a992"
+                    "D1.chr10_1-50000.rtiger.versions.yml:md5,e98b090c8653a726693c2aab4ae4e2ec"
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:49:02.56692",
+        "timestamp": "2026-09-30T19:38:06.513355",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

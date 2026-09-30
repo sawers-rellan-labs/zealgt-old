@@ -46,7 +46,8 @@ workflow PIPELINE_INITIALISATION {
     )
 
     //
-    // Validate parameters (and --input against assets/schema_input.json) and generate parameter summary to stdout
+    // Validate parameters and generate parameter summary to stdout (--input only for existence: its rows are validated
+    // against assets/schema_input.json by samplesheetToList in zgDemuxInputs, the one place that reads it)
     //
     def before_text = ""
     def after_text = ""

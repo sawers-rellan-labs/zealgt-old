@@ -43,8 +43,10 @@ Spec index: https://nf-co.re/docs/specifications/overview
   >= 26.04.6 (`nextflow-cache` skill). Rerun the module's own nf-test after patching; update its snapshot.
 
 ## Samplesheets and params — https://nf-co.re/docs/specifications/pipelines/requirements/parameters
-- `--input` is a CSV validated by nf-schema: `"schema": "assets/schema_input.json"` on the param, parsed in
-  `PIPELINE_INITIALISATION` with `samplesheetToList`. No hand parsing/validation in the workflow.
+- `--input` is a CSV validated by nf-schema against `assets/schema_input.json`, parsed in `PIPELINE_INITIALISATION` with
+  `samplesheetToList` (which validates it). No hand parsing/validation in the workflow. zealgt leaves `"schema"` off the
+  `input` param (2026-09-30): the sheet would be validated twice for CRAM runs and needlessly (≈ 3.5 s) for genotype runs,
+  which never read it. Do not put it back.
 - Push checks into the schema: `uniqueEntries`, `maximum`/`minimum`, `pattern`, `format: file-path|directory-path`, `exists`
   (nf-schema spec: https://nextflow-io.github.io/nf-schema/latest/nextflow_schema/nextflow_schema_specification/).
 - Workflows are wiring only; input building and run guards live in the utils subworkflow (template code locations).

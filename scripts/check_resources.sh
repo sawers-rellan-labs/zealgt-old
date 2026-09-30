@@ -10,7 +10,7 @@
 # fixture library LIBX, markdup_import on touch-file CRAMs) and of the 7 genotype entries (tests/fixtures/genotype, each on
 # a store seeded with the earlier stages' outputs) with the real profiles (-profile hazel,<p>), plus an override
 # config that only swaps the executor to local with a large pool (64 cpus, 1 TB: nothing is capped by the laptop), turns
-# conda off, and puts work/, TMPDIR (+ its beforeScript), outdir, a store_stub* store and a checkpoint_stub* FASTQ checkpoint under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
+# conda and Apptainer off (tasks on the host, as the stub shims expect), and puts work/, TMPDIR (+ its beforeScript), outdir, a store_stub* store and a checkpoint_stub* FASTQ checkpoint under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
 # retry) are compared with the table: every observed process needs a row, every row must be observed, values must match.
 # Then a size probe (conf/hazel.config scales the per-sample times with the input size and conf/normal.config routes each
 # task by its time; the fixtures only reach the 15 min floor): five stand-in processes on sparse 100 M / 310 M pair
@@ -165,6 +165,7 @@ executor {
 }
 process.executor = 'local'
 conda.enabled    = false
+apptainer.enabled = false   // hazel.config turns it on; its cache dir is on /share, absent on the laptop
 env.TMPDIR       = '$D/tmp'
 process.beforeScript = "mkdir -p '$D/tmp'"
 trace.fields     = 'process,name,attempt,status,cpus,memory,time,queue'
