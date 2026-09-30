@@ -105,7 +105,12 @@ Categories:
   share one), rows merged in run order: **≈ 13 min -> 3 min 19 s**. `scripts/run_checks.sh`: every line stamped
   `[HH:MM:SS]`, written line by line to `agent/run_checks_<time>.log` with `agent/run_checks_latest.log` linking to the
   newest, elapsed time per step; one `start` / `done` line per stub run. Suite ≈ 31 min (1-min polling) -> 16 min (10 s)
-  -> **8 min 29 s**. Next: nf-test in 4 shards (the ≈ 4 1/2 min left) and a summary line at the end of the log.
+  -> **8 min 29 s**. Then nf-test in 4 shards at once (`ZG_NFT_SHARDS`; each its own `.nf-test/shard_<i>` work dir and
+  `agent/nftest_shard_<i>.log`, `[shard i/n]` prefixes in the main log) and a `summary:` line at the end of every log.
+  **Known inefficiency, kept for now (user, 2026-09-30):** 4 shards give only ≈ 2 × (36 of 71 tests in 70 s vs ≈ 140 s one
+  after another): 4 Nextflow JVMs starting at once compete for the laptop's CPU and disk. The best `ZG_NFT_SHARDS` and
+  `ZG_RES_JOBS` (2, 3 or 4) are not measured; time the nf-test stage and the resource check with each if the suite's
+  duration matters again.
 - Each hazel test run's run card names its run dirs, and the write-up of the run ends with the cleanup listing for them.
 - **Fast gates: a `gate` profile + one head job per chain** (user, 2026-09-30). After the polling fix a Gate 0/1 chain is
   still mostly overhead (genotype Gate 1: critical path ≈ 3-4 min of work, longest task CRISP 76 s): every task is its own

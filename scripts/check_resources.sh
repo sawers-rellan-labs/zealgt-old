@@ -52,7 +52,8 @@ OBS="$SCRATCH/obs"; mkdir -p "$OBS"
 JOBS_MAX="${ZG_RES_JOBS:-4}"
 RUNS_TOTAL=22; RUN_N=0; T0=$(date +%s)
 declare -a RUN_LABEL RUN_LOG
-stamp() { printf '== [%s] %s (%d s elapsed)\n' "$(date +%H:%M:%S)" "$*" "$(( $(date +%s) - T0 ))"; }
+# "== " marks the progress lines (grep '== '); the time only when run alone (run_checks.sh stamps every line itself)
+stamp() { printf '== %s%s (%d s elapsed)\n' "$([ -n "${ZG_LOG_STAMPED:-}" ] || date '+[%H:%M:%S] ')" "$*" "$(( $(date +%s) - T0 ))"; }
 
 # run_job <nn> <label> <rowkey: profile | profile_tag> <dir> <log> <trace> <command...>: one stub run in the background
 run_job() {
