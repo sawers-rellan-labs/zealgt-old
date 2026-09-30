@@ -1,7 +1,7 @@
 // POOLED_LIKELIHOOD_TIERS — step 4 of discovery: the pooled likelihood ratio, flags and tiers per donor and site (genotype
 // design §2.2; math supplement "Per-donor variant discovery"; rewrite of the maths of zealbc1
 // PHG/bin/pilot_step4_postfilter_llr.py). Also included as JOINT_POOLED_LIKELIHOOD (stage 6, all donors of a set at the
-// union sites, --input-format counts, no veto; envs/process_aliases.tsv).
+// union sites, --input-format counts, no veto; the `include ... as` aliases of the workflows).
 //
 // Owner of the python environment: every genotype python module runs in this module's environment.yml (design §0.8).
 //

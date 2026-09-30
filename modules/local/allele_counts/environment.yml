@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
-# ALLELE_COUNTS (and its aliases, envs/process_aliases.tsv): bcftools mpileup -I -a AD at fixed sites | bcftools query,
+# ALLELE_COUNTS (and its aliases, the `include ... as` aliases of the workflows): bcftools mpileup -I -a AD at fixed sites | bcftools query,
 # bgzip; cmp + diff (diffutils) and gzip for the sample-column check and the stub; the bcftools zealbc1 ran (envs/legacy_zealbc1/assembly.list.txt, nilhmm.list.txt). Versions only (nf-core); the container image is built from these specs.
 channels:
   - conda-forge

@@ -11,12 +11,12 @@
 // only when the VCF has a #CHROM line and the log has no error line (error / segmentation fault / abort / cannot open /
 // failed, any case); anything else fails with CRISP's status, and the status is written to the log's last line.
 // CRISP is single-threaded; bgzip uses task.cpus. CRISP has no version option: the version is the commit built by
-// build.sh (vibansal/crisp @ 1a9027e), reported as a `versions` topic tuple with htslib's (bgzip, tabix).
+// Dockerfile (vibansal/crisp @ 1a9027e), reported as a `versions` topic tuple with htslib's (bgzip, tabix).
+// Not on conda: container only (the Dockerfile in this directory); a conda / mamba profile is refused, as nf-core's cellranger.
 process CRISP {
     tag "${meta.id}"
     label 'process_low'
 
-    conda "${moduleDir}/environment.yml"
     container "ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e"   // modules/local/crisp/Dockerfile (.github/workflows/build_images.yml)
 
     input:
@@ -35,9 +35,12 @@ process CRISP {
     task.ext.when == null || task.ext.when
 
     script:
+    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+        error("CRISP module does not support Conda (CRISP is not on conda): use the container (Docker / Apptainer / Singularity).")
+    }
     def args     = task.ext.args ?: ''
     def prefix   = task.ext.prefix ?: "${meta.id}"
-    def crisp_commit = '1a9027e'   // modules/local/crisp/build.sh pin; CRISP prints no version
+    def crisp_commit = '1a9027e'   // modules/local/crisp/Dockerfile pin; CRISP prints no version
     def bam_list = (bams instanceof List ? bams : [bams]) + (witness_bam instanceof List ? witness_bam : [witness_bam])
     def names    = bam_list.collect { f -> f.name.tokenize('.')[0] }
     if (names.toUnique().size() != names.size()) {

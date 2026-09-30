@@ -12,7 +12,7 @@
 # Default (gates): 1 cpu, 8 GB (zealbc1 heads peaked at 3.8 of 4 GB; Gate 2 0.42 GB), short QOS, 2 h. Launch directory (.nextflow/, .nextflow.log, history)
 # = /share/maize/frodrig4/nf_work/<run_id>/launch; workDir and TMPDIR come from conf/hazel.config (same <run_id>). The launcher
 # is the prebuilt nextflow env (scripts/build_envs.sh --list); its bin/ goes on PATH (the bioconda wrapper needs its java) and
-# Slurm exports this environment to every task job (conda for the prefixes, NXF_OFFLINE: compute nodes are offline).
+# Slurm exports this environment to every task job (apptainer for the images, NXF_OFFLINE: compute nodes are offline).
 # The checkout is ZEAL/zealgt unless ZG_REPO names another one (e.g. the genotype session's); the log starts with that REPO
 # and its full commit, and every nextflow console line carries a timestamp.
 # No `set -u` here (the user's shell init trips on it).
@@ -38,8 +38,9 @@ NXF_PREFIX="$(bash "$REPO/scripts/build_envs.sh" --list | awk -F'\t' '$1 == "nex
 
 export NXF_OFFLINE=true NXF_ANSI_LOG=false
 export NXF_PLUGINS_DIR="$NXF_PREFIX/share/nextflow/plugins"
-# apptainer for -profile apptainer_hazel (the binary itself: the site module fails when TMPDIR is unset); unused under conda
-export PATH="$NXF_PREFIX/bin:/usr/local/apps/conda/miniconda3/26.3.2/bin:/usr/local/apps/apptainer/1.4.2-1/bin:$PATH"
+# apptainer for the task images (the binary itself: the site module fails when TMPDIR is unset). hazel's miniconda is no
+# longer added (the tasks run in containers; the launcher's own bin/ is enough for nextflow + java).
+export PATH="$NXF_PREFIX/bin:/usr/local/apps/apptainer/1.4.2-1/bin:$PATH"
 
 LAUNCH=/share/maize/frodrig4/nf_work/$RUN_ID/launch
 mkdir -p "$LAUNCH"

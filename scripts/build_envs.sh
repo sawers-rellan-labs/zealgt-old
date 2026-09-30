@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 # scripts/build_envs.sh — build every zealgt environment once, from the repo, into /share (never at task time, never on /rsstu).
 #
-# Environments (PLAN §2 rule 6; one environment.yml per nf-core / local module, never one env bundling several steps):
-#   envs/<name>/environment.yml                      non-module envs (the Nextflow launcher: envs/nextflow), built first
-#   modules/nf-core/<tool>[/<sub>]/environment.yml   nf-core modules, the yml they ship with (never edited)
-#   modules/local/<module>/environment.yml           local modules
-#   + an optional build.sh next to the environment.yml for tools that are not conda packages (pinned commit, compiled
-#     with the compilers pinned in that environment.yml, installed into $CONDA_PREFIX). build.sh runs inside the new env
-#     (`conda run -p <prefix>`) with ZG_ENV_DIR (its own directory) and ZG_BUILD_DIR (a scratch dir inside the prefix,
-#     kept as the source record) exported. Declare the pinned source(s) in build.sh with lines `# zg-source: <url>@<commit>`.
+# Since the container switch (2026-09-30, docs/PLAN_containers.md step 5) the pipeline's processes run in container images
+# and have no conda env on hazel. What is left for this script is the non-module envs under envs/: today only the Nextflow
+# launcher (envs/nextflow, used by scripts/submit_head_job.sbatch via --list), until it is replaced by the single-file
+# launcher + a pinned Java (docs/PLAN_containers.md §6, option B). The modules' environment.yml files stay (nf-core rule:
+# the Seqera images are built from them) but are not built here any more, and conf/env_prefixes.config is gone.
+#   envs/<name>/environment.yml                      the non-module envs (the launcher), built first
+#   + an optional build.sh next to the environment.yml (envs/nextflow/build.sh fetches the nf-schema plugin into the
+#     prefix). build.sh runs inside the new env (`conda run -p <prefix>`) with ZG_ENV_DIR (its own directory) and
+#     ZG_BUILD_DIR (a scratch dir inside the prefix, kept as the source record) exported. Declare the pinned source(s) in
+#     build.sh with lines `# zg-source: <url>@<commit>`.
 #
-# Env id: path under envs/, modules/nf-core/ or modules/local/ with "/" -> "_" (samtools/stats -> samtools_stats);
-# process name = upper-case id (SAMTOOLS_STATS). Aliased includes (`include { X as Y }`) can be mapped in an optional
-# envs/process_aliases.tsv (alias<TAB>env_id): the genotype workflow's ALLELE_COUNTS, POOLED_LIKELIHOOD_TIERS and
-# BCFTOOLS_VIEW aliases.
+# Env id: the path under envs/ (nextflow); process name = upper-case id (NEXTFLOW).
 #
 # Prefix = CONTENT only: ${ZG_ENV_ROOT}/<first dependency>-<sha8>, sha8 = first 8 hex of sha256( the environment.yml without
 # comment lines, blank lines, trailing comments and the `name:` line ++ build.sh bytes if present ), <first dependency> =
@@ -35,8 +34,6 @@
 #                                           "nextflow" first; read by submit_head_job.sbatch / test_cache.sbatch). No conda
 #                                           needed; works on the laptop.
 #   scripts/build_envs.sh --prefixes        one row per prefix: prefix, sha8, env ids, processes, on-disk state
-#   scripts/build_envs.sh --write-config    regenerate conf/env_prefixes.config (withName -> prefix); run locally, commit
-#   scripts/build_envs.sh --check-config    exit 1 if conf/env_prefixes.config is stale (run_checks.sh; before every build)
 #   scripts/build_envs.sh [--only <id>]...  build (hazel, as the xfer job scripts/build_envs.sbatch; compute nodes are offline)
 #   scripts/build_envs.sh --list-stale [--all-refs | <git ref>...]
 #                                           dirs under ZG_ENV_ROOT that neither this checkout nor the named git refs (their
@@ -59,7 +56,6 @@ export CONDA_PKGS_DIRS="${CONDA_PKGS_DIRS:-/share/maize/frodrig4/conda/pkgs}"
 export CONDA_CHANNEL_PRIORITY=strict
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONFIG_OUT="$REPO/conf/env_prefixes.config"
 
 die() { echo "build_envs: ERROR: $*" >&2; exit 1; }
 log() { echo "build_envs: $(date '+%F %T') $*" >&2; }
@@ -119,18 +115,10 @@ list_env_dirs() {
             d="$(dirname "$f")"; rel="${d#"$REPO"/}"; id="${rel#envs/}"
             if [ "$id" = "nextflow" ]; then printf '0\t%s\t%s\n' "$id" "$rel"; else printf '1\t%s\t%s\n' "$id" "$rel"; fi
         done
-        for base in modules/nf-core modules/local; do
-            [ -d "$REPO/$base" ] || continue
-            while IFS= read -r f; do
-                d="$(dirname "$f")"; rel="${d#"$REPO"/}"; id="${rel#"$base"/}"; id="${id//\//_}"
-                printf '2\t%s\t%s\n' "$id" "$rel"
-            done < <(find "$REPO/$base" -name environment.yml -not -path '*/tests/*' | sort)
-        done
     } | sort -t$'\t' -k1,1 -k2,2 | cut -f2,3
 }
 
-# One row per process: id<TAB>process<TAB>env dir<TAB>sha8<TAB>prefix; the launcher (id nextflow, process NEXTFLOW) first,
-# aliases (envs/process_aliases.tsv, if present) last.
+# One row per env: id<TAB>process<TAB>env dir<TAB>sha8<TAB>prefix; the launcher (id nextflow, process NEXTFLOW) first.
 list_envs() {
     local id rel sha label rows="" alias target hit
     while IFS=$'\t' read -r id rel; do
@@ -139,14 +127,6 @@ list_envs() {
         rows="$rows$(printf '%s\t%s\t%s\t%s\t%s' "$id" "$(echo "$id" | tr '[:lower:]-' '[:upper:]_')" "$rel" "$sha" "$ZG_ENV_ROOT/$label-$sha")"$'\n'
     done < <(list_env_dirs)
     printf '%s' "$rows"
-    if [ -f "$REPO/envs/process_aliases.tsv" ]; then
-        while IFS=$'\t' read -r alias target; do
-            case "$alias" in ''|'#'*) continue;; esac
-            hit="$(printf '%s' "$rows" | awk -F'\t' -v t="$target" -v a="$alias" 'BEGIN{OFS="\t"} $1 == t { $2 = a; print; exit }')"
-            [ -n "$hit" ] || die "envs/process_aliases.tsv: unknown env id '$target' for alias '$alias'"
-            printf '%s\n' "$hit"
-        done < "$REPO/envs/process_aliases.tsv"
-    fi
 }
 
 # One row per prefix (first appearance order, so the launcher first): prefix<TAB>sha8<TAB>env dir of its first env id<TAB>
@@ -164,30 +144,6 @@ check_unique() {
     local dup
     dup="$(list_env_dirs | cut -f1 | sort | uniq -d)"
     [ -z "$dup" ] || die "env ids not unique (same module name under nf-core and local?): $dup"
-}
-
-render_config() {
-    echo '// GENERATED by scripts/build_envs.sh --write-config — do not edit by hand; rerun it after adding or changing a module env.'
-    echo '// Site config for the offline cluster: points every process at its prebuilt, build-pinned prefix under /share (built by'
-    echo '// scripts/build_envs.sbatch, an xfer job), overriding the conda directive of the module (the standard Nextflow override:'
-    echo '// config beats module), so no env is ever created at task time (compute nodes are offline). The prefix is keyed on the'
-    echo '// content of environment.yml (+ build.sh) only: <first dependency>-<sha8>; processes whose envs have identical content'
-    echo '// share one prefix. Included by conf/hazel.config and conf/local.config only.'
-    echo 'process {'
-    local id proc rel sha prefix
-    while IFS=$'\t' read -r id proc rel sha prefix; do
-        [ "$id" = "nextflow" ] && continue
-        printf "    withName: '%s' { conda = '%s' }\n" "$proc" "$prefix"
-    done < <(list_envs)
-    echo '}'
-}
-
-check_config() {
-    [ -f "$CONFIG_OUT" ] || die "conf/env_prefixes.config missing; run scripts/build_envs.sh --write-config locally and commit it"
-    if ! diff -q <(render_config) "$CONFIG_OUT" >/dev/null; then
-        diff <(render_config) "$CONFIG_OUT" >&2 || true
-        die "conf/env_prefixes.config is stale (an environment.yml / build.sh changed); rerun --write-config locally and commit"
-    fi
 }
 
 # in_lines <word> <newline-separated list>: exact line match, no pipe (grep -q in a pipe can turn a match into SIGPIPE)
@@ -336,7 +292,6 @@ main_build() {
     [ -x "$ZG_CONDA" ] || die "conda binary not found at $ZG_CONDA"
     case "$ZG_ENV_ROOT" in /rsstu/*) die "ZG_ENV_ROOT on /rsstu is not allowed (too slow; user 2026-09-28)";; esac
     check_unique
-    if [ "${ZG_ALLOW_STALE_CONFIG:-}" = 1 ]; then log "WARNING: config check skipped (ZG_ALLOW_STALE_CONFIG=1, testing only)"; else check_config; fi
     for id in "${only[@]}"; do
         in_lines "$id" "$(list_env_dirs | cut -f1)" || die "--only: unknown env id '$id' (see --list)"
     done
@@ -373,8 +328,7 @@ main_build() {
 case "${1:-}" in
     --list)         check_unique; list_envs ;;
     --prefixes)     check_unique; show_prefixes ;;
-    --write-config) check_unique; render_config > "$CONFIG_OUT"; echo "wrote $CONFIG_OUT" >&2 ;;
-    --check-config) check_unique; check_config; echo "conf/env_prefixes.config is current" >&2 ;;
+    --write-config|--check-config) die "$1 was removed with the container switch (no module envs, no conf/env_prefixes.config)" ;;
     --list-stale)   shift; check_unique; list_stale "$@" ;;
     --inodes)       shift; check_unique; list_inodes "$@" ;;
     --deps)         yml_deps "$2" ;;

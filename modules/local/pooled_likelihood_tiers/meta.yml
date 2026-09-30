@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
-# Also included as JOINT_POOLED_LIKELIHOOD (envs/process_aliases.tsv).
+# Also included as JOINT_POOLED_LIKELIHOOD (the `include ... as` aliases of the workflows).
 name: pooled_likelihood_tiers
 description: Step 4 of discovery - the pooled likelihood ratio of every donor at every candidate site (Bin(6, 1/2) carrier lattice, site error rate from the zero class), flags (hidepth, af_gt_half, inconsistent, single_sample, no_zero_class) and tiers A/B/C/ref, from a vetoed CRISP VCF or from ALLELE_COUNTS tables; writes n0, a0 and the full-precision log-odds for stage 6.
 keywords:

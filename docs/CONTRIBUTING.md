@@ -167,11 +167,10 @@ GitHub Actions) do not apply. The rules that do:
       nf-core modules' `eval` outputs on PATH:
       `ZG_CHECK_PATH=$PWD/agent/bin:$PWD/agent/.venv_nfcore/bin:$PWD/agent/stubbin NXF_VER=26.04.6 bash scripts/run_checks.sh`.
       The snapshots hold those shim versions (they equal the environment.yml pins, except DEMUX's `tar`, which is the laptop's).
-- [ ] **Every module has its own `environment.yml`** (never another module's). The hazel conda prefix is keyed on content
-      only, `<first dependency>-<sha8 of environment.yml without comments + build.sh>`, so identical envs share one prefix;
-      a dependency or build.sh change forces a rebuild (`scripts/build_envs.sbatch`) and reruns that process's tasks on
-      `-resume` (the prefix path is hashed). After any env change run `bash scripts/build_envs.sh --write-config` and commit
-      `conf/env_prefixes.config` (`run_checks.sh` fails on a stale one).
+- [ ] **Every module has its own `environment.yml`** (never another module's), versions only, declaring every command its
+      script or stub calls. A dependency change needs a new image: Seqera Containers (versions only, linux/amd64), the new
+      URLs in the module's `container` line, the SIF downloaded to hazel and the module's commands checked inside it; the
+      image path is hashed, so that process's tasks rerun on `-resume`. CRISP / RTIGER: their Dockerfile and a new tag.
 - [ ] **Hash hygiene** (nextflow-cache skill): resources are directives read in the script as `${task.cpus}` /
       `task.memory` (not hashed on Nextflow >= 26.04.6), never `task.*` inside an `ext.args*` closure (hashed;
       `scripts/check_ext_args.py`, part of `run_checks.sh`); no checkout paths in a `script:`; python helpers are module
