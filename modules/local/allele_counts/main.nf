@@ -23,8 +23,8 @@ process ALLELE_COUNTS {
 
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/7f/7f30710cf454d5943d2bb1158f95cb4cc4cdc556e75b09a8fe9ed68ac6a16fce/data'
-        : 'community.wave.seqera.io/library/bcftools_htslib_gzip:a5f880134bf11a16'}"
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/f7/f79e3aeb77eaa806b853aaa83b1f2645fc6502d5c64ac9fcc8a05417ac24862e/data'
+        : 'community.wave.seqera.io/library/bcftools_htslib_gzip_diffutils:6e04b4f4aa71ffd1'}"
 
     input:
     tuple val(meta), path(bams, stageAs: 'bam/*'), path(bais, stageAs: 'bam/*'), val(ids)
