@@ -1,0 +1,10 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+# ALLELE_COUNTS (and its aliases, envs/process_aliases.tsv): bcftools mpileup -I -a AD at fixed sites | bcftools query,
+# bgzip; the bcftools zealbc1 ran (envs/legacy_zealbc1/assembly.list.txt, nilhmm.list.txt). Exact version + build.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::bcftools=1.21=h3a4d415_1
+  - bioconda::htslib=1.21=h566b1c6_1

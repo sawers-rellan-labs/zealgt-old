@@ -1,0 +1,41 @@
+{
+    "Zx.0001_P1.chrA_1-5000": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.genotype_summary.tsv:md5,1042952473853b018fa57f92ec6f7561"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.single_locus.tsv:md5,0a0037c9006c6889d64f0e6ef02cf51e"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.breakpoint_density.tsv:md5,bb082e11706707fdfe5b81a59f9c9662"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T08:00:03.998139",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

@@ -9,7 +9,10 @@
       --workflow cram      raw libraries -> analysis-ready CRAMs + QC + provenance + demux registry (workflows/cram.nf);
                            the entry is chosen by --entry (read_demultiplexing: stage 1 -> FASTQ checkpoint -> stage 2 |
                            read_alignment: stage 2 from the checkpoint | markdup_import)
-      --workflow genotype  CRAM store -> discovery ... genotypes (workflows/genotype.nf; skeleton, not implemented yet)
+      --workflow genotype  CRAM store -> sample QC, discovery, ancestry, union, donor alleles, genotypes, reports
+                           (workflows/genotype.nf); --entry <stage> runs that stage only (sample_quality_control |
+                           variant_discovery | ancestry_inference | marker_union | donor_allele_calling |
+                           genotype_imputation | reporting), reading --cram_store and writing <store>/genotype/<genotype_store_key>
     The store is the only contract between them.
 ----------------------------------------------------------------------------------------
 */
@@ -41,6 +44,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     ch_checkpoint // channel: [ val(meta), val(checkpoint row) ]
     ch_imports   // channel: [ val(meta), cram|bam, crai|bai, val(read_group) ]
     ch_records   // channel: [ val(sample_id), val(provenance record) ]
+    ch_genotype_samples // channel: [ val(meta), cram, crai, metrics, val([mask_r1, mask_r2]) ]
 
     main:
     def ch_multiqc_report = channel.empty()
@@ -59,7 +63,9 @@ workflow SAWERSRELLANLABS_ZEALGT {
         ch_task_dirs = CRAM.out.task_dirs
     }
     else if (params.workflow == 'genotype') {
-        GENOTYPE ()
+        GENOTYPE (
+            ch_genotype_samples,
+        )
     }
     else {
         error("unknown --workflow '${params.workflow}' (cram | genotype)")
@@ -100,6 +106,7 @@ workflow {
         PIPELINE_INITIALISATION.out.checkpoint,
         PIPELINE_INITIALISATION.out.imports,
         PIPELINE_INITIALISATION.out.records,
+        PIPELINE_INITIALISATION.out.genotype_samples,
     )
 
     //

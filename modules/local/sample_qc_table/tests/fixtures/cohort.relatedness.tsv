@@ -1,0 +1,6 @@
+sample	role	donor	method	n_sites	kinship_self	kinship_own	n_sites_own	own_z	closest_other_donor	kinship_closest_other	n_sites_closest_other	flag	reason
+L1	line	D1	vanraden_pseudohaploid	45	1.09	0.118072	45	0.046	D2	-0.302822	45	false	.
+L2	line	D1	vanraden_pseudohaploid	2	NA	NA	2	NA	D2	NA	2	false	insufficient_sites
+L4	line	D1	vanraden_pseudohaploid	42	0.93	-0.299650	42	-14.282	D2	0.153402	42	true	low_kinship_own_donor,closer_to_other_donor
+L5	line	D1	vanraden_pseudohaploid	46	0.22	0.026369	46	-3.099	D2	-0.083106	46	true	low_kinship_own_donor
+K1	b73_control	.	vanraden_pseudohaploid	60	0.25	NA	0	NA	D1	0.068062	60	false	.

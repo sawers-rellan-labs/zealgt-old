@@ -1,0 +1,3 @@
+sample	role	stage	reason
+S_1A_1	bc1_sample	sample_quality_control	min_coverage
+PN1_SID4	line	ancestry_inference	below_marker_floor

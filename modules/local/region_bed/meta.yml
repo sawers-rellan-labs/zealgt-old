@@ -1,0 +1,64 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
+name: region_bed
+description: Clip the lowcopy BED to one region ('chr' or 'chr:start-end'), merging overlapping ranges; writes a 0-based BED and the same ranges as 1-based region strings.
+keywords:
+  - bed
+  - region
+  - variant discovery
+tools:
+  - python:
+      description: Python standard library script (module template, templates/clip_bed_to_region.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing region information
+          e.g. [ id:'chr10_1-20000000' ]
+    - bed:
+        type: file
+        description: Lowcopy reference ranges (BED, 0-based half-open; extra columns ignored)
+        pattern: "*.bed"
+        ontologies: []
+  - region:
+      type: string
+      description: Region, 'chr' (whole chromosome) or 'chr:start-end' (1-based, inclusive)
+output:
+  bed:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing region information
+            e.g. [ id:'chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.bed":
+          type: file
+          description: Ranges inside the region, merged and sorted (3 columns, 0-based half-open)
+          pattern: "*.bed"
+          ontologies: []
+  regions:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing region information
+            e.g. [ id:'chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.regions.txt":
+          type: file
+          description: The same ranges as 1-based 'chr:start-end', one per line
+          pattern: "*.regions.txt"
+          ontologies: []
+  versions:
+    - "${task.ext.prefix ?: meta.id}.region_bed.versions.yml":
+        type: file
+        description: Tool versions (python)
+        pattern: "*.region_bed.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

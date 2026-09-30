@@ -1,0 +1,131 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
+name: sample_labels
+description: Edge translation of one donor x region (meta/PROVENANCE.md "Identifiers") - one join of the internal sample_id on the registry (meta/registry.csv, resolved columns) giving the short label (nil_id_resolved, else pedigree_resolved, else sample_id; excluded wells refused; replicate-well collisions suffixed with the sample_id) in the final genotype tables, the exclusion table and the segments / line_qc read by the reports, plus a labels table recording the registry path, sha256 and repo commit.
+keywords:
+  - genotyping
+  - reporting
+  - identifiers
+  - registry
+tools:
+  - python:
+      description: Python standard library script (module template, templates/label_samples.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map with the donor x region
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - genotypes:
+        type: file
+        description: RASTERIZE long table (column line = sample_id)
+        pattern: "*.tsv{,.gz}"
+        ontologies: []
+    - matrix:
+        type: file
+        description: RASTERIZE matrix (chrom pos ref alt, then one column per sample_id)
+        pattern: "*.tsv{,.gz}"
+        ontologies: []
+    - segments:
+        type: file
+        description: RTIGER segments CSV (column name = sample_id)
+        pattern: "*.{csv,tsv}"
+        ontologies: []
+    - line_qc:
+        type: file
+        description: LINE_MARKER_QC line_qc.tsv (column sample = sample_id)
+        pattern: "*.tsv"
+        ontologies: []
+    - exclusions:
+        type: file
+        description: Exclusion table of the unit (sample role stage reason; sample = sample_id)
+        pattern: "*.tsv"
+        ontologies: []
+    - donor:
+        type: string
+        description: The unit donor; a sample whose registry donor differs is refused
+    - sample_ids:
+        type: list
+        description: The unit's sheet samples (donor samples and B73 controls), listed in the labels table even when absent from the tables
+  - registry:
+      type: file
+      description: Sample registry meta/registry.csv (columns sample_id, nil_id_resolved, pedigree_resolved, donor_resolved, taxon, role, correction_ids, exclude)
+      pattern: "*.csv"
+      ontologies: []
+  - registry_source:
+      type: string
+      description: The registry path as recorded in the labels table (relative to the pipeline directory when inside it)
+  - code_version:
+      type: string
+      description: Repository commit of the run (zgCodeVersion), recorded in the labels table
+output:
+  genotypes:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.genotypes.tsv.gz":
+          type: file
+          description: Final long genotype table, line = label, sample_id added after it
+          pattern: "*.genotypes.tsv.gz"
+          ontologies: []
+  matrix:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.genotypes.matrix.tsv.gz":
+          type: file
+          description: Final genotype matrix, one column per label
+          pattern: "*.genotypes.matrix.tsv.gz"
+          ontologies: []
+  segments:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.segments.csv":
+          type: file
+          description: RTIGER segments with name = label (for GENOTYPE_SUMMARY and CHROMOSOME_PAINTING)
+          pattern: "*.segments.csv"
+          ontologies: []
+  line_qc:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.line_qc.tsv":
+          type: file
+          description: line_qc.tsv with sample = label (for GENOTYPE_SUMMARY and CHROMOSOME_PAINTING)
+          pattern: "*.line_qc.tsv"
+          ontologies: []
+  exclusions:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.exclusions.tsv":
+          type: file
+          description: Exclusion table with sample = label, sample_id added after it
+          pattern: "*.exclusions.tsv"
+          ontologies: []
+  labels:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.sample_labels.tsv":
+          type: file
+          description: "Per sample: sample_id label label_source collision nil_id pedigree donor (resolved values) taxon role correction_ids registry registry_sha256 code_version"
+          pattern: "*.sample_labels.tsv"
+          ontologies: []
+  versions:
+    - "*.sample_labels.versions.yml":
+        type: file
+        description: Tool versions (python); `eval` outputs are not allowed with a python template script
+        pattern: "*.sample_labels.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

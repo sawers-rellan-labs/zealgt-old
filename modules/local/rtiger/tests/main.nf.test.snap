@@ -1,0 +1,58 @@
+{
+    "D1.chr10_1-50000 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "D1.chr10_1-50000",
+                            "donor": "D1",
+                            "region": "chr10_1-50000"
+                        },
+                        "D1.chr10_1-50000.segments.csv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "D1.chr10_1-50000.rtiger.versions.yml:md5,411379c369850f58fb3e235d9e87a992"
+                ],
+                "segments": [
+                    [
+                        {
+                            "id": "D1.chr10_1-50000",
+                            "donor": "D1",
+                            "region": "chr10_1-50000"
+                        },
+                        "D1.chr10_1-50000.segments.csv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "D1.chr10_1-50000.rtiger.versions.yml:md5,411379c369850f58fb3e235d9e87a992"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:49:02.56692",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "D1.chr10_1-50000 - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "D1.chr10_1-50000",
+                        "donor": "D1",
+                        "region": "chr10_1-50000"
+                    },
+                    "D1.chr10_1-50000.segments.csv:md5,039bb61610eca1f98fa83d17268f708a"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:49:31.028849",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

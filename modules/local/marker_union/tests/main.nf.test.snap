@@ -1,0 +1,79 @@
+{
+    "gt_set.chrA_1-5000 - two run donors + one reference donor - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "gt_set.chrA_1-5000",
+                            "donor_set": "gt_set",
+                            "region": "chrA_1-5000"
+                        },
+                        "gt_set.chrA_1-5000.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "gt_set.chrA_1-5000",
+                            "donor_set": "gt_set",
+                            "region": "chrA_1-5000"
+                        },
+                        "gt_set.chrA_1-5000.union_sites.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "gt_set.chrA_1-5000",
+                            "donor_set": "gt_set",
+                            "region": "chrA_1-5000"
+                        },
+                        "gt_set.chrA_1-5000.per_donor.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    "gt_set.chrA_1-5000.marker_union.versions.yml:md5,70603829fbe452a24989b45bfc7a19bd"
+                ],
+                "per_donor": [
+                    [
+                        {
+                            "id": "gt_set.chrA_1-5000",
+                            "donor_set": "gt_set",
+                            "region": "chrA_1-5000"
+                        },
+                        "gt_set.chrA_1-5000.per_donor.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "sites": [
+                    [
+                        {
+                            "id": "gt_set.chrA_1-5000",
+                            "donor_set": "gt_set",
+                            "region": "chrA_1-5000"
+                        },
+                        "gt_set.chrA_1-5000.union_sites.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "union": [
+                    [
+                        {
+                            "id": "gt_set.chrA_1-5000",
+                            "donor_set": "gt_set",
+                            "region": "chrA_1-5000"
+                        },
+                        "gt_set.chrA_1-5000.tsv.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "gt_set.chrA_1-5000.marker_union.versions.yml:md5,70603829fbe452a24989b45bfc7a19bd"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:54:18.446429",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

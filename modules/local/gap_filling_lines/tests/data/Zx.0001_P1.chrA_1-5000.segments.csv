@@ -1,0 +1,5 @@
+source,donor,name,chr,start_bp,end_bp,state
+RTIGER_poolseq,Zx.0001_P1,L1,chrA,1,350,2
+RTIGER_poolseq,Zx.0001_P1,L1,chrA,380,5000,0
+RTIGER_poolseq,Zx.0001_P1,L2,chrA,1,5000,0
+RTIGER_poolseq,Zx.0001_P1,L3,chrA,1,5000,2

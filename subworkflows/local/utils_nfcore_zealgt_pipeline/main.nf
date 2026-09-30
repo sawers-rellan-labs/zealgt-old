@@ -13,6 +13,7 @@ include { samplesheetToList         } from 'plugin/nf-schema'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NFCORE_PIPELINE     } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipeline'
+include { zgGenotypeEntries; zgGenotypeGuards; zgGenotypeInputs } from './genotype_functions'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,12 +82,17 @@ workflow PIPELINE_INITIALISATION {
                : params.entry == 'read_alignment' ? zgAlignmentInputs()
                : zgDemuxInputs()
     }
+    if (params.workflow == 'genotype') {
+        zgGenotypeGuards()
+        inputs.genotype = zgGenotypeInputs()
+    }
 
     emit:
     libraries  = channel.fromList(inputs.libraries)  // channel: [ val(lmeta), [ raw R1 ], [ raw R2 ], val(barcodes), val(read_structures), val(tar_members) ]  (read_demultiplexing)
     checkpoint = channel.fromList(inputs.checkpoint) // channel: [ val(meta), val(checkpoint row) ]  every sample of the stage-2 libraries (read_demultiplexing, read_alignment)
     imports    = channel.fromList(inputs.imports)    // channel: [ val(meta), cram|bam, crai|bai, val(read_group) ]  (markdup_import)
     records    = channel.fromList(inputs.records)    // channel: [ val(sample_id), val(provenance record) ]
+    genotype_samples = channel.fromList(inputs.genotype ?: []) // channel: [ val(meta), cram, crai, metrics, val([mask_r1, mask_r2]) ]  (genotype_functions.nf)
 }
 
 /*
@@ -156,9 +162,12 @@ def toolCitationText() {
             "cutadapt (Martin 2011),",
             "FastQC (Andrews 2010),",
             "minibwa (Li, https://github.com/lh3/minibwa),",
-            "SAMtools (Danecek et al. 2021),",
+            "SAMtools and BCFtools (Danecek et al. 2021),",
+            "HTSlib (Bonfield et al. 2021),",
             "Picard (Broad Institute 2019),",
-            "MultiQC (Ewels et al. 2016)",
+            "MultiQC (Ewels et al. 2016);",
+            "genotype workflow: CRISP (Bansal 2010),",
+            "RTIGER (Campos-Martin et al. 2023) through nilHMM (Sawers-Rellán Lab, https://github.com/sawers-rellan-labs/nilhmm)",
             "."
         ].join(' ').trim()
 
@@ -172,7 +181,11 @@ def toolBibliographyText() {
             "<li>Li H. minibwa, URL: https://github.com/lh3/minibwa</li>",
             "<li>Danecek P et al. (2021) Twelve years of SAMtools and BCFtools. GigaScience 10(2):giab008. doi: 10.1093/gigascience/giab008</li>",
             "<li>Broad Institute (2019) Picard toolkit, URL: https://broadinstitute.github.io/picard/</li>",
-            "<li>Ewels P, Magnusson M, Lundin S, Käller M (2016) MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics 32(19):3047-3048. doi: 10.1093/bioinformatics/btw354</li>"
+            "<li>Ewels P, Magnusson M, Lundin S, Käller M (2016) MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics 32(19):3047-3048. doi: 10.1093/bioinformatics/btw354</li>",
+            "<li>Bonfield JK, Marshall J, Danecek P, Li H, Ohan V, Whitwham A, Keane T, Davies RM (2021) HTSlib: C library for reading/writing high-throughput sequencing data. GigaScience 10(2):giab007. doi: 10.1093/gigascience/giab007</li>",
+            "<li>Bansal V (2010) A statistical method for the detection of variants from next-generation resequencing of DNA pools. Bioinformatics 26(12):i318-i324. doi: 10.1093/bioinformatics/btq214</li>",
+            "<li>Campos-Martin R, Schmickler S, Goel M, Schneeberger K, Tresch A (2023) Reliable genotyping of recombinant genomes using a robust hidden Markov model. Plant Physiol 192(2):821-836. doi: 10.1093/plphys/kiad191</li>",
+            "<li>Sawers-Rellán Lab. nilHMM (v0.3.0), URL: https://github.com/sawers-rellan-labs/nilhmm</li>"
         ].join(' ').trim()
 
     return reference_text
@@ -240,6 +253,9 @@ def zgRunGuards() {
     def profiles = workflow.profile.tokenize(',')
     if (profiles.intersect(['hazel', 'slurm']) && !params.run_id) {
         error("--run_id is required on hazel: it names the scratch dir /share/maize/frodrig4/nf_work/<run_id> (conf/hazel.config)")
+    }
+    if ((params.workflow == 'genotype') != (params.entry in zgGenotypeEntries())) {
+        error("--entry ${params.entry} is not an entry of --workflow ${params.workflow} (cram: read_demultiplexing | read_alignment | markdup_import; genotype: ${zgGenotypeEntries().join(' | ')})")
     }
     // a subset never lands where the real CRAMs go (a stored subsample CRAM would make the skip-if-stored logic skip the
     // real alignment), and stub outputs never land in the real store

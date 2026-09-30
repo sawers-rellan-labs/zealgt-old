@@ -78,3 +78,58 @@ docs/usage.md "Store rules" and "Waves of libraries"). The cutadapt logs live he
 
   The task dirs are those whose outputs the run used (cached ones included); failed or retried attempts are not listed (the file
   says how to list them with `nextflow log`). Running the file unchanged only lists and measures.
+
+## Genotype workflow (`--workflow genotype`)
+
+The genotype workflow reads `--cram_store` and never writes there. Its reusable outputs go into the keyed genotype store
+`<store>/genotype/<genotype_store_key>/` (published: copied, never overwritten). Each `--entry` writes its own kinds and
+skips a unit whose final outputs are already there; the next entry reads them
+(`--input_store_key` points it at another key). `<region>` is the region label (`chr10`, `chr10_1-20000000`), and `<set>` is
+`--donor_set`.
+
+**Identifiers** (meta/PROVENANCE.md "Identifiers: one physical key, biology in the registry"): every store table, every
+internal table and every QC table (`sample_qc.tsv`, `line_qc.tsv`, `read_position_qc.tsv`, the VCF pool names) is keyed by the
+well-level `sample_id`. Only the **final reporting outputs** carry the short id: SAMPLE_LABELS joins the `sample_id` once on
+the current registry (`--registry`, default `meta/registry.csv`) and labels each sample with its `nil_id_resolved`, else its
+`pedigree_resolved` (line id, e.g. BC1 samples), else its `sample_id` (the B73 controls have no registry row). Only the
+resolved columns are read (`meta/corrections.csv` applied by `meta/build_samples.py`), and a registry row with `exclude` = TRUE
+is refused. Replicate wells that share a
+`nil_id` in one unit are labelled `<nil_id>_<sample_id>` and listed in the `collision` column of `sample_labels.tsv`.
+
+### Genotype store (`<store>/genotype/<key>/`)
+
+| path | entry (process) | files |
+|---|---|---|
+| `settings/<stage>.json` | every entry, at initialisation | the stage's parameters (reference tables and priors with sha256), `input_store_key`, the sha256 of each stage module's `main.nf` + templates and of the stage subworkflow, `workflows/genotype.nf` and `conf/genotype_modules.config`, and per unit the sample rows (`id\|role\|donor\|store_dir\|mask\|origin`); a rerun under the key must match (review #7) |
+| `sample_qc/` | sample_quality_control (SAMPLE_QC_TABLE) | `sample_qc.tsv`: sample role donor **pass** reasons notes mean_coverage pct_1x panel_qc panel_min_covered panel_contigs_below_floor kinship_own own_z closest_other_donor kinship_closest_other relatedness_reason donor_content donor_content_reason (+ `min_coverage.tsv`, and with `--qc_panel` `panel_coverage.tsv`, `relatedness.tsv`, `donor_content.tsv`) |
+| `step4/` | variant_discovery (POOLED_LIKELIHOOD_TIERS) | `<donor>.<region>.sites.tsv.gz`: chrom pos ref alt n a n_pools n_pools_alt eps n0 a0 self_in_zero LLR logodds posterior tier flags [in_<annotation> …] pool_counts (tiers A / B / C / ref; LLR and logodds at full precision); `.summary.tsv` (tier counts, tier × annotation), `.pool_qc.tsv`, `.run_info.txt`, versions.yml |
+| `ancestry/` | ancestry_inference (RTIGER, LINE_MARKER_QC) | `<donor>.<region>.segments.csv`: source donor name chr start_bp end_bp state (x = 0 / 1 / 2 donor copies); `.line_qc.tsv`: sample contig markers markers_kept covered reads mean_depth floor contig_pass line_pass reason (a line below `min_markers_factor × rigidity` covered own tier-A markers is excluded from every later caller); `.rigidity.txt`: the unit's effective rigidity (`rigidity` at `rigidity_ref_markers` markers per chromosome, scaled to the unit's marker density) |
+| `union/` | marker_union (MARKER_UNION) | `<set>.<region>.tsv.gz`: chrom pos ref alt n_donors donors multiallelic donor_kind ref_donors; `.union_sites.tsv` (the non-multiallelic site list of the stage-6 counts); `.per_donor.tsv` (tier A, shared, private, n_gaps per donor, run and reference donors) |
+| `joint_step4/<set>/` | donor_allele_calling (JOINT_POOLED_LIKELIHOOD) | `<donor>.<region>.sites.tsv.gz`: the step-4 columns re-scored on the union sites from one joint count |
+| `gap_bc1/` | donor_allele_calling (GAP_FILLING_BC1, step 1) | `<set>.<region>.tsv.gz`: per donor and gap: src tier LLR k m prior logodds state flags |
+| `gap_lines/<set>/` | donor_allele_calling (GAP_FILLING_LINES, step 2) | `<donor>.<region>.tsv.gz`: chrom pos ref alt prior llr_bc1 llr_lines logodds_combined call (ALT \| undecided \| blocked_flag \| blocked_b73_lines \| no_test) eps_s eps0 n0 a0 n0_lines a0_lines …; summary with the ALT-read rate in x = 0 lines at the calls (review #3) |
+| `donor_alleles/<set>/` | donor_allele_calling (DONOR_FOUNDER) | `<donor>.<region>.tsv.gz`: chrom pos ref alt D (ALT \| REF \| NA) call_step (own \| step1_ref \| step1_alt \| step2_alt \| missing \| multiallelic) logodds p_alt; `.summary.tsv` (step-1 and step-2 shares reported separately, review #2) |
+| `genotypes/<set>/` | genotype_imputation (RASTERIZE) | `<donor>.<region>.genotypes.tsv.gz` long: line (= sample_id) chrom pos ref alt x D gt dosage_expected (gt = x if D = ALT, 0 if REF, NA if D is missing and x > 0, NA where the ancestry is unknown or the line excluded; dosage_expected = x · P(ALT), review #9); `.genotypes.matrix.tsv.gz` wide (sites × lines) |
+
+### Results directory (genotype)
+
+- The store tables above are also published under `--outdir`, per stage.
+- variant_discovery publishes the CRISP raw, BED-clipped and vetoed VCFs, the witness-veto summary, the B73 counts and the
+  CRISP log.
+- reporting publishes (`<outdir>/genotype/<key>/reporting/<set>/`, per unit `<donor>.<region>`; the lines are named by the
+  label, see **Identifiers**):
+  - `<unit>.genotypes.tsv.gz` (long: line sample_id chrom pos ref alt x D gt dosage_expected, line = label) and
+    `<unit>.genotypes.matrix.tsv.gz` (sites × labels): the final genotype tables;
+  - `<unit>.sample_labels.tsv`: sample_id label label_source (nil_id \| pedigree \| sample_id_not_in_registry \|
+    sample_id_no_label) collision nil_id pedigree donor (the resolved values) taxon role correction_ids registry
+    registry_sha256 code_version, one row per sample
+    of the unit (the donor's sheet samples, the B73 controls, and every id in the tables); `registry_sha256` and
+    `code_version` (the repo commit) record which registry the labels came from (recorded, not part of the settings guard);
+  - `<unit>.exclusions.tsv`: sample (label) sample_id role stage reason, every sample dropped at stage 2b or 4;
+  - `genotype_summary.tsv`: per line, Mb REF / HET / ALT and the no-call share;
+  - `single_locus.tsv`: allele and genotype frequencies against the `--reporting_expectation`, by default BC2S2 (HET 1/16,
+    TEO 3/32);
+  - `breakpoint_density.tsv`: step-2 calls near RTIGER breakpoints versus elsewhere (review #12);
+  - `read_position_qc.tsv`: the ALT / other fraction by read cycle, per role, before and after the 5′ mask (QC: sample_id);
+  - `<id>.painting.png` / `.pdf`: chromosome paintings (bars named by the label).
+- `pipeline_info/` is written as for the CRAM workflow.

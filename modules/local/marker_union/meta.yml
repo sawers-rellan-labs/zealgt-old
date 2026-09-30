@@ -1,0 +1,81 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
+name: marker_union
+description: Union of the tier-A sites of a donor set in one region (stage 5), keyed by chrom, pos, ref, alt; multiallelic positions flagged; read-only reference-donor tables add their tier-A sites and tier-ref calls (gaps and step-1 prior of single-donor runs); also writes the site list of the stage-6 counts. published to <store>/genotype/<key>/union.
+keywords:
+  - genotyping
+  - marker union
+  - tier A
+  - gap filling
+tools:
+  - python:
+      description: Python standard library script (module template, templates/build_marker_union.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map with the donor set x region
+          e.g. [ id:'gt_set.chr10_1-20000000', donor_set:'gt_set', region:'chr10_1-20000000' ]
+    - tables:
+        type: file
+        description: Step-4 tables of the run donors, <donor>.<region>.sites.tsv.gz (POOLED_LIKELIHOOD_TIERS; columns chrom pos ref alt tier), matched to `donors` by name
+        pattern: "*.sites.tsv{,.gz}"
+        ontologies: []
+    - reference_tables:
+        type: file
+        description: Read-only step-4 tables of the reference donors (run card reference_donor_tables), in the order of `reference_donors` (staged as reference/<i>/, so any file name); [] for none
+        pattern: "*"
+        ontologies: []
+  - donors:
+      type: list
+      description: Run donors of the set (sheet `donor`)
+  - reference_donors:
+      type: list
+      description: Reference donor names, same order as reference_tables; [] for none
+  - region:
+      type: string
+      description: Region string chr or chr:start-end (1-based, inclusive); reference tables are clipped to it
+output:
+  union:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor set x region
+      - "*.tsv.gz":
+          type: file
+          description: "Union: chrom pos ref alt n_donors donors multiallelic donor_kind ref_donors"
+          pattern: "*.tsv.gz"
+          ontologies: []
+  sites:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor set x region
+      - "*.union_sites.tsv":
+          type: file
+          description: "chrom pos ref alt of the non-multiallelic union alleles, no header (site list of the stage-6 ALLELE_COUNTS)"
+          pattern: "*.union_sites.tsv"
+          ontologies: []
+  per_donor:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor set x region
+      - "*.per_donor.tsv":
+          type: file
+          description: "Per donor: donor_kind table table_sha256 tierA shared private union_alleles n_gaps multiallelic_own"
+          pattern: "*.per_donor.tsv"
+          ontologies: []
+  versions:
+    - "*.marker_union.versions.yml":
+        type: file
+        description: "Tool versions (python); a module template: `eval` outputs need a Bash script"
+        pattern: "*.marker_union.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

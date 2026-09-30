@@ -1,0 +1,7 @@
+chrom	pos	ref	alt	n_donors	donors	multiallelic	donor_kind	ref_donors
+chrA	100	A	G	2	Zx.0001_P1,Zx.0570_P2	0	run,reference	.
+chrA	200	C	G	1	Zx.0002_P1	1	run	.
+chrA	200	C	T	1	Zx.0001_P1	1	run	.
+chrA	300	G	A	1	Zx.0002_P1	0	run	.
+chrA	400	T	C	1	Zx.0002_P1	0	run	Zx.0570_P2
+chrA	500	A	C	1	Zx.0570_P2	0	reference	.

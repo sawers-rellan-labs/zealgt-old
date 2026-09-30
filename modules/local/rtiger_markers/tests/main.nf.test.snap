@@ -1,0 +1,88 @@
+{
+    "D1.chr10_1-5000 - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "D1.chr10_1-5000",
+                        "donor": "D1",
+                        "region": "chr10_1-5000"
+                    },
+                    "D1.chr10_1-5000.tierA_sites.tsv:md5,6e8a55bb471627fd9c4f28dc8fc326b9"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "D1.chr10_1-5000",
+                        "donor": "D1",
+                        "region": "chr10_1-5000"
+                    },
+                    "D1.chr10_1-5000.rtiger_markers.tsv:md5,9cffa1bc6b9d145bee83a4f126c6621a"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:45:57.500459",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "D1.chr10_1-5000 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.tierA_sites.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.rtiger_markers.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "D1.chr10_1-5000.rtiger_markers.versions.yml:md5,9eb229426310bb6c32d9cc5621374c46"
+                ],
+                "sites": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.tierA_sites.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "D1.chr10_1-5000",
+                            "donor": "D1",
+                            "region": "chr10_1-5000"
+                        },
+                        "D1.chr10_1-5000.rtiger_markers.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "D1.chr10_1-5000.rtiger_markers.versions.yml:md5,9eb229426310bb6c32d9cc5621374c46"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:45:54.81341",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

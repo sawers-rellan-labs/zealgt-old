@@ -1,0 +1,109 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
+# Also included as JOINT_POOLED_LIKELIHOOD (envs/process_aliases.tsv).
+name: pooled_likelihood_tiers
+description: Step 4 of discovery - the pooled likelihood ratio of every donor at every candidate site (Bin(6, 1/2) carrier lattice, site error rate from the zero class), flags (hidepth, af_gt_half, inconsistent, single_sample, no_zero_class) and tiers A/B/C/ref, from a vetoed CRISP VCF or from ALLELE_COUNTS tables; writes n0, a0 and the full-precision log-odds for stage 6.
+keywords:
+  - pooled sequencing
+  - likelihood ratio
+  - variant discovery
+  - tiers
+tools:
+  - python:
+      description: Python standard library script (module template, templates/score_pooled_likelihood.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map of the unit (donor x region) or the set (donor set x region)
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - calls:
+        type: file
+        description: The vetoed CRISP VCF (crisp_vcf) or the donors' ALLELE_COUNTS tables (counts)
+        pattern: "*.{vcf.gz,vcf,ad.tsv.gz}"
+        ontologies: []
+    - extra_counts:
+        type: file
+        description: ALLELE_COUNTS tables of the B73 controls (the zero class)
+        pattern: "*.ad.tsv.gz"
+        ontologies: []
+    - sites:
+        type: file
+        description: Site list (chrom pos ref alt) for counts mode; [] with a VCF
+        pattern: "*.{tsv,tsv.gz}"
+        ontologies: []
+  - sample_map:
+      type: list
+      description: "[ sample, donor, taxon, role ] per pool, role bc1_sample | witness | b73_control"
+  - region:
+      type: string
+      description: Region 'chr' or 'chr:start-end'; output label = region with ':' replaced by '_'
+  - - annotation_names:
+        type: list
+        description: Names of the annotation site lists ([] for none); column in_<name>
+    - annotations:
+        type: file
+        description: Annotation site lists (chrom pos ref alt), in the order of the names
+        pattern: "*"
+        ontologies: []
+output:
+  sites:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit or set
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "*.sites.tsv.gz":
+          type: file
+          description: "One table per bc1_sample donor, <donor>.<label>.sites.tsv.gz: chrom pos ref alt n a n_pools n_pools_alt eps n0 a0 self_in_zero LLR logodds posterior tier flags [in_<annotation>...] pool_counts"
+          pattern: "*.sites.tsv.gz"
+          ontologies: []
+  summary:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit or set
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.summary.tsv":
+          type: file
+          description: Per called donor the tier counts and tier x annotation overlaps
+          pattern: "*.summary.tsv"
+          ontologies: []
+  pool_qc:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit or set
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.pool_qc.tsv":
+          type: file
+          description: Per pool the sites with reads, ALT / REF reads, ALT fraction and sites with ALT fraction > 1/2
+          pattern: "*.pool_qc.tsv"
+          ontologies: []
+  run_info:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit or set
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.run_info.txt":
+          type: file
+          description: Inputs, record counts, median depth and every option
+          pattern: "*.run_info.txt"
+          ontologies: []
+  versions:
+    - "${task.ext.prefix ?: meta.id}.pooled_likelihood_tiers.versions.yml":
+        type: file
+        description: "Tool versions (python); a module template: `eval` outputs need a Bash script"
+        pattern: "*.pooled_likelihood_tiers.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

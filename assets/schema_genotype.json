@@ -1,0 +1,129 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_genotype.json",
+    "title": "sawers-rellan-labs/zealgt - params.genotype_input schema (meta/genotype_dev.csv, built by meta/build_genotype_sheet.py)",
+    "description": "The genotype sample sheet: one row per stored CRAM the genotype workflow may read. The CRAM, index, coverage metrics and provenance record are resolved as <cram_store>/<store_dir>/<sample_id>.* and checked when the sheet is read (PIPELINE_INITIALISATION); the sheet itself holds no paths.",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$",
+                "meta": [
+                    "sample_id"
+                ],
+                "errorMessage": "sample_id: letters, digits, _ - only, no dots (CRISP --sm 0 names a pool by the file basename cut at the first '.'), unique in the sheet"
+            },
+            "role": {
+                "type": "string",
+                "enum": [
+                    "bc1_sample",
+                    "line",
+                    "b73_control"
+                ],
+                "meta": [
+                    "role"
+                ],
+                "errorMessage": "role: bc1_sample | line | b73_control"
+            },
+            "donor": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "meta": [
+                    "donor"
+                ],
+                "errorMessage": "donor: letters, digits, _ . - only (e.g. Zx.0540_P3); required unless role = b73_control"
+            },
+            "taxon": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$",
+                "meta": [
+                    "taxon"
+                ],
+                "errorMessage": "taxon: letters, digits, _ - only (names the mappability prior <taxon>.prior.tsv)"
+            },
+            "source": {
+                "type": "string",
+                "enum": [
+                    "bc1",
+                    "bc2s3_batch1",
+                    "bc2s3_batch2",
+                    "b73_control"
+                ],
+                "meta": [
+                    "source"
+                ],
+                "errorMessage": "source: bc1 | bc2s3_batch1 | bc2s3_batch2 | b73_control (reported only)"
+            },
+            "store_dir": {
+                "type": "string",
+                "enum": [
+                    "cram",
+                    "cram_import"
+                ],
+                "meta": [
+                    "store_dir"
+                ],
+                "errorMessage": "store_dir: cram | cram_import (the directory under --cram_store that holds the CRAM)"
+            },
+            "mask_r1": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 30,
+                "meta": [
+                    "mask_r1"
+                ],
+                "errorMessage": "mask_r1: integer 0-30 (5' cycles of R1 set to Q0 by MASK_READ_STARTS)"
+            },
+            "mask_r2": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 30,
+                "meta": [
+                    "mask_r2"
+                ],
+                "errorMessage": "mask_r2: integer 0-30 (5' cycles of R2 set to Q0 by MASK_READ_STARTS)"
+            },
+            "include": {
+                "type": "boolean",
+                "meta": [
+                    "include"
+                ],
+                "errorMessage": "include: TRUE | FALSE"
+            },
+            "mask_source": {
+                "type": "string",
+                "meta": [
+                    "mask_source"
+                ],
+                "description": "Where the mask values come from (documentation only)"
+            }
+        },
+        "required": [
+            "sample_id",
+            "role",
+            "store_dir",
+            "mask_r1",
+            "mask_r2",
+            "include"
+        ],
+        "if": {
+            "properties": {
+                "role": {
+                    "not": {
+                        "const": "b73_control"
+                    }
+                }
+            }
+        },
+        "then": {
+            "required": [
+                "donor"
+            ]
+        }
+    },
+    "uniqueEntries": [
+        "sample_id"
+    ]
+}

@@ -1,0 +1,97 @@
+nextflow_process {
+
+    name "Test Process SAMPLE_QC_TABLE"
+    script "../main.nf"
+    process "SAMPLE_QC_TABLE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "sample_qc_table"
+
+    test("cohort - no panel - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([ [ id:'cohort' ], file("${moduleDir}/tests/fixtures/cohort.min_coverage.tsv", checkIfExists: true), [], [], [] ])
+                input[1] = [ ['L1', 'line', 'D1'] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.tsv[0][1]).name == "cohort.sample_qc.tsv" }
+            )
+        }
+    }
+
+    // Gate 1 path (no blind panel): only MIN_COVERAGE decides; GHOST has no min_coverage row.
+    test("cohort - no panel - real") {
+
+        tag "real"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([ [ id:'cohort' ], file("${moduleDir}/tests/fixtures/cohort.min_coverage.tsv", checkIfExists: true), [], [], [] ])
+                input[1] = [ ['L1', 'line', 'D1'], ['L2', 'line', 'D1'], ['L4', 'line', 'D1'], ['L5', 'line', 'D1'], ['K1', 'b73_control', ''], ['GHOST', 'line', 'D1'] ]
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.tsv[0][1]).readLines().drop(1).collect { it.split('\t') as List }
+            def pass = rows.collectEntries { [ (it[0]): it[3] ] }
+            assertAll(
+                { assert process.success },
+                { assert pass == [ L1:'true', L2:'false', L4:'true', L5:'true', K1:'true', GHOST:'false' ] },
+                { assert rows.find { it[0] == 'L2' }[4] == 'below_min_coverage' },
+                { assert rows.find { it[0] == 'GHOST' }[4] == 'not_in_min_coverage' },
+                { assert rows.every { it[8] == 'not_run' } },
+                { assert snapshot(process.out.tsv).match() }
+            )
+        }
+    }
+
+    // Fixture panel tables: relatedness and donor-content flags fail (default --fail-on), panel coverage is a note.
+    test("cohort - panel - real") {
+
+        tag "real"
+
+        when {
+            process {
+                """
+                def d = "${moduleDir}/tests/fixtures"
+                input[0] = channel.of([
+                    [ id:'cohort' ],
+                    file("\${d}/cohort.min_coverage.tsv", checkIfExists: true),
+                    file("\${d}/cohort.panel_coverage.tsv", checkIfExists: true),
+                    file("\${d}/cohort.relatedness.tsv", checkIfExists: true),
+                    file("\${d}/cohort.donor_content.tsv", checkIfExists: true)
+                ])
+                input[1] = [ ['L1', 'line', 'D1'], ['L2', 'line', 'D1'], ['L4', 'line', 'D1'], ['L5', 'line', 'D1'], ['K1', 'b73_control', ''] ]
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.tsv[0][1]).readLines().drop(1).collect { it.split('\t') as List }
+            def byS = rows.collectEntries { [ (it[0]): it ] }
+            assertAll(
+                { assert process.success },
+                { assert byS.collectEntries { k, v -> [ (k): v[3] ] } == [ L1:'true', L2:'false', L4:'false', L5:'false', K1:'true' ] },
+                { assert byS['L2'][4] == 'below_min_coverage' && byS['L2'][5] == 'panel_coverage:below_min_markers' },
+                { assert byS['L4'][4] == 'relatedness:low_kinship_own_donor,closer_to_other_donor' },
+                { assert byS['L5'][4] == 'relatedness:low_kinship_own_donor,donor_content:low_donor_content' },
+                { assert rows.every { it[8] == 'run' } },
+                { assert snapshot(process.out.tsv).match() }
+            )
+        }
+    }
+}

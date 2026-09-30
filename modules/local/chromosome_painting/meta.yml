@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). Wraps an R module template.
+name: chromosome_painting
+description: Chromosome painting of one donor x region - one bar per line with the RTIGER segments coloured by dosage (0 = B73, 1 = HET, 2 = donor); positions outside every segment stay white (no-call drawn as no-call); lines excluded by line QC drawn grey.
+keywords:
+  - genotyping
+  - ancestry
+  - plot
+  - chromosome painting
+tools:
+  - r-base:
+      description: R (module template, templates/paint_chromosomes.R)
+      homepage: https://www.r-project.org/
+      documentation: https://cran.r-project.org/manuals.html
+      licence: ["GPL-2.0-or-later"]
+      identifier: ""
+      args_id: "$args"
+  - r-ggplot2:
+      description: Grammar of graphics plotting for R
+      homepage: https://ggplot2.tidyverse.org/
+      documentation: https://ggplot2.tidyverse.org/reference/
+      licence: ["MIT"]
+      identifier: ""
+  - r-data.table:
+      description: Fast tabular data for R (fread)
+      homepage: https://r-datatable.com/
+      documentation: https://rdatatable.gitlab.io/data.table/
+      licence: ["MPL-2.0"]
+      identifier: ""
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map with the donor x region
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - segments:
+        type: file
+        description: RTIGER segments (source donor name chr start_bp end_bp state); [] gives a placeholder plot
+        pattern: "*.{csv,tsv}"
+        ontologies: []
+    - line_qc:
+        type: file
+        description: LINE_MARKER_QC line_qc.tsv (columns sample and line_pass = true|false, one row per contig); [] = no line excluded
+        pattern: "*.tsv"
+        ontologies: []
+output:
+  png:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.painting.png":
+          type: file
+          description: Painting (PNG, 150 dpi)
+          pattern: "*.painting.png"
+          ontologies: []
+  pdf:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.painting.pdf":
+          type: file
+          description: Painting (PDF)
+          pattern: "*.painting.pdf"
+          ontologies: []
+  versions:
+    - "*.chromosome_painting.versions.yml":
+        type: file
+        description: Tool versions (r-base, r-data.table, r-ggplot2); `eval` outputs are not allowed with an R template script
+        pattern: "*.chromosome_painting.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

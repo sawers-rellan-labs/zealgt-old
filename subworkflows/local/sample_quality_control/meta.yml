@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow of the genotype workflow; see the header comment of main.nf and the genotype design.
+# Versions: the modules publish their versions.yml to the `versions` topic (collated in workflows/genotype.nf);
+# `versions` here re-emits them.
+name: sample_quality_control
+description: "Stage 2b: MIN_COVERAGE, optional blind-panel QC (masked counts, coverage, relatedness, donor content), SAMPLE_QC_TABLE"
+keywords:
+  - zealgt
+  - genotype workflow
+  - sample_quality_control
+components:
+  - min/coverage
+  - region/bed
+  - mask/read/starts
+  - allele/counts
+  - coverage/qc
+  - relatedness/qc
+  - donor/content/qc
+  - sample/qc/table
+input:
+  - ch_samples:
+      type: file
+      description: |
+        channel: [ val(meta), cram, crai, metrics, val([mask_r1, mask_r2]) ]  the cohort
+  - ch_groups:
+      type: file
+      description: |
+        channel: [ val(gmeta), [ crams ], [ crais ], val([ ids ]), val([ masks ]) ]  gmeta = id unit donor region interval role taxon  (empty without a panel)
+  - ch_regions:
+      type: list
+      description: |
+        channel: [ val(rmeta), val(region) ]  rmeta.id = region label (chr10_1-20000000)  (empty without a panel)
+  - ch_lowcopy:
+      type: file
+      description: |
+        channel: value [ val(meta), lowcopy bed ]
+  - ch_ref:
+      type: file
+      description: |
+        channel: value [ val(meta), fasta, fai ]
+  - panel:
+      type: file
+      description: |
+        path: QC panel sites (chrom pos ref alt), or []
+  - min_coverage:
+      type: float
+      description: |
+        value: MEAN_COVERAGE floor (params.min_coverage)
+output:
+  - sample_qc:
+      type: file
+      description: |
+        channel: [ val(meta), cohort.sample_qc.tsv ]  (stored in sample_qc/)
+  - min_coverage:
+      type: file
+      description: |
+        channel: [ val(meta), cohort.min_coverage.tsv ]
+  - panel_counts:
+      type: file
+      description: |
+        channel: [ val(gmeta), <gmeta.id>.ad.tsv.gz ]
+  - versions:
+      type: file
+      description: |
+        channel: versions.yml files (every module also publishes to the `versions` topic)
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

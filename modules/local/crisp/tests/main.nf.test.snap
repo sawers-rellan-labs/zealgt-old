@@ -1,0 +1,83 @@
+{
+    "Zx.0540_P3.chrA - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                        "Zx.0540_P3.chrA.crisp.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        "CRISP",
+                        "crisp",
+                        "1a9027e"
+                    ]
+                ],
+                "3": [
+                    [
+                        "CRISP",
+                        "htslib",
+                        "1.23"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "vcf": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.crisp.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+                        "Zx.0540_P3.chrA.crisp.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_crisp": [
+                    [
+                        "CRISP",
+                        "crisp",
+                        "1a9027e"
+                    ]
+                ],
+                "versions_htslib": [
+                    [
+                        "CRISP",
+                        "htslib",
+                        "1.23"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-09-29T21:00:40.960476",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

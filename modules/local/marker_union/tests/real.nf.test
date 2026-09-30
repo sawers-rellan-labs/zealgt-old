@@ -1,0 +1,87 @@
+nextflow_process {
+
+    name "Test Process MARKER_UNION (real)"
+    script "../main.nf"
+    process "MARKER_UNION"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "marker_union"
+    tag "real"
+
+    test("gt_set.chrA_1-5000 - two run donors + one reference donor") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'gt_set.chrA_1-5000', donor_set:'gt_set', region:'chrA_1-5000' ],
+                    [
+                        file("${projectDir}/modules/local/marker_union/tests/data/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true),
+                        file("${projectDir}/modules/local/marker_union/tests/data/Zx.0002_P1.chrA_1-5000.sites.tsv", checkIfExists: true)
+                    ],
+                    [ file("${projectDir}/modules/local/marker_union/tests/data/zealbc1_reference.sites.tsv", checkIfExists: true) ]
+                ])
+                input[1] = [ 'Zx.0001_P1', 'Zx.0002_P1' ]
+                input[2] = [ 'Zx.0570_P2' ]
+                input[3] = 'chrA:1-5000'
+                """
+            }
+        }
+
+        then {
+            def union = path(process.out.union[0][1]).linesGzip
+            def sites = path(process.out.sites[0][1]).readLines()
+            def perDonor = path(process.out.per_donor[0][1]).readLines()
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out.union, process.out.sites, process.out.per_donor).match() },
+                // 100 G shared by a run and the reference donor; 200 C>T / C>G multiallelic; 400 C with the reference REF;
+                // the reference table's chrA:9000 site lies outside the region; the D2 indel is ignored
+                { assert union[0] == "chrom\tpos\tref\talt\tn_donors\tdonors\tmultiallelic\tdonor_kind\tref_donors" },
+                { assert union[1] == "chrA\t100\tA\tG\t2\tZx.0001_P1,Zx.0570_P2\t0\trun,reference\t." },
+                { assert union.count { it.contains("\t200\t") && it.contains("\t1\trun\t") } == 2 },
+                { assert union.contains("chrA\t400\tT\tC\t1\tZx.0002_P1\t0\trun\tZx.0570_P2") },
+                { assert union.size() == 7 },
+                { assert sites == [ "chrA\t100\tA\tG", "chrA\t300\tG\tA", "chrA\t400\tT\tC", "chrA\t500\tA\tC" ] },
+                { assert perDonor[1].startsWith("Zx.0001_P1\trun\tZx.0001_P1.chrA_1-5000.sites.tsv\t") },
+                { assert perDonor[1].endsWith("\t2\t1\t1\t4\t3\t1") }
+            )
+        }
+    }
+
+    test("one run donor, no reference donor - 0 gap sites, no crash") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'solo.chrA_1-5000', donor_set:'solo', region:'chrA_1-5000' ],
+                    [ file("${projectDir}/modules/local/marker_union/tests/data/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true) ],
+                    []
+                ])
+                input[1] = [ 'Zx.0001_P1' ]
+                input[2] = []
+                input[3] = 'chrA:1-5000'
+                """
+            }
+        }
+
+        then {
+            def perDonor = path(process.out.per_donor[0][1]).readLines()
+            assertAll(
+                { assert process.success },
+                { assert perDonor.size() == 2 },
+                // n_gaps = 0 (the task log carries "WARN solo.chrA_1-5000: donor Zx.0001_P1 has 0 gap sites")
+                { assert perDonor[1].endsWith("\t2\t0\t2\t2\t0\t0") }
+            )
+        }
+    }
+}

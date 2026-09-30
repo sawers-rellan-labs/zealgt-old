@@ -1,0 +1,31 @@
+{
+    "Zx.0001_P1.chrA_1-5000": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.tsv.gz:md5,07f8139ac503443a185f7d6fe98f0228"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "Zx.0001_P1.chrA_1-5000",
+                        "donor": "Zx.0001_P1",
+                        "region": "chrA_1-5000"
+                    },
+                    "Zx.0001_P1.chrA_1-5000.summary.tsv:md5,97573ee5413ac4ca0b1fb613863a8ff3"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:57:26.341365",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

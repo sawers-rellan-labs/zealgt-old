@@ -1,0 +1,71 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow of the genotype workflow; see the header comment of main.nf and the genotype design.
+# Versions: the modules publish their versions.yml to the `versions` topic (collated in workflows/genotype.nf);
+# `versions` here re-emits them.
+name: genotype_reporting
+description: "Stage 8 per donor x region: genotype summary tables, chromosome paintings, read-position QC (raw vs masked)"
+keywords:
+  - zealgt
+  - genotype workflow
+  - genotype_reporting
+components:
+  - genotype/summary
+  - chromosome/painting
+  - region/bed
+  - mask/read/starts
+  - read/position/qc
+input:
+  - ch_inputs:
+      type: file
+      description: |
+        channel: [ val(unit), genotypes, segments.csv, donor_alleles, line_qc.tsv ]  (store)
+  - ch_groups:
+      type: file
+      description: |
+        channel: [ val(gmeta), [ crams ], [ crais ], val([ ids ]), val([ masks ]) ]  gmeta = id unit donor region interval role taxon  (BC1 + line groups; empty = no read-position QC)
+  - ch_markers:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.tierA_sites.tsv ]  (store)
+  - ch_regions:
+      type: list
+      description: |
+        channel: [ val(rmeta), val(region) ]  rmeta.id = region label (chr10_1-20000000)  (empty = no read-position QC)
+  - ch_lowcopy:
+      type: file
+      description: |
+        channel: value [ val(meta), lowcopy bed ]
+  - ch_ref:
+      type: file
+      description: |
+        channel: value [ val(meta), fasta, fai ]
+output:
+  - summary:
+      type: file
+      description: |
+        channel: [ val(unit), genotype_summary.tsv ]
+  - single_locus:
+      type: file
+      description: |
+        channel: [ val(unit), single_locus.tsv ]
+  - breakpoint_density:
+      type: file
+      description: |
+        channel: [ val(unit), breakpoint_density.tsv ]
+  - painting:
+      type: file
+      description: |
+        channel: [ val(unit), painting.png ]
+  - read_position_qc:
+      type: file
+      description: |
+        channel: [ val(gmeta), read_position_qc.tsv ]
+  - versions:
+      type: file
+      description: |
+        channel: versions.yml files (every module also publishes to the `versions` topic)
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

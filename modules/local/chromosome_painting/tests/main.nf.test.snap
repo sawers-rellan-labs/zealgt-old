@@ -1,0 +1,59 @@
+{
+    "Zx.0001_P1.chrA_1-5000 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.painting.png:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.painting.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "Zx.0001_P1.chrA_1-5000.chromosome_painting.versions.yml:md5,80966b3b7f2bd9ec0bc316c7153a3df8"
+                ],
+                "pdf": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.painting.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "png": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.painting.png:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "Zx.0001_P1.chrA_1-5000.chromosome_painting.versions.yml:md5,80966b3b7f2bd9ec0bc316c7153a3df8"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T08:00:59.135676",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

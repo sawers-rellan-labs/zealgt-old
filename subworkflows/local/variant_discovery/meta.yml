@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow of the genotype workflow; see the header comment of main.nf and the genotype design.
+# Versions: the modules publish their versions.yml to the `versions` topic (collated in workflows/genotype.nf);
+# `versions` here re-emits them.
+name: variant_discovery
+description: "Stage 3 per donor x region: masked reads, witness pool, CRISP, BED clip, witness veto, B73 counts, pooled-likelihood tiers"
+keywords:
+  - zealgt
+  - genotype workflow
+  - variant_discovery
+components:
+  - region/bed
+  - mask/read/starts
+  - witness/pool
+  - crisp
+  - bcftools/view
+  - witness/veto
+  - allele/counts
+  - pooled/likelihood/tiers
+input:
+  - ch_groups:
+      type: file
+      description: |
+        channel: [ val(gmeta), [ crams ], [ crais ], val([ ids ]), val([ masks ]) ]  gmeta = id unit donor region interval role taxon  (roles bc1_sample, line, b73_control)
+  - ch_regions:
+      type: list
+      description: |
+        channel: [ val(rmeta), val(region) ]  rmeta.id = region label (chr10_1-20000000)
+  - ch_lowcopy:
+      type: file
+      description: |
+        channel: value [ val(meta), lowcopy bed ]
+  - ch_ref:
+      type: file
+      description: |
+        channel: value [ val(meta), fasta, fai ]
+  - ch_annotations:
+      type: file
+      description: |
+        channel: value [ val([ names ]), [ site lists ] ]  or [ [], [] ]
+  - tier_counts_source:
+      type: string
+      description: |
+        string: crisp | mpileup (params.tier_counts_source)
+output:
+  - sites:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.sites.tsv.gz ]  (stored in step4/)
+  - summary:
+      type: file
+      description: |
+        channel: [ val(unit), <unit>.summary.tsv ]
+  - vcf:
+      type: file
+      description: |
+        channel: [ val(unit), <unit>.vetoed.vcf.gz ]
+  - b73:
+      type: file
+      description: |
+        channel: [ val(unit), <unit>.b73.ad.tsv.gz ]
+  - versions:
+      type: file
+      description: |
+        channel: versions.yml files (every module also publishes to the `versions` topic)
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

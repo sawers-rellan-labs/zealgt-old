@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). Own env: environment.yml + build.sh (nilHMM 0.3.0,
+# sawers-rellan-labs/nilhmm @ 248e67e). Wraps an R module template.
+name: rtiger
+description: Stage 4 ancestry segments per line; nilHMM RTIGER (Julia-free port, rigidity 500, parameters learned from the data) on the donor's own tier-A marker counts of the lines that passed LINE_MARKER_QC; stored in ancestry/.
+keywords:
+  - ancestry
+  - rtiger
+  - hmm
+  - genotype
+tools:
+  - nilhmm:
+      description: NIL ancestry HMM callers in R, including a Julia-free port of RTIGER (caller = "rtiger")
+      homepage: https://github.com/sawers-rellan-labs/nilhmm
+      documentation: https://github.com/sawers-rellan-labs/nilhmm
+      licence: ["MIT"]
+      identifier: ""
+      args_id: "$args"
+  - data.table:
+      description: Fast data frames for R (reading the counts, writing the segments)
+      homepage: https://r-datatable.com
+      documentation: https://rdatatable.gitlab.io/data.table/
+      licence: ["MPL-2.0"]
+      identifier: ""
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map of the donor x region unit
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - counts:
+        type: file
+        description: LINE_MARKER_QC counts of the passing lines (SAMPLE CONTIG POSITION REF_COUNT ALT_COUNT REF_NUCLEOTIDE ALT_NUCLEOTIDE)
+        pattern: "*.counts.tsv"
+        ontologies: []
+  - rigidity:
+      type: integer
+      description: RTIGER rigidity, the minimum run length in markers; the unit's effective rigidity (params.rigidity at params.rigidity_ref_markers markers per chromosome, scaled by LINE_MARKER_QC)
+  - chrom_int:
+      type: integer
+      description: Integer chromosome of the region (nilHMM needs an integer chr), e.g. 10 for chr10
+  - donor:
+      type: string
+      description: Donor label written into the donor column of the segments table
+output:
+  segments:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the donor x region unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+      - "*.segments.csv":
+          type: file
+          description: "source, donor, name, chr, start_bp, end_bp, state (0/1/2 = copies of the donor segment); header only when no line passed"
+          pattern: "*.segments.csv"
+          ontologies: []
+  versions:
+    - "*.rtiger.versions.yml":
+        type: file
+        description: "Tool versions (r-base, nilhmm, r-data.table); a file: a module template: `eval` outputs need a Bash script"
+        pattern: "*.rtiger.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"
