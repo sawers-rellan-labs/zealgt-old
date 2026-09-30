@@ -57,7 +57,7 @@ nextflow_workflow {
                     workflow.out.sample_qc.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.min_coverage.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.panel_counts.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
-                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                    workflow.out.versions.collect { v -> v instanceof List ? "${v[0].tokenize(':')[-1]} ${v[1]}".toString() : file(v).name }.sort()
                 ).match() }
             )
         }
@@ -97,7 +97,7 @@ nextflow_workflow {
                 { assert workflow.out.panel_counts.size() == 0 },
                 { assert snapshot(
                     workflow.out.sample_qc.collect { meta, f -> [meta.id, file(f).name] },
-                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                    workflow.out.versions.collect { v -> v instanceof List ? "${v[0].tokenize(':')[-1]} ${v[1]}".toString() : file(v).name }.sort()
                 ).match() }
             )
         }

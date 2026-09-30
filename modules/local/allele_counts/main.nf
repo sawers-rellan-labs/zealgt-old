@@ -16,7 +16,7 @@
 // emitted with -I).
 // The task checks that the table's sample columns are exactly the input ids (a BAM whose SM differs would silently count
 // under another name). An empty site list writes the header only.
-// Versions in a versions.yml (bcftools, htslib) so a stub reports the environment.yml pins.
+// Versions: one `versions` topic tuple per tool (bcftools, htslib).
 process ALLELE_COUNTS {
     tag "${meta.id}"
     label 'process_low'
@@ -31,7 +31,8 @@ process ALLELE_COUNTS {
 
     output:
     tuple val(meta), path("${task.ext.prefix ?: meta.id}.ad.tsv.gz"), emit: counts
-    path "${task.ext.prefix ?: meta.id}.allele_counts.versions.yml" , emit: versions, topic: versions
+    tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), emit: versions_bcftools, topic: versions
+    tuple val("${task.process}"), val('htslib'), eval("bgzip --version | sed '1!d; s/.* //'"), emit: versions_htslib, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -54,7 +55,6 @@ process ALLELE_COUNTS {
         error("ALLELE_COUNTS ${prefix}: ext.args may not set regions, targets, BAM list or output type (the module does): '${args}'")
     }
     """
-    source export_slurm_resources.sh
     set -o pipefail
 
     printf '%s\\n' ${bam_list.join(' ')} > bams.txt
@@ -64,7 +64,7 @@ process ALLELE_COUNTS {
     if [ -s pos.tsv ]; then
         bcftools mpileup -I -a AD -f ${fasta} -r ${region} -T pos.tsv ${args} -b bams.txt -Ou \\
         | bcftools query -H -f '%CHROM\\t%POS\\t%REF\\t%ALT[\\t%AD]\\n' \\
-        | bgzip -@ \${ZG_CPUS} > ${prefix}.ad.tsv.gz
+        | bgzip -@ ${task.cpus} > ${prefix}.ad.tsv.gz
     else
         echo "ALLELE_COUNTS ${prefix}: no sites; header only" >&2
         printf '#[1]CHROM\\t[2]POS\\t[3]REF\\t[4]ALT\\t%s\\n' "\$(printf '%s:AD\\n' ${id_list.join(' ')} | awk '{ printf "%s[%d]%s", (NR > 1 ? "\\t" : ""), NR + 4, \$0 }')" | bgzip > ${prefix}.ad.tsv.gz
@@ -80,23 +80,12 @@ process ALLELE_COUNTS {
     fi
     echo "ALLELE_COUNTS ${prefix}: \$(wc -l < pos.tsv) sites requested, \$(( \$(bgzip -dc ${prefix}.ad.tsv.gz | wc -l) - 1 )) rows, ${id_list.size()} samples" >&2
 
-    cat <<-END_VERSIONS > ${prefix}.allele_counts.versions.yml
-    "${task.process}":
-        bcftools: \$(bcftools --version | sed '1!d; s/^.*bcftools //')
-        htslib: \$(bgzip --version | sed '1!d; s/.* //')
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Stub versions are the environment.yml pins (the tools are not run in a stub).
     """
     echo '' | gzip > ${prefix}.ad.tsv.gz
 
-    cat <<-END_VERSIONS > ${prefix}.allele_counts.versions.yml
-    "${task.process}":
-        bcftools: 1.21
-        htslib: 1.21
-    END_VERSIONS
     """
 }

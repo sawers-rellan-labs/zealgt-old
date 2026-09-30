@@ -62,7 +62,7 @@ nextflow_workflow {
                     workflow.out.breakpoint_density.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.painting.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.read_position_qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),
-                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                    workflow.out.versions.collect { v -> v instanceof List ? "${v[0].tokenize(':')[-1]} ${v[1]}".toString() : file(v).name }.sort()
                 ).match() }
             )
         }
@@ -109,7 +109,7 @@ nextflow_workflow {
                     workflow.out.genotypes.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.summary.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.painting.collect { meta, f -> [meta.id, file(f).name] },
-                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                    workflow.out.versions.collect { v -> v instanceof List ? "${v[0].tokenize(':')[-1]} ${v[1]}".toString() : file(v).name }.sort()
                 ).match() }
             )
         }

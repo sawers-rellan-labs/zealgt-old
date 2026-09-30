@@ -53,15 +53,15 @@ output:
   - segments:
       type: file
       description: |
-        channel: [ val(unit), <donor>.<label>.segments.csv ]  (storeDir ancestry/)
+        channel: [ val(unit), <donor>.<label>.segments.csv ]  (stored in ancestry/)
   - line_qc:
       type: file
       description: |
-        channel: [ val(unit), <donor>.<label>.line_qc.tsv ]  (storeDir ancestry/)
+        channel: [ val(unit), <donor>.<label>.line_qc.tsv ]  (stored in ancestry/)
   - markers:
       type: file
       description: |
-        channel: [ val(unit), <donor>.<label>.tierA_sites.tsv ]  (storeDir ancestry/)
+        channel: [ val(unit), <donor>.<label>.tierA_sites.tsv ]  (stored in ancestry/)
   - versions:
       type: file
       description: |

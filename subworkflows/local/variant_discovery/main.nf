@@ -4,7 +4,7 @@
 //   REGION_BED (per region) -> MASK_READ_STARTS (per role group: the donor's BC1 samples, its lines; the B73 controls per region)
 //   lines -> WITNESS_POOL -> CRISP (BC1 pools + witness) -> BED_CLIP (bcftools view -T region BED) -> WITNESS_VETO
 //   -> B73_CONTROL_COUNTS (B73 controls at the kept sites) [+ BC1_SITE_COUNTS when tier_counts_source = mpileup]
-//   -> POOLED_LIKELIHOOD_TIERS (storeDir <store>/genotype/<key>/step4: <donor>.<label>.sites.tsv.gz, summary, pool_qc, run_info)
+//   -> POOLED_LIKELIHOOD_TIERS (stored in <store>/genotype/<key>/step4: <donor>.<label>.sites.tsv.gz, summary, pool_qc, run_info)
 // Sample map of step 4 (zealbc1 map.tsv): BC1 pools -> donor, witness <donor without dots>_BC2S3 -> donor BC2S3 (crisp mode
 // only: a counts table has no witness column), B73 controls -> donor B73. No B73 group for a region (stub runs only; the utils
 // guard refuses it in a real run) -> no extra counts.
@@ -110,7 +110,6 @@ workflow VARIANT_DISCOVERY {
 
     // step-4 input: the vetoed CRISP VCF (crisp) or the BC1 counts at the kept sites (mpileup, design §4 #6)
     def ch_calls = WITNESS_VETO.out.vcf.map { u, vcf -> [u.id, vcf, []] }
-    def ch_bc1_versions = channel.empty()
     if (tier_counts_source == 'mpileup') {
         def ch_bc1c = WITNESS_VETO.out.sites
             .map { u, sites -> [u.id, u, sites] }
@@ -124,7 +123,6 @@ workflow VARIANT_DISCOVERY {
         ch_calls = BC1_SITE_COUNTS.out.counts
             .map { u, counts -> [u.id, counts] }
             .join(WITNESS_VETO.out.sites.map { u, sites -> [u.id, sites] }, failOnMismatch: true)
-        ch_bc1_versions = BC1_SITE_COUNTS.out.versions
     }
     def ch_b73_ids = ch_masked.b73
         .map { g, bams, _bais -> [g.region, zgBamIds(bams)] }
@@ -150,7 +148,6 @@ workflow VARIANT_DISCOVERY {
     b73      = B73_CONTROL_COUNTS.out.counts       // channel: [ val(unit), <unit>.b73.ad.tsv.gz ]
     // versions.yml files; BED_CLIP (nf-core) reports bcftools as an `eval` tuple into the `versions` topic only (collated by
     // workflows/genotype.nf), so this channel holds one item type
-    versions = REGION_BED.out.versions.mix(MASK_READ_STARTS.out.versions, WITNESS_POOL.out.versions, CRISP.out.versions,
-                                           WITNESS_VETO.out.versions, B73_CONTROL_COUNTS.out.versions,
-                                           ch_bc1_versions, POOLED_LIKELIHOOD_TIERS.out.versions) // channel: versions.yml
+    versions = REGION_BED.out.versions.mix(WITNESS_VETO.out.versions,
+                                           POOLED_LIKELIHOOD_TIERS.out.versions) // channel: versions.yml (the eval tuples of the bash modules: topic `versions` only)
 }

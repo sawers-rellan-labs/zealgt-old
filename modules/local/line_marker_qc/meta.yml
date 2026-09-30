@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared genotype python env
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv LINE_MARKER_QC -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: line_marker_qc
 description: Stage 4 line coverage floor and RTIGER input; per-line REF/ALT reads at the donor's own tier-A markers, invariant markers dropped, lines below min_markers_factor x rigidity covered markers excluded (PLAN §4 #13), RTIGER counts table of the passing lines.
 keywords:
@@ -87,7 +86,7 @@ output:
   versions:
     - "*.line_marker_qc.versions.yml":
         type: file
-        description: Tool versions (python); a file, not `eval`, so the process may use storeDir
+        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
         pattern: "*.line_marker_qc.versions.yml"
         ontologies: []
 authors:

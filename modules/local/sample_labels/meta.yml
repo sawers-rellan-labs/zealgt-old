@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared python env of the genotype python modules
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv SAMPLE_LABELS -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: sample_labels
 description: Edge translation of one donor x region (meta/PROVENANCE.md "Identifiers") - one join of the internal sample_id on the registry (meta/registry.csv, resolved columns) giving the short label (nil_id_resolved, else pedigree_resolved, else sample_id; excluded wells refused; replicate-well collisions suffixed with the sample_id) in the final genotype tables, the exclusion table and the segments / line_qc read by the reports, plus a labels table recording the registry path, sha256 and repo commit.
 keywords:

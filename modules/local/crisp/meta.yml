@@ -105,12 +105,46 @@ output:
           description: CRISP stdout + stderr; the last line records the exit status
           pattern: "*.crisp.log"
           ontologies: []
+  versions_crisp:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - crisp:
+          type: string
+          description: Name of the tool
+      - "1a9027e":
+          type: string
+          description: The pinned commit of the tool (modules/local/crisp/build.sh; CRISP prints no version)
+  versions_htslib:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - htslib:
+          type: string
+          description: Name of the tool
+      - "tabix --version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
   versions:
-    - "${task.ext.prefix ?: meta.id}.crisp.versions.yml":
-        type: file
-        description: Tool versions (crisp = the build.sh commit, htslib)
-        pattern: "*.crisp.versions.yml"
-        ontologies: []
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - crisp:
+          type: string
+          description: Name of the tool
+      - "1a9027e":
+          type: string
+          description: The pinned commit of the tool (modules/local/crisp/build.sh; CRISP prints no version)
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - htslib:
+          type: string
+          description: Name of the tool
+      - "tabix --version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
 authors:
   - "@faustovrz"
 maintainers:

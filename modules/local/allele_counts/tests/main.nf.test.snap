@@ -13,7 +13,18 @@
                     ]
                 ],
                 "1": [
-                    "Zx.0540_P3.chrA.b73.allele_counts.versions.yml:md5,66dec238f4a74436aa6fd0f734300d56"
+                    [
+                        "ALLELE_COUNTS",
+                        "bcftools",
+                        "1.23.1"
+                    ]
+                ],
+                "2": [
+                    [
+                        "ALLELE_COUNTS",
+                        "htslib",
+                        "1.23"
+                    ]
                 ],
                 "counts": [
                     [
@@ -25,12 +36,23 @@
                         "Zx.0540_P3.chrA.b73.ad.tsv.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
                     ]
                 ],
-                "versions": [
-                    "Zx.0540_P3.chrA.b73.allele_counts.versions.yml:md5,66dec238f4a74436aa6fd0f734300d56"
+                "versions_bcftools": [
+                    [
+                        "ALLELE_COUNTS",
+                        "bcftools",
+                        "1.23.1"
+                    ]
+                ],
+                "versions_htslib": [
+                    [
+                        "ALLELE_COUNTS",
+                        "htslib",
+                        "1.23"
+                    ]
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:49:48.562506",
+        "timestamp": "2026-09-29T21:00:37.953487",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

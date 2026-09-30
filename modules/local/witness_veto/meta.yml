@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the python env of POOLED_LIKELIHOOD_TIERS
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv WITNESS_VETO -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: witness_veto
 description: Keep a CRISP record only when the witness pool (the donor's merged BC2S3 lines) shows at least --min-alt-reads ALT reads (ADf + ADr + ADb, all ALT alleles); writes the kept records as a BGZF VCF, their site list and a summary.
 keywords:

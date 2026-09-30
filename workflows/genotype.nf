@@ -5,8 +5,9 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     --entry <stage> runs that stage only (design §0.1). Its upstream inputs are read from the keyed genotype store
     <store>/genotype/<input_store_key or genotype_store_key>/ (zgStorePath); their existence, the provenance of the CRAMs and
-    the stage settings were checked by PIPELINE_INITIALISATION (utils genotype_functions.nf). Outputs go to storeDir
-    <store>/genotype/<genotype_store_key>/ (conf/genotype_modules.config). Unit = donor x region; the B73 controls form one
+    the stage settings were checked by PIPELINE_INITIALISATION (utils genotype_functions.nf). Outputs are published (copied,
+    never overwritten) to <store>/genotype/<genotype_store_key>/ (conf/genotype_modules.config), and a unit whose final
+    outputs are already there is not run again (zgIsStageStored; skip-if-stored instead of storeDir). Unit = donor x region; the B73 controls form one
     role group per region. Samples that failed stage 2b (sample_qc.tsv pass = false) are removed before any read consumer.
     This file only wires channels.
 ----------------------------------------------------------------------------------------
@@ -20,7 +21,7 @@ include { GENOTYPE_IMPUTATION    } from '../subworkflows/local/genotype_imputati
 include { GENOTYPE_REPORTING     } from '../subworkflows/local/genotype_reporting'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { zgCodeVersion          } from '../subworkflows/local/utils_nfcore_zealgt_pipeline'
-include { zgDonors; zgRegions; zgStorePath; zgFlag; zgMappabilityPrior; zgReferenceDonorTables; zgAnnotationPanels } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
+include { zgDonors; zgRegions; zgStorePath; zgGenotypeStore; zgIsStageStored; zgFlag; zgMappabilityPrior; zgReferenceDonorTables; zgAnnotationPanels } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
 include { zgRoleGroup; zgQcKeep; zgDropSamples; zgLineQcFailures; zgExclusionTable; zgReferenceDonorTaxa; zgPriorDonorTaxa; zgRegistrySource } from '../subworkflows/local/utils_nfcore_zealgt_pipeline/genotype_functions'
 
 workflow GENOTYPE {
@@ -39,7 +40,15 @@ workflow GENOTYPE {
     // units as plain lists: donor x region (unit meta) and donor set x region (set meta)
     def units = donors.collectMany { d -> zgRegions().collect { rmeta, r -> [id: "${d}.${rmeta.id}".toString(), donor: d, region: rmeta.id, interval: r] } }
     def sets  = zgRegions().collect { rmeta, r -> [id: "${dset}.${rmeta.id}".toString(), donor_set: dset, region: rmeta.id, interval: r] }
-    def ch_units = channel.fromList(units)
+    // skip-if-stored (zgIsStageStored): a unit (set for marker_union / donor_allele_calling) whose final outputs are already in
+    // <store>/genotype/<genotype_store_key>/ is not run again; only the others go on
+    def per_set    = entry in ['marker_union', 'donor_allele_calling']
+    def todo_sets  = sets.findAll { s -> !zgIsStageStored(entry, donors, s.region) }
+    def todo_units = per_set ? units.findAll { u -> u.region in todo_sets*.region } : units.findAll { u -> !zgIsStageStored(entry, [u.donor], u.region) }
+    def todo_regions = todo_units*.region.unique()
+    (per_set ? sets - todo_sets : units - todo_units).each { u -> log.info("zealgt genotype: ${entry} ${u.id} already in ${zgGenotypeStore()}, not run again") }
+    def ch_units = channel.fromList(todo_units)
+    def ch_regions_todo = ch_regions.filter { rmeta, _r -> rmeta.id in todo_regions }
     def rpq = zgFlag('read_position_qc')
 
     // Exclusions are cumulative ("lines fall at every QC", user decision 2026-09-28): stage 2b (sample_qc.tsv) for every entry
@@ -68,9 +77,14 @@ workflow GENOTYPE {
         ch_groups = ch_groups.combine(ch_line_fail).map { g, c, i, ids, m, fails -> zgDropSamples([g, c, i, ids, m], fails[g.unit] ?: [], 'LINE_MARKER_QC') }.filter { grp -> grp != null }
     }
     ch_groups = ch_groups.filter { _g, crams, _crais, _ids, _masks -> crams } // an empty group would give MASK_READ_STARTS no output
+    // only the groups of units still to run (the B73 controls of a region as long as one unit of that region runs)
+    ch_groups = ch_groups.filter { g, _c, _i, _ids, _m -> g.role == 'b73_control' ? g.region in todo_regions : g.unit in todo_units*.id }
 
     def ch_versions = channel.empty()
-    if (entry == 'sample_quality_control') {
+    if (!todo_units) {
+        log.info("zealgt genotype: every unit of --entry ${entry} is already in ${zgGenotypeStore()}; nothing to run")
+    }
+    else if (entry == 'sample_quality_control') {
         def panel = params.qc_panel ? file(params.qc_panel, checkIfExists: true) : []
         SAMPLE_QUALITY_CONTROL(ch_selected, params.qc_panel ? ch_groups : channel.empty(), params.qc_panel ? ch_regions : channel.empty(), ch_lowcopy, ch_ref, panel, params.min_coverage)
         ch_versions = SAMPLE_QUALITY_CONTROL.out.versions
@@ -78,21 +92,21 @@ workflow GENOTYPE {
     else if (entry == 'variant_discovery') {
         def annot = zgAnnotationPanels()
         def ch_annot = channel.value(annot ? [annot.collect { a -> a[0] }, annot.collect { a -> a[1] }] : [[], []])
-        VARIANT_DISCOVERY(ch_groups, ch_regions, ch_lowcopy, ch_ref, ch_annot, params.tier_counts_source)
+        VARIANT_DISCOVERY(ch_groups, ch_regions_todo, ch_lowcopy, ch_ref, ch_annot, params.tier_counts_source)
         ch_versions = VARIANT_DISCOVERY.out.versions
     }
     else if (entry == 'ancestry_inference') {
         ANCESTRY_INFERENCE(
             ch_groups.filter { g, _c, _i, _ids, _m -> g.role == 'line' },
             ch_units.map { u -> [u, zgStorePath('step4', u.donor, u.region)] },
-            ch_regions, ch_lowcopy, ch_ref, params.rigidity, params.min_markers_factor, params.rigidity_ref_markers,
+            ch_regions_todo, ch_lowcopy, ch_ref, params.rigidity, params.min_markers_factor, params.rigidity_ref_markers,
         )
         ch_versions = ANCESTRY_INFERENCE.out.versions
     }
     else if (entry == 'marker_union') {
         def refs = zgReferenceDonorTables()
         MARKER_UNION_STAGE(
-            channel.fromList(sets).map { s -> [s, donors.collect { d -> zgStorePath('step4', d, s.region) }, refs.collect { r -> r[1] }] },
+            channel.fromList(todo_sets).map { s -> [s, donors.collect { d -> zgStorePath('step4', d, s.region) }, refs.collect { r -> r[1] }] },
             donors, refs.collect { r -> r[0] },
         )
         ch_versions = MARKER_UNION_STAGE.out.versions
@@ -102,11 +116,11 @@ workflow GENOTYPE {
         def ch_taxa = ch_genotype_samples.filter { meta, _c, _i, _m, _k -> meta.role != 'b73_control' }.map { meta, _c, _i, _m, _k -> [meta.donor, meta.taxon ?: ''] }.unique()
         DONOR_ALLELE_CALLING(
             ch_groups,
-            channel.fromList(sets).map { s -> [s, zgStorePath('union', '', s.region), zgStorePath('union_sites', '', s.region)] },
+            channel.fromList(todo_sets).map { s -> [s, zgStorePath('union', '', s.region), zgStorePath('union_sites', '', s.region)] },
             ch_units.map { u -> [u, zgStorePath('segments', u.donor, u.region), zgStorePath('line_qc', u.donor, u.region)] },
             ch_taxa.map { d, t -> [d, flat ? [] : zgMappabilityPrior(t)] },
             ch_taxa.toList().map { l -> zgPriorDonorTaxa(l.collectEntries(), zgReferenceDonorTaxa()) },
-            donors, ch_regions, ch_lowcopy, ch_ref,
+            donors, ch_regions_todo, ch_lowcopy, ch_ref,
         )
         ch_versions = DONOR_ALLELE_CALLING.out.versions
     }

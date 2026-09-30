@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the python env of POOLED_LIKELIHOOD_TIERS
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv REGION_BED -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: region_bed
 description: Clip the lowcopy BED to one region ('chr' or 'chr:start-end'), merging overlapping ranges; writes a 0-based BED and the same ranges as 1-based region strings.
 keywords:

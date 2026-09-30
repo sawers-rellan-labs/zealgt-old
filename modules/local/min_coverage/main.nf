@@ -3,13 +3,12 @@
 // genotype processing. One task per cohort (the sheet rows of --donors plus the B73 controls): reads each sample's
 // <sample>.CollectWgsMetrics.coverage_metrics from the CRAM store and writes one row per sample (templates/flag_low_coverage.py,
 // a module template: hashed by content). A sample without a metrics file or without MEAN_COVERAGE fails with that reason.
-// Runs in the shared genotype python env (no own environment.yml; envs/process_aliases.tsv MIN_COVERAGE ->
-// pooled_likelihood_tiers). The python version goes into a versions.yml (the table may be stored with storeDir).
+// Own environment.yml (python only). The python version goes into a versions.yml (a module template: `eval` outputs need a Bash script).
 process MIN_COVERAGE {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(metrics, stageAs: 'metrics/*'), val(sample_ids)

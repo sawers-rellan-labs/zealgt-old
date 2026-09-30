@@ -88,6 +88,5 @@ workflow GENOTYPE_REPORTING {
     breakpoint_density = GENOTYPE_SUMMARY.out.breakpoint_density // channel: [ val(unit), breakpoint_density.tsv ]
     painting           = CHROMOSOME_PAINTING.out.png             // channel: [ val(unit), painting.png ]
     read_position_qc   = READ_POSITION_QC.out.tsv                // channel: [ val(gmeta), read_position_qc.tsv ]
-    versions           = SAMPLE_LABELS.out.versions.mix(GENOTYPE_SUMMARY.out.versions, CHROMOSOME_PAINTING.out.versions, REGION_BED.out.versions,
-                                                           MASK_READ_STARTS.out.versions, READ_POSITION_QC.out.versions) // channel: versions.yml
+    versions           = SAMPLE_LABELS.out.versions.mix(GENOTYPE_SUMMARY.out.versions, CHROMOSOME_PAINTING.out.versions, REGION_BED.out.versions, READ_POSITION_QC.out.versions) // channel: versions.yml (the eval tuples of the bash modules: topic `versions` only)
 }

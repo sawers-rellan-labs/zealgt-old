@@ -82,7 +82,8 @@ docs/usage.md "Store rules" and "Waves of libraries"). The cutadapt logs live he
 ## Genotype workflow (`--workflow genotype`)
 
 The genotype workflow reads `--cram_store` and never writes there. Its reusable outputs go into the keyed genotype store
-`<store>/genotype/<genotype_store_key>/` (storeDir). Each `--entry` writes its own kinds, and the next entry reads them
+`<store>/genotype/<genotype_store_key>/` (published: copied, never overwritten). Each `--entry` writes its own kinds and
+skips a unit whose final outputs are already there; the next entry reads them
 (`--input_store_key` points it at another key). `<region>` is the region label (`chr10`, `chr10_1-20000000`), and `<set>` is
 `--donor_set`.
 

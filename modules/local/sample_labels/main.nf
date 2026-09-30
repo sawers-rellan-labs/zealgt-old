@@ -7,8 +7,8 @@
 // nil_id are suffixed _<sample_id> and listed in <unit>.sample_labels.tsv, which also records the registry path, sha256 and
 // the repo commit (code_version). The registry is recorded, not part of the settings guard.
 // templates/label_samples.py (module template, hashed by content). Published only (no store), but Nextflow allows `eval`
-// outputs only with bash scripts, so the template writes a versions.yml. Shared python env (envs/process_aliases.tsv
-// SAMPLE_LABELS -> pooled_likelihood_tiers). Inputs are staged under input/ (the outputs reuse the store file names).
+// outputs only with bash scripts, so the template writes a versions.yml. Own environment.yml (python only).
+// Inputs are staged under input/ (the outputs reuse the store file names).
 // donor = the unit donor (a registry donor that differs is refused); sample_ids = the unit's sheet samples (listed in the
 // labels table even when absent from the tables, e.g. the B73 controls); registry_source = the registry path as recorded.
 // ext.args: none.
@@ -16,7 +16,7 @@ process SAMPLE_LABELS {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(genotypes, stageAs: 'input/*'), path(matrix, stageAs: 'input/*'), path(segments, stageAs: 'input/*'), path(line_qc, stageAs: 'input/*'), path(exclusions, stageAs: 'input/*'), val(donor), val(sample_ids)

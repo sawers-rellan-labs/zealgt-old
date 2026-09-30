@@ -4,13 +4,13 @@
 // It reports only: the line exclusion by covered markers is applied in ancestry_inference on the donor's own tier-A sites
 // (LINE_MARKER_QC; design §10 item 5). Runs only when params.qc_panel is set (the blind panel does not exist yet, design
 // §10 item 6; the workflow skips the process otherwise). templates/count_panel_coverage.py is a module template (hashed by
-// content). Shared genotype python env (envs/process_aliases.tsv COVERAGE_QC -> pooled_likelihood_tiers).
+// content). Own environment.yml (python only).
 // ext.args = --min-markers N --report-at 10,100 [--regions chr10:1-20000000,...].
 process COVERAGE_QC {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(counts, stageAs: 'counts/*')

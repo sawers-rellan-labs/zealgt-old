@@ -205,11 +205,14 @@ message names the entry to run first. `--workflow genotype` without `--entry` is
 ### Store rules (genotype)
 
 - **Two stores:** `--cram_store` is where CRAMs, QC and provenance are read, and the genotype workflow never writes there.
-  Genotype outputs go to `<store>/genotype/<genotype_store_key>/`.
+  Genotype outputs are published (copied, never overwritten) to `<store>/genotype/<genotype_store_key>/`.
+- **Skip-if-stored:** an entry does not run again a unit (donor x region; donor set x region for `marker_union` and
+  `donor_allele_calling`; the cohort for `sample_quality_control`) whose final outputs are already in that store, and
+  logs it; `reporting` always runs. To redo a unit, use a new key.
 - **Keyed settings (review #7):** on first use, each stage writes `settings/<stage>.json` with:
   - its parameters;
   - the sha256 of its code: each module's `main.nf` + templates, the stage's subworkflow `main.nf`,
-    `workflows/genotype.nf` and `conf/genotype_modules.config` (ext.args, ext.prefix, storeDir). The resource-only
+    `workflows/genotype.nf` and `conf/genotype_modules.config` (ext.args, ext.prefix, publishDir). The resource-only
     `conf/genotype_hazel.config` is not hashed;
   - the sample rows of every unit.
 
@@ -279,13 +282,18 @@ Deliberate deviations from the nf-core specifications. The same list, word for w
   provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
   stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
   CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
-  lint). Only reports go to `--outdir`.
-- **`versions.yml` files for five local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and MARKDUP_IMPORT
+  lint). The genotype workflow's keyed store `<store>/genotype/<genotype_store_key>/` works the same way: stage outputs are
+  copied there (never overwritten), a later `--entry` reads them, the workflow skips a unit whose stored outputs exist, and
+  a settings guard refuses a changed setting or code under the same key. Only reports go to `--outdir`.
+- **`versions.yml` files for 25 local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and MARKDUP_IMPORT
   publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored CRAM (skipped, not
-  made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY are python module templates,
-  and Nextflow allows `eval` outputs only with Bash scripts. DEMUX and the nf-core modules report `eval` topic tuples;
-  coreutils (DEMUX's `head`, MERGE_LANES's `cat`) is pinned in `environment.yml` but not reported (the BSD tools of the
-  laptop's local runs have no `--version`).
+  made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY and the genotype modules
+  COVERAGE_QC, DONOR_CONTENT_QC, DONOR_FOUNDER, GAP_FILLING_BC1, GAP_FILLING_LINES, GENOTYPE_SUMMARY, LINE_MARKER_QC,
+  MARKER_UNION, MIN_COVERAGE, POOLED_LIKELIHOOD_TIERS, RASTERIZE, READ_POSITION_QC, REGION_BED, RELATEDNESS_QC,
+  RTIGER_MARKERS, SAMPLE_LABELS, SAMPLE_QC_TABLE and WITNESS_VETO are python module templates, CHROMOSOME_PAINTING and
+  RTIGER R module templates, and Nextflow allows `eval` outputs only with Bash scripts. DEMUX and the nf-core modules report
+  `eval` topic tuples; coreutils (DEMUX's `head`, MERGE_LANES's `cat`) is pinned in `environment.yml` but not reported (the
+  BSD tools of the laptop's local runs have no `--version`).
 - **Stage-2 samplesheet written by the pipeline** (spec: inputs through `--input`).
   `<fastq_checkpoint>/<lib>/samplesheet.csv` is an output of stage 1 and the only input of `--entry read_alignment`,
   validated by nf-schema against `assets/schema_checkpoint.json`.
@@ -294,3 +302,16 @@ Deliberate deviations from the nf-core specifications. The same list, word for w
 - **Per-source read structures as two parameters** (`read_structure_*`, chosen by `barcode_layout`), not one per sample;
   both values are recorded in every provenance record.
 - **CRAM output only, no `--bam`**: the genotype workflow reads CRAM.
+- **nf-core `bcftools/mpileup` not used** (spec: use the nf-core module where one exists). The nf-core module always pipes
+  into `bcftools call` and reheaders to one sample (`meta.id`); every count of the genotype workflow needs the raw `AD` of
+  all its samples at fixed sites, with no calling, so the local `allele_counts` module runs `bcftools mpileup -I -a AD -T
+  <sites> | bcftools query` (`-I` because indel records would overwrite the SNP counts, PLAN §4 #3). Patching the nf-core
+  module would replace its whole script; `bcftools/view` is used (BED_CLIP).
+- **nf-core `samtools/merge` not used for the witness pool** (spec: use the nf-core module where one exists). The merge of
+  the donor's line BAMs, the read-group rewrite and the index run as one pipe in `witness_pool`, so the ~2 GB intermediate
+  never reaches `work/` (PLAN §2 principle 5).
+- **Stage subworkflow `MARKER_UNION_STAGE` in `subworkflows/local/marker_union`** (spec: a subworkflow is named after its
+  directory and combines at least two modules). A workflow cannot share its module's process name MARKER_UNION in one script
+  scope, so stage 5's subworkflow takes a `_STAGE` suffix; its directory keeps the stage (entry) name. It and
+  `genotype_imputation` (RASTERIZE) wrap one module each, because every `--entry` runs one stage subworkflow, so nf-core
+  lint warns that they include fewer than 2 modules.

@@ -13,7 +13,7 @@ Per sample: `samtools view <ext.args> --reference <fasta> -M -L <sites in the re
 the read from its 5' end in sequencing orientation (reverse reads flipped), counting soft- and hard-clipped bases; class REF,
 ALT (the site's alleles) or other; deletions at the site are not observed. Overlapping mates are counted twice (as the note).
 Output <prefix>.read_position_qc.tsv: label sample mate cycle_bin n ref alt other alt_frac other_frac alt_ref_alt, per sample
-and for ALL samples, over --bins (default 1-2,3-4,5-8,9-12,13-20,21-40,41-80,81-). Samples run in parallel (ZG_CPUS).
+and for ALL samples, over --bins (default 1-2,3-4,5-8,9-12,13-20,21-40,41-80,81-). Samples run in parallel (task.cpus).
 Versions (samtools, python) go into <prefix>.read_position_qc.versions.yml (no `eval` outputs for a python script).
 """
 import argparse
@@ -160,15 +160,6 @@ def rows_of(label, sample, counts, bins):
     return out
 
 
-def zg_cpus():
-    """ZG_CPUS from bin/export_slurm_resources.sh (sourced by name from PATH, as every module script)."""
-    r = subprocess.run(["bash", "-c", "source export_slurm_resources.sh 1>&2 && printenv ZG_CPUS"], capture_output=True, text=True)
-    sys.stderr.write(r.stderr)
-    if r.returncode != 0:
-        raise SystemExit("READ_POSITION_QC: export_slurm_resources.sh failed")
-    return int(r.stdout.strip())
-
-
 def find_alignment(sample, d="aln"):
     for ext in (".bam", ".cram"):
         p = os.path.join(d, sample + ext)
@@ -195,7 +186,7 @@ def main():
         for p in sorted(sites):
             o.write(f"{chrom}{TAB}{p - 1}{TAB}{p}{NL}")
     jobs = [(s, find_alignment(s), fasta, bed, samtools_args, sites, a.min_bq, bins) for s in samples]
-    ncpu = max(1, min(zg_cpus(), len(jobs)))
+    ncpu = max(1, min(int("${task.cpus}"), len(jobs)))   # task.cpus: a directive, not hashed
     if sites and jobs:
         try:
             with multiprocessing.Pool(ncpu) as pool:

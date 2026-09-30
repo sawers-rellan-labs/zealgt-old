@@ -28,7 +28,7 @@ output:
   - union:
       type: file
       description: |
-        channel: [ val(setmeta), <set>.<label>.tsv.gz ]  (storeDir union/)
+        channel: [ val(setmeta), <set>.<label>.tsv.gz ]  (stored in union/)
   - sites:
       type: file
       description: |

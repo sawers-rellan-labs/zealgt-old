@@ -1,10 +1,10 @@
 //
 // ANCESTRY_INFERENCE (stage 4; PLAN §3 row 4, §4 #10 / #13; genotype design §2.3; zealbc1 rtiger_ancestry_inference.sbatch),
 // per unit (donor x region):
-//   step-4 table (store) -> RTIGER_MARKERS (own tier-A sites; storeDir ancestry/, also read by reporting)
+//   step-4 table (store) -> RTIGER_MARKERS (own tier-A sites; stored in ancestry/, also read by reporting)
 //   lines -> MASK_READ_STARTS -> LINE_ALLELE_COUNTS (at the tier-A sites) -> LINE_MARKER_QC (coverage floor
-//   min_markers_factor x rigidity, rigidity scaled to the unit's marker density; storeDir ancestry/: counts + line_qc +
-//   rigidity) -> RTIGER at that rigidity (storeDir ancestry/: <donor>.<label>.segments.csv)
+//   min_markers_factor x rigidity, rigidity scaled to the unit's marker density; stored in ancestry/: counts + line_qc +
+//   rigidity) -> RTIGER at that rigidity (stored in ancestry/: <donor>.<label>.segments.csv)
 // Every unit needs a line group (all lines of a donor failing sample QC stops the join with an error, not silently).
 //
 include { REGION_BED                          } from '../../../modules/local/region_bed/main'
@@ -92,6 +92,6 @@ workflow ANCESTRY_INFERENCE {
     segments = RTIGER.out.segments          // channel: [ val(unit), <donor>.<label>.segments.csv ]
     line_qc  = LINE_MARKER_QC.out.line_qc   // channel: [ val(unit), <donor>.<label>.line_qc.tsv ]
     markers  = RTIGER_MARKERS.out.sites     // channel: [ val(unit), <donor>.<label>.tierA_sites.tsv ]
-    versions = RTIGER_MARKERS.out.versions.mix(REGION_BED.out.versions, MASK_READ_STARTS.out.versions, LINE_ALLELE_COUNTS.out.versions,
-                                               LINE_MARKER_QC.out.versions, RTIGER.out.versions) // channel: versions.yml
+    versions = RTIGER_MARKERS.out.versions.mix(REGION_BED.out.versions,
+                                               LINE_MARKER_QC.out.versions, RTIGER.out.versions) // channel: versions.yml (the eval tuples of the bash modules: topic `versions` only)
 }

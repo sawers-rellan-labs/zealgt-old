@@ -8,13 +8,13 @@
 // <prefix>.rigidity.txt and is RTIGER's rigidity for the unit (user rule 2026-09-29). Writes the RTIGER counts table of the
 // passing lines and the per-line QC table (templates/filter_line_markers.py, a module template: hashed by content). The
 // markers input is needed to pick each marker's ALT among mpileup's AD alleles (zealbc1 ad_to_counts.py read it too).
-// Shared genotype python env (envs/process_aliases.tsv LINE_MARKER_QC -> pooled_likelihood_tiers).
+// Own environment.yml (python only).
 // ext.args = --drop-invariant true|false (params.rtiger_drop_invariant_sites).
 process LINE_MARKER_QC {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(counts), path(sites)

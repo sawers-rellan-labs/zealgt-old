@@ -58,19 +58,19 @@ output:
   - donor_alleles:
       type: file
       description: |
-        channel: [ val(unit), <donor>.<label>.tsv.gz ]  (storeDir donor_alleles/<set>/)
+        channel: [ val(unit), <donor>.<label>.tsv.gz ]  (stored in donor_alleles/<set>/)
   - gap_bc1:
       type: file
       description: |
-        channel: [ val(setmeta), <set>.<label>.gap_bc1.tsv.gz ]  (storeDir gap_bc1/)
+        channel: [ val(setmeta), <set>.<label>.gap_bc1.tsv.gz ]  (stored in gap_bc1/)
   - gap_lines:
       type: file
       description: |
-        channel: [ val(unit), <donor>.<label>.gap_lines.tsv.gz ]  (storeDir gap_lines/<set>/)
+        channel: [ val(unit), <donor>.<label>.gap_lines.tsv.gz ]  (stored in gap_lines/<set>/)
   - joint:
       type: file
       description: |
-        channel: [ val(setmeta), [ <donor>.<label>.sites.tsv.gz ] ]  (storeDir joint_step4/<set>/)
+        channel: [ val(setmeta), [ <donor>.<label>.sites.tsv.gz ] ]  (stored in joint_step4/<set>/)
   - versions:
       type: file
       description: |

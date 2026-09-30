@@ -3,15 +3,14 @@
 // lines, --expected-bc1 for BC1 pools, 0 for B73 controls) and relative to its (donor, role) group; catches B73
 // contamination (selfing, seed mix-up) that kinship alone does not separate (templates/estimate_donor_content.py, a module
 // template: hashed by content). Runs only when params.qc_panel is set; the blind panel does not exist yet (design §10 item 6),
-// so the workflow skips it and the module is tested on a fixture panel. Shared genotype python env
-// (envs/process_aliases.tsv DONOR_CONTENT_QC -> pooled_likelihood_tiers).
+// so the workflow skips it and the module is tested on a fixture panel. Own environment.yml (python only).
 // ext.args = --expected <donor_content_expected> --flag-low <donor_content_flag_low> [--expected-bc1 X --statistic
 //            alt_read_fraction|share_sites_alt --flag-relative X --flag-high-b73 X --min-sites N --regions ...].
 process DONOR_CONTENT_QC {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(counts, stageAs: 'counts/*')

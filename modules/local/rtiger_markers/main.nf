@@ -3,13 +3,13 @@
 // biallelic single-base SNVs, no hard flag; a position with two kept alleles is dropped. Writes the header-less site list
 // (chrom pos ref alt) that LINE_ALLELE_COUNTS (ALLELE_COUNTS alias) counts the lines at and LINE_MARKER_QC matches alleles
 // with, plus a one-row summary (templates/select_rtiger_markers.py, a module template: hashed by content). Does not depend on
-// the union (PLAN §3 row 4). Shared genotype python env (envs/process_aliases.tsv RTIGER_MARKERS -> pooled_likelihood_tiers).
+// the union (PLAN §3 row 4). Own environment.yml (python only).
 // ext.args = [--tier A --exclude-flags hidepth,af_gt_half,inconsistent].
 process RTIGER_MARKERS {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(sites)

@@ -4,15 +4,14 @@
 // ALT fractions to all). Flags a sample whose kinship to its own donor falls outside its (donor, role) group (robust z below
 // -flag_sd) or that is closer to another donor (templates/estimate_relatedness.py, a module template: hashed by content).
 // Runs only when params.qc_panel is set; the blind panel does not exist yet (design §10 item 6), so the workflow skips it and
-// the module is tested on a fixture panel. Shared genotype python env (envs/process_aliases.tsv RELATEDNESS_QC ->
-// pooled_likelihood_tiers).
+// the module is tested on a fixture panel. Own environment.yml (python only).
 // ext.args = --method <relatedness_method> --seed <relatedness_seed> --flag-sd <relatedness_flag_sd> [--closer-margin X
 //            --min-sites N --min-group N --regions ...].
 process RELATEDNESS_QC {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(counts, stageAs: 'counts/*')

@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared python env of the genotype python modules
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv GENOTYPE_SUMMARY -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: genotype_summary
 description: Reporting tables of one donor x region - per-line RTIGER Mb in x = 0 / 1 / 2 and raster no-call share against the BC2S2 (or BC2S3) expectation, per-site segregation (chi-square, 2 df) and donor allele frequency vs 12.5 %, and the share of step-2 calls near RTIGER breakpoints vs elsewhere (review #12).
 keywords:

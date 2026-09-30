@@ -7,7 +7,7 @@
 // donor.replace('.', '') + '_BC2S3', zealbc1 :24). The task checks that the pool's header holds exactly that one @RG
 // (CRISP splits a file by read group, PLAN §4 #1b); a samtools that kept the inputs' @RG lines would fail here, not later.
 // Duplicates are not re-marked: every record keeps its per-sample duplicate flag (merged pools are not deduplicated, §4 #1b).
-// Threads from bin/export_slurm_resources.sh; versions in a versions.yml (samtools) so a stub reports the pin.
+// Threads: task.cpus (conf/genotype_hazel.config); versions: a `versions` topic tuple (samtools).
 process WITNESS_POOL {
     tag "${meta.id}"
     label 'process_medium'
@@ -20,7 +20,7 @@ process WITNESS_POOL {
 
     output:
     tuple val(meta), path("${witness}.bam"), path("${witness}.bam.bai"), emit: bam
-    path "${task.ext.prefix ?: meta.id}.witness_pool.versions.yml"    , emit: versions, topic: versions
+    tuple val("${task.process}"), val('samtools'), eval("samtools version | sed '1!d; s/.* //'"), emit: versions_samtools, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -36,13 +36,12 @@ process WITNESS_POOL {
         error("WITNESS_POOL ${prefix}: an input is already named ${witness}.bam")
     }
     """
-    source export_slurm_resources.sh
     set -o pipefail
 
-    samtools merge -@ \${ZG_CPUS} -u ${args} -o - ${bam_list.join(' ')} \\
-    | samtools addreplacerg -@ \${ZG_CPUS} -m overwrite_all -r '@RG\\tID:${witness}\\tSM:${witness}\\tPL:ILLUMINA' \\
+    samtools merge -@ ${task.cpus} -u ${args} -o - ${bam_list.join(' ')} \\
+    | samtools addreplacerg -@ ${task.cpus} -m overwrite_all -r '@RG\\tID:${witness}\\tSM:${witness}\\tPL:ILLUMINA' \\
         --reference ${fasta} -O BAM -o ${witness}.bam -
-    samtools index -@ \${ZG_CPUS} ${witness}.bam
+    samtools index -@ ${task.cpus} ${witness}.bam
 
     n_rg=\$(samtools view -H ${witness}.bam | grep -c '^@RG' || true)
     rg=\$(samtools view -H ${witness}.bam | grep '^@RG' || true)
@@ -53,10 +52,6 @@ process WITNESS_POOL {
     [ "\$n_rg" -eq 1 ] || { echo "WITNESS_POOL ${prefix}: ${witness}.bam header has \$n_rg matching @RG lines, expected exactly one (ID:${witness})" >&2; exit 1; }
     echo "WITNESS_POOL ${prefix}: ${bam_list.size()} BAMs -> ${witness}.bam, \$(samtools idxstats ${witness}.bam | awk '{ r += \$3 + \$4 } END { print r + 0 }') records" >&2
 
-    cat <<-END_VERSIONS > ${prefix}.witness_pool.versions.yml
-    "${task.process}":
-        samtools: \$(samtools version | sed '1!d; s/.* //')
-    END_VERSIONS
     """
 
     stub:
@@ -65,9 +60,5 @@ process WITNESS_POOL {
     """
     touch ${witness}.bam ${witness}.bam.bai
 
-    cat <<-END_VERSIONS > ${prefix}.witness_pool.versions.yml
-    "${task.process}":
-        samtools: 1.21
-    END_VERSIONS
     """
 }

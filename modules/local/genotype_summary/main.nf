@@ -7,15 +7,15 @@
 //                          RTIGER breakpoint vs elsewhere (the design's BREAKPOINT_DENSITY, folded into this task: it needs
 //                          only the segments and DONOR_FOUNDER's call_step, so no second task)
 // templates/summarize_genotypes.py (module template, hashed by content). Nothing goes to the store (published only), but
-// Nextflow allows `eval` outputs only with bash scripts, so the template writes a versions.yml (as DEMUX_QC). Shared python
-// env (envs/process_aliases.tsv GENOTYPE_SUMMARY -> pooled_likelihood_tiers).
+// Nextflow allows `eval` outputs only with bash scripts, so the template writes a versions.yml (as DEMUX_QC).
+// Own environment.yml (python only).
 // Inputs: RASTERIZE's long table, the RTIGER segments CSV, DONOR_FOUNDER's table, line_qc.tsv (optional: []).
 // ext.args = summarize_genotypes.py options: --expectation (bc2s2|bc2s3) --breakpoint-window (500).
 process GENOTYPE_SUMMARY {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(genotypes), path(segments), path(donor_alleles), path(line_qc)

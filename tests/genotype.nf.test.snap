@@ -3,8 +3,8 @@
         "content": [
             {
                 "B73_UNION_COUNTS": {
-                    "bcftools": 1.21,
-                    "htslib": 1.21
+                    "bcftools": "1.23.1",
+                    "htslib": 1.23
                 },
                 "DONOR_FOUNDER": {
                     "python": "3.12.14"
@@ -19,19 +19,19 @@
                     "python": "3.12.14"
                 },
                 "LINE_UNION_COUNTS": {
-                    "bcftools": 1.21,
-                    "htslib": 1.21
+                    "bcftools": "1.23.1",
+                    "htslib": 1.23
                 },
                 "MASK_READ_STARTS": {
-                    "samtools": 1.21,
-                    "gawk": "5.4.1"
+                    "gawk": "5.4.0",
+                    "samtools": 1.24
                 },
                 "REGION_BED": {
                     "python": "3.12.14"
                 },
                 "UNION_SITE_COUNTS": {
-                    "bcftools": 1.21,
-                    "htslib": 1.21
+                    "bcftools": "1.23.1",
+                    "htslib": 1.23
                 },
                 "Workflow": {
                     "sawers-rellan-labs/zealgt": "v0.1.0dev"
@@ -109,7 +109,7 @@
                 "test_set.chr10_1-16000.union_sites.tsv:md5,514b6552f8d71d54b59330db10168828"
             ]
         ],
-        "timestamp": "2026-09-28T08:33:06.275313",
+        "timestamp": "2026-09-29T21:02:14.607655",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -125,15 +125,15 @@
                     "python": "3.12.14"
                 },
                 "MASK_READ_STARTS": {
-                    "samtools": 1.21,
-                    "gawk": "5.4.1"
+                    "gawk": "5.4.0",
+                    "samtools": 1.24
                 },
                 "MIN_COVERAGE": {
                     "python": "3.12.14"
                 },
                 "QC_PANEL_COUNTS": {
-                    "bcftools": 1.21,
-                    "htslib": 1.21
+                    "bcftools": "1.23.1",
+                    "htslib": 1.23
                 },
                 "REGION_BED": {
                     "python": "3.12.14"
@@ -182,7 +182,7 @@
                 "cohort.sample_qc_table.versions.yml:md5,03e365775a042f0a8a46cfd27fae2e1d"
             ]
         ],
-        "timestamp": "2026-09-28T08:32:43.4667",
+        "timestamp": "2026-09-29T21:01:39.751873",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -192,19 +192,19 @@
         "content": [
             {
                 "B73_CONTROL_COUNTS": {
-                    "bcftools": 1.21,
-                    "htslib": 1.21
+                    "bcftools": "1.23.1",
+                    "htslib": 1.23
                 },
                 "BED_CLIP": [
                     "bcftools"
                 ],
                 "CRISP": {
                     "crisp": "1a9027e",
-                    "htslib": 1.21
+                    "htslib": 1.23
                 },
                 "MASK_READ_STARTS": {
-                    "samtools": 1.21,
-                    "gawk": "5.4.1"
+                    "gawk": "5.4.0",
+                    "samtools": 1.24
                 },
                 "POOLED_LIKELIHOOD_TIERS": {
                     "python": "3.12.14"
@@ -213,7 +213,7 @@
                     "python": "3.12.14"
                 },
                 "WITNESS_POOL": {
-                    "samtools": 1.21
+                    "samtools": 1.24
                 },
                 "WITNESS_VETO": {
                     "python": "3.12.14"
@@ -267,7 +267,7 @@
                 "Zx.9001_P1.chr10_1-16000.summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
             ]
         ],
-        "timestamp": "2026-09-28T08:32:49.339567",
+        "timestamp": "2026-09-29T21:01:48.21402",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -285,8 +285,8 @@
                     "python": "3.12.14"
                 },
                 "MASK_READ_STARTS": {
-                    "samtools": 1.21,
-                    "gawk": "5.4.1"
+                    "gawk": "5.4.0",
+                    "samtools": 1.24
                 },
                 "READ_POSITION_QC": {
                     "samtools": 1.21,
@@ -382,7 +382,7 @@
                 "test_set.chr10_1-16000.union_sites.tsv:md5,514b6552f8d71d54b59330db10168828"
             ]
         ],
-        "timestamp": "2026-09-29T13:07:44.397075",
+        "timestamp": "2026-09-29T21:02:29.973277",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -392,15 +392,15 @@
         "content": [
             {
                 "LINE_ALLELE_COUNTS": {
-                    "bcftools": 1.21,
-                    "htslib": 1.21
+                    "bcftools": "1.23.1",
+                    "htslib": 1.23
                 },
                 "LINE_MARKER_QC": {
                     "python": "3.12.14"
                 },
                 "MASK_READ_STARTS": {
-                    "samtools": 1.21,
-                    "gawk": "5.4.1"
+                    "gawk": "5.4.0",
+                    "samtools": 1.24
                 },
                 "REGION_BED": {
                     "python": "3.12.14"
@@ -459,7 +459,7 @@
                 "Zx.9001_P1.chr10_1-16000.summary.tsv:md5,56e3ff03257cb27755e303b0d8e84905"
             ]
         ],
-        "timestamp": "2026-09-29T18:34:58.134714",
+        "timestamp": "2026-09-29T21:01:56.112473",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

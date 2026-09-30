@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared genotype python env
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv SAMPLE_QC_TABLE -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: sample_qc_table
 description: Stage 2b decision table sample_qc.tsv; joins MIN_COVERAGE with the optional blind-panel tables (coverage, relatedness, donor content) into one pass/fail row per sample with reasons and notes.
 keywords:
@@ -59,7 +58,7 @@ output:
   versions:
     - "*.sample_qc_table.versions.yml":
         type: file
-        description: Tool versions (python); a file, not `eval`, since the process uses storeDir
+        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
         pattern: "*.sample_qc_table.versions.yml"
         ontologies: []
 authors:

@@ -1,9 +1,8 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared python env of the genotype python modules
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv MARKER_UNION -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: marker_union
-description: Union of the tier-A sites of a donor set in one region (stage 5), keyed by chrom, pos, ref, alt; multiallelic positions flagged; read-only reference-donor tables add their tier-A sites and tier-ref calls (gaps and step-1 prior of single-donor runs); also writes the site list of the stage-6 counts. storeDir <store>/genotype/<key>/union.
+description: Union of the tier-A sites of a donor set in one region (stage 5), keyed by chrom, pos, ref, alt; multiallelic positions flagged; read-only reference-donor tables add their tier-A sites and tier-ref calls (gaps and step-1 prior of single-donor runs); also writes the site list of the stage-6 counts. published to <store>/genotype/<key>/union.
 keywords:
   - genotyping
   - marker union
@@ -73,7 +72,7 @@ output:
   versions:
     - "*.marker_union.versions.yml":
         type: file
-        description: Tool versions (python); storeDir forbids `eval` version outputs
+        description: Tool versions (python); a module template: `eval` outputs need a Bash script
         pattern: "*.marker_union.versions.yml"
         ontologies: []
 authors:

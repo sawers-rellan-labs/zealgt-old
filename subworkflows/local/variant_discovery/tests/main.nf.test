@@ -90,7 +90,7 @@ nextflow_workflow {
         then {
             assertAll(
                 { assert workflow.success },
-                { assert workflow.out.versions.collect { v -> v instanceof List ? '' : file(v).name }.contains('Zx.9001_P1.chr10_1-16000.bc1.allele_counts.versions.yml') },
+                { assert workflow.trace.tasks().any { t -> t.name.contains('BC1_SITE_COUNTS') } },
                 { assert snapshot(
                     workflow.out.sites.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.versions.collect { v -> v instanceof List ? "${v[0]} ${v[1]}".toString() : file(v).name }.sort()

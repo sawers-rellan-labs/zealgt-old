@@ -70,8 +70,8 @@ def zgStageModules() {
 }
 
 // Wiring and module config of each stage, hashed into its settings next to the modules (PLAN §2 hash hygiene): the stage's
-// subworkflow, workflows/genotype.nf and conf/genotype_modules.config (ext.args / ext.prefix / ext.when / storeDir). An
-// ext.prefix or storeDir change under an existing key is refused like a code change. conf/genotype_hazel.config is not
+// subworkflow, workflows/genotype.nf and conf/genotype_modules.config (ext.args / ext.prefix / ext.when / publishDir). An
+// ext.prefix or store path change under an existing key is refused like a code change. conf/genotype_hazel.config is not
 // hashed: it holds resources only (cpus / memory / time; the scripts read the allocation from Slurm, task hashes keep).
 def zgStageWiring() {
     def swf = [sample_quality_control: 'sample_quality_control', variant_discovery: 'variant_discovery',
@@ -151,7 +151,7 @@ def zgRegions() {
     return zgGtList(params.regions).unique().collect { r -> [[id: zgRegionLabel(r)], r] }
 }
 
-// <store>/genotype/<genotype_store_key>: where this run's stage writes (storeDir root of every genotype process)
+// <store>/genotype/<genotype_store_key>: where this run's stage writes (store publishDir root of every genotype process)
 def zgGenotypeStore() {
     return "${params.store}/genotype/${params.genotype_store_key}".toString()
 }
@@ -184,6 +184,36 @@ def zgStoreRel(String kind, String donor, String label) {
 // An upstream output in the input store as a file (for wiring; existence is checked at initialisation)
 def zgStorePath(String kind, String donor, String label) {
     return file("${zgInputStore()}/${zgStoreRel(kind, donor, label)}")
+}
+
+// Skip-if-stored (replaces storeDir, main's zgIsStored pattern; storeDir is being deprecated, nextflow-cache skill): the
+// final store outputs of each entry, per unit. The stage outputs are published (copied, never overwritten) into
+// <store>/genotype/<genotype_store_key>/ (conf/genotype_modules.config); a unit whose final outputs are all there is not run
+// again. Scope of the unit: cohort (sample_quality_control), donor x region (variant_discovery, ancestry_inference,
+// genotype_imputation) or set x region (marker_union; donor_allele_calling, whose final output is one table per donor of the
+// set). reporting publishes to --outdir only and always runs. The settings guard (below) refuses a changed setting or code
+// under the same key, so a stored unit was made with the settings of this run.
+def zgStageFinalKinds() {
+    return [
+        sample_quality_control: ['sample_qc'],
+        variant_discovery     : ['step4'],
+        ancestry_inference    : ['segments', 'line_qc', 'markers'],
+        marker_union          : ['union', 'union_sites'],
+        donor_allele_calling  : ['donor_alleles'],
+        genotype_imputation   : ['genotypes', 'genotypes_matrix'],
+    ]
+}
+
+// true when every final output of `entry` for the unit (its donors, one region label) exists in this run's store
+def zgIsStageStored(String entry, List donors, String label) {
+    def kinds = zgStageFinalKinds()[entry]
+    if (!kinds) {
+        return false
+    }
+    def rels = kinds.collectMany { k ->
+        k in ['sample_qc', 'union', 'union_sites'] ? [zgStoreRel(k, '', label)] : donors.collect { d -> zgStoreRel(k, d, label) }
+    }
+    return rels.every { rel -> file("${zgGenotypeStore()}/${rel}").exists() }
 }
 
 // --reference_donor_tables -> [[donor, file], ...] (read-only step-4 tables of donors not called in this run, design §2.4)
@@ -513,7 +543,7 @@ def zgCheckUpstream(String entry, List donors) {
     <store>/genotype/<key>/settings/<stage>.json holds the stage's parameters, the sha256 of its modules' code and, per unit
     (donor x region, set x region, or the cohort), the sample rows it was run on. A later run with the same key must agree on
     parameters and code, and on the rows of every unit it shares with the stored settings; new units are added. Otherwise the
-    run is refused and the message names the differing fields (storeDir would silently keep the old outputs).
+    run is refused and the message names the differing fields (skip-if-stored would silently keep the old outputs).
 */
 
 // Parameter values as comparable strings (numbers normalised: 2, "2" and 2.0 compare equal); files hashed where the design
@@ -614,7 +644,7 @@ def zgStageSettings(String stage, Map units) {
             diffs << "unit ${id}: sample rows differ (stored only: ${gone.take(3)}${gone.size() > 3 ? '...' : ''}; now only: ${added.take(3)}${added.size() > 3 ? '...' : ''})"
         }
         if (diffs) {
-            error("genotype store key '${key}', stage ${stage}: settings differ from ${path} (review #7: storeDir would keep outputs made with other settings):\n  " + diffs.join('\n  ') + "\nUse a new --genotype_store_key, or rerun with the stored settings.")
+            error("genotype store key '${key}', stage ${stage}: settings differ from ${path} (review #7: skip-if-stored would keep outputs made with other settings):\n  " + diffs.join('\n  ') + "\nUse a new --genotype_store_key, or rerun with the stored settings.")
         }
         if (units.every { id, _s -> stored_units.containsKey(id) }) {
             return

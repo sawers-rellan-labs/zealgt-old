@@ -3,7 +3,7 @@
 # zealgt local module (step-named; the name keys the hazel conda prefix). Own env: environment.yml + build.sh (nilHMM 0.3.0,
 # sawers-rellan-labs/nilhmm @ 248e67e). Wraps an R module template.
 name: rtiger
-description: Stage 4 ancestry segments per line; nilHMM RTIGER (Julia-free port, rigidity 500, parameters learned from the data) on the donor's own tier-A marker counts of the lines that passed LINE_MARKER_QC; storeDir ancestry/.
+description: Stage 4 ancestry segments per line; nilHMM RTIGER (Julia-free port, rigidity 500, parameters learned from the data) on the donor's own tier-A marker counts of the lines that passed LINE_MARKER_QC; stored in ancestry/.
 keywords:
   - ancestry
   - rtiger
@@ -58,7 +58,7 @@ output:
   versions:
     - "*.rtiger.versions.yml":
         type: file
-        description: Tool versions (r-base, nilhmm, r-data.table); a file, since storeDir forbids `eval` outputs
+        description: Tool versions (r-base, nilhmm, r-data.table); a file: a module template: `eval` outputs need a Bash script
         pattern: "*.rtiger.versions.yml"
         ontologies: []
 authors:

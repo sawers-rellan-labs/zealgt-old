@@ -53,7 +53,7 @@ nextflow_workflow {
                     workflow.out.segments.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.line_qc.collect { meta, f -> [meta.id, file(f).name] },
                     workflow.out.markers.collect { meta, f -> [meta.id, file(f).name] },
-                    workflow.out.versions.collect { v -> file(v).name }.sort()
+                    workflow.out.versions.collect { v -> v instanceof List ? "${v[0].tokenize(':')[-1]} ${v[1]}".toString() : file(v).name }.sort()
                 ).match() }
             )
         }

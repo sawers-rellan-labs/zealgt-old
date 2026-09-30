@@ -10,8 +10,8 @@
 // Exit status (design §10.9, to verify on hazel): CRISP exits 1 on success (zealbc1 :40). The task accepts status 0 or 1
 // only when the VCF has a #CHROM line and the log has no error line (error / segmentation fault / abort / cannot open /
 // failed, any case); anything else fails with CRISP's status, and the status is written to the log's last line.
-// CRISP is single-threaded; bgzip / tabix use ZG_CPUS. CRISP has no version option: the version is the commit built by
-// build.sh (vibansal/crisp @ 1a9027e), recorded with htslib's (bgzip, tabix) in a versions.yml.
+// CRISP is single-threaded; bgzip uses task.cpus. CRISP has no version option: the version is the commit built by
+// build.sh (vibansal/crisp @ 1a9027e), reported as a `versions` topic tuple with htslib's (bgzip, tabix).
 process CRISP {
     tag "${meta.id}"
     label 'process_low'
@@ -27,7 +27,8 @@ process CRISP {
     output:
     tuple val(meta), path("${task.ext.prefix ?: meta.id}.crisp.vcf.gz"), path("${task.ext.prefix ?: meta.id}.crisp.vcf.gz.tbi"), emit: vcf
     tuple val(meta), path("${task.ext.prefix ?: meta.id}.crisp.log")                                                          , emit: log
-    path "${task.ext.prefix ?: meta.id}.crisp.versions.yml"                                                                   , emit: versions, topic: versions
+    tuple val("${task.process}"), val('crisp'), val('1a9027e'), emit: versions_crisp, topic: versions
+    tuple val("${task.process}"), val('htslib'), eval("tabix --version | sed '1!d; s/.* //'"), emit: versions_htslib, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -43,7 +44,6 @@ process CRISP {
     }
     def chrom = region.tokenize(':')[0]
     """
-    source export_slurm_resources.sh
     set -o pipefail
 
     printf '%s\\n' ${bam_list.join(' ')} > bams.txt
@@ -61,27 +61,16 @@ process CRISP {
     fi
     echo "CRISP ${prefix}: \$(grep -vc '^#' ${prefix}.crisp.vcf || true) records, status \$status" >&2
 
-    bgzip -@ \${ZG_CPUS} -f ${prefix}.crisp.vcf
+    bgzip -@ ${task.cpus} -f ${prefix}.crisp.vcf
     tabix -f -p vcf ${prefix}.crisp.vcf.gz
 
-    cat <<-END_VERSIONS > ${prefix}.crisp.versions.yml
-    "${task.process}":
-        crisp: ${crisp_commit}
-        htslib: \$(tabix --version | sed '1!d; s/.* //')
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Stub versions are the build.sh / environment.yml pins (the tools are not run in a stub).
     """
     echo '' | gzip > ${prefix}.crisp.vcf.gz
     touch ${prefix}.crisp.vcf.gz.tbi ${prefix}.crisp.log
 
-    cat <<-END_VERSIONS > ${prefix}.crisp.versions.yml
-    "${task.process}":
-        crisp: 1a9027e
-        htslib: 1.21
-    END_VERSIONS
     """
 }

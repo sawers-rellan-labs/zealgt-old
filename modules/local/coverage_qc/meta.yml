@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared genotype python env
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv COVERAGE_QC -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: coverage_qc
 description: Stage 2b panel coverage report; covered blind-panel markers (>= 1 read) per sample x chromosome from the QC_PANEL_COUNTS tables, with the counts below the marker floor and below 10 / 100. Reports only; the line exclusion is applied in ancestry_inference (LINE_MARKER_QC).
 keywords:
@@ -50,7 +49,7 @@ output:
   versions:
     - "*.coverage_qc.versions.yml":
         type: file
-        description: Tool versions (python); a file, not `eval`, so the process may use storeDir
+        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
         pattern: "*.coverage_qc.versions.yml"
         ontologies: []
 authors:

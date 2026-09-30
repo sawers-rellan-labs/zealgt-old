@@ -252,6 +252,29 @@ nextflow_pipeline {
 
     // gap_prior_scope same_taxon with the reference donor Zx.9002_P1 (review fix b): its taxon from --reference_donor_taxa
     // reaches GAP_FILLING_BC1's donor_taxa next to the run donor's sheet taxon (logged by zgPriorDonorTaxa)
+    // Skip-if-stored (replaces storeDir): the store already holds this entry's final outputs for every unit (the seed of the
+    // entry after it), so the entry runs no task and says so in the log.
+    test("-profile test_genotype, --entry variant_discovery, step 4 already stored: no task - stub") {
+        options "-stub"
+        when {
+            params {
+                outdir = "$outputDir"
+                store  = "$outputDir/store_stub"
+                entry  = 'variant_discovery'
+                GenotypeSeed.copyBefore(baseDir.toString(), outputDir.toString(), 'ancestry_inference')
+            }
+        }
+        then {
+            def log = path("${outputDir}/../meta/nextflow.log").text
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.trace.tasks().size() == 0 },
+                { assert log.contains('zealgt genotype: variant_discovery Zx.9001_P1.chr10_1-16000 already in') },
+                { assert log.contains('every unit of --entry variant_discovery is already in') }
+            )
+        }
+    }
+
     test("-profile test_genotype, --entry donor_allele_calling, same_taxon with a reference donor taxon - stub") {
         options "-stub"
         when {

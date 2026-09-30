@@ -47,7 +47,7 @@ output:
   - sites:
       type: file
       description: |
-        channel: [ val(unit), <donor>.<label>.sites.tsv.gz ]  (storeDir step4/)
+        channel: [ val(unit), <donor>.<label>.sites.tsv.gz ]  (stored in step4/)
   - summary:
       type: file
       description: |

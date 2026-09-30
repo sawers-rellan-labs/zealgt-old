@@ -14,7 +14,11 @@
                     ]
                 ],
                 "1": [
-                    "Zx.0540_P3.chrA.witness_pool.versions.yml:md5,d831811f638d06d1dd1f0c1aea016bde"
+                    [
+                        "WITNESS_POOL",
+                        "samtools",
+                        "1.24"
+                    ]
                 ],
                 "bam": [
                     [
@@ -27,12 +31,16 @@
                         "Zx0540_P3_BC2S3.bam.bai:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
-                "versions": [
-                    "Zx.0540_P3.chrA.witness_pool.versions.yml:md5,d831811f638d06d1dd1f0c1aea016bde"
+                "versions_samtools": [
+                    [
+                        "WITNESS_POOL",
+                        "samtools",
+                        "1.24"
+                    ]
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:49:03.268835",
+        "timestamp": "2026-09-29T21:00:46.737346",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

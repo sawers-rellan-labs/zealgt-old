@@ -1,6 +1,6 @@
 //
 // GENOTYPE_IMPUTATION (stage 7; PLAN §3 row 7; genotype design §2.6; math supplement Eq. S5.1): per unit (donor x region),
-// RASTERIZE = RTIGER ancestry x donor allele at every non-multiallelic union site (storeDir genotypes/<set>:
+// RASTERIZE = RTIGER ancestry x donor allele at every non-multiallelic union site (stored in genotypes/<set>:
 // <donor>.<label>.tsv.gz long + .matrix.tsv.gz wide). imputation_method = raster; the PHG path is a later work package
 // (refused by the utils guard).
 //

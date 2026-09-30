@@ -4,7 +4,7 @@
 // CRAMs, masked = MASK_READ_STARTS output), so a raw and a masked run give the before/after view of the 5' mask. Run when
 // the `read_position_qc` param is true.
 // templates/count_alt_by_cycle.py (module template, hashed by content): `samtools view ${ext.args} -M -L <sites>.bed`
-// piped per sample into the counter; samples in parallel over ZG_CPUS (bin/export_slurm_resources.sh). Own env
+// piped per sample into the counter; samples in parallel over task.cpus (conf/genotype_hazel.config). Own env
 // (samtools + python). Published only (no store), but Nextflow allows `eval` outputs only with bash scripts, so the template
 // writes a versions.yml (samtools, python).
 // Alignments are matched to `sample_ids` by name (<sample>.bam or <sample>.cram); indexes staged next to them.

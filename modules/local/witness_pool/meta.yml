@@ -68,12 +68,27 @@ output:
           description: Its index
           pattern: "*.bam.bai"
           ontologies: []
+  versions_samtools:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - samtools:
+          type: string
+          description: Name of the tool
+      - "samtools version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
   versions:
-    - "${task.ext.prefix ?: meta.id}.witness_pool.versions.yml":
-        type: file
-        description: Tool versions (samtools)
-        pattern: "*.witness_pool.versions.yml"
-        ontologies: []
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - samtools:
+          type: string
+          description: Name of the tool
+      - "samtools version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
 authors:
   - "@faustovrz"
 maintainers:

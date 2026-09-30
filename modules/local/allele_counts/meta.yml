@@ -84,12 +84,46 @@ output:
           description: "bcftools query -H table: #[1]CHROM [2]POS [3]REF [4]ALT [5]<sample>:AD ..., one row per covered site, AD in REF,ALT order (ALT may include <*>)"
           pattern: "*.ad.tsv.gz"
           ontologies: []
+  versions_bcftools:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - bcftools:
+          type: string
+          description: Name of the tool
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+  versions_htslib:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - htslib:
+          type: string
+          description: Name of the tool
+      - "bgzip --version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
   versions:
-    - "${task.ext.prefix ?: meta.id}.allele_counts.versions.yml":
-        type: file
-        description: Tool versions (bcftools, htslib)
-        pattern: "*.allele_counts.versions.yml"
-        ontologies: []
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - bcftools:
+          type: string
+          description: Name of the tool
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - htslib:
+          type: string
+          description: Name of the tool
+      - "bgzip --version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
 authors:
   - "@faustovrz"
 maintainers:

@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module (step-named; the name keys the hazel conda prefix). Owner of the python environment of every genotype
-# python module (design §0.8). Also included as JOINT_POOLED_LIKELIHOOD (envs/process_aliases.tsv).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
+# Also included as JOINT_POOLED_LIKELIHOOD (envs/process_aliases.tsv).
 name: pooled_likelihood_tiers
 description: Step 4 of discovery - the pooled likelihood ratio of every donor at every candidate site (Bin(6, 1/2) carrier lattice, site error rate from the zero class), flags (hidepth, af_gt_half, inconsistent, single_sample, no_zero_class) and tiers A/B/C/ref, from a vetoed CRISP VCF or from ALLELE_COUNTS tables; writes n0, a0 and the full-precision log-odds for stage 6.
 keywords:
@@ -100,7 +100,7 @@ output:
   versions:
     - "${task.ext.prefix ?: meta.id}.pooled_likelihood_tiers.versions.yml":
         type: file
-        description: Tool versions (python); storeDir forbids `eval` version outputs
+        description: Tool versions (python); a module template: `eval` outputs need a Bash script
         pattern: "*.pooled_likelihood_tiers.versions.yml"
         ontologies: []
 authors:

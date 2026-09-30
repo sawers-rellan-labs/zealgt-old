@@ -1,9 +1,8 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared python env of the genotype python modules
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv DONOR_FOUNDER -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: donor_founder
-description: Final donor allele D (ALT / REF / NA) of one donor at every union site of a region, with the step that decided it (own, step1_ref, step1_alt, step2_alt, missing, multiallelic), the evidence log-odds and p_alt = E[D]; the summary reports the step-1 and step-2 shares of the gaps separately. storeDir <store>/genotype/<key>/donor_alleles/<set>.
+description: Final donor allele D (ALT / REF / NA) of one donor at every union site of a region, with the step that decided it (own, step1_ref, step1_alt, step2_alt, missing, multiallelic), the evidence log-odds and p_alt = E[D]; the summary reports the step-1 and step-2 shares of the gaps separately. published to <store>/genotype/<key>/donor_alleles/<set>.
 keywords:
   - genotyping
   - donor allele
@@ -62,7 +61,7 @@ output:
   versions:
     - "*.donor_founder.versions.yml":
         type: file
-        description: Tool versions (python); storeDir forbids `eval` version outputs
+        description: Tool versions (python); a module template: `eval` outputs need a Bash script
         pattern: "*.donor_founder.versions.yml"
         ontologies: []
 authors:

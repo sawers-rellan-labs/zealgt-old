@@ -30,7 +30,18 @@
                     ]
                 ],
                 "2": [
-                    "Zx.0540_P3.chrA.mask_read_starts.versions.yml:md5,392a98ee9caa490fcd6e5dc79c97475b"
+                    [
+                        "MASK_READ_STARTS",
+                        "samtools",
+                        "1.24"
+                    ]
+                ],
+                "3": [
+                    [
+                        "MASK_READ_STARTS",
+                        "gawk",
+                        "5.4.0"
+                    ]
                 ],
                 "bam": [
                     [
@@ -59,12 +70,23 @@
                         "Zx.0540_P3.chrA.masks.tsv:md5,cc535abc743a3b4ca18f7c70c6eaa732"
                     ]
                 ],
-                "versions": [
-                    "Zx.0540_P3.chrA.mask_read_starts.versions.yml:md5,392a98ee9caa490fcd6e5dc79c97475b"
+                "versions_gawk": [
+                    [
+                        "MASK_READ_STARTS",
+                        "gawk",
+                        "5.4.0"
+                    ]
+                ],
+                "versions_samtools": [
+                    [
+                        "MASK_READ_STARTS",
+                        "samtools",
+                        "1.24"
+                    ]
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:47:57.345815",
+        "timestamp": "2026-09-29T21:00:43.92048",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

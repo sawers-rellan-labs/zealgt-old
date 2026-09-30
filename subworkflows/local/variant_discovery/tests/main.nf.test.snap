@@ -8,19 +8,12 @@
                 ]
             ],
             [
-                "Zx.9001_P1.chr10_1-16000.b73.allele_counts.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.bc1.allele_counts.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.bc1.mask_read_starts.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.crisp.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.lines.mask_read_starts.versions.yml",
                 "Zx.9001_P1.chr10_1-16000.pooled_likelihood_tiers.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.witness_pool.versions.yml",
                 "Zx.9001_P1.chr10_1-16000.witness_veto.versions.yml",
-                "b73.chr10_1-16000.b73.mask_read_starts.versions.yml",
                 "chr10_1-16000.region_bed.versions.yml"
             ]
         ],
-        "timestamp": "2026-09-28T08:15:25.644397",
+        "timestamp": "2026-09-29T21:06:27.716957",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -53,18 +46,12 @@
                 ]
             ],
             [
-                "Zx.9001_P1.chr10_1-16000.b73.allele_counts.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.bc1.mask_read_starts.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.crisp.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.lines.mask_read_starts.versions.yml",
                 "Zx.9001_P1.chr10_1-16000.pooled_likelihood_tiers.versions.yml",
-                "Zx.9001_P1.chr10_1-16000.witness_pool.versions.yml",
                 "Zx.9001_P1.chr10_1-16000.witness_veto.versions.yml",
-                "b73.chr10_1-16000.b73.mask_read_starts.versions.yml",
                 "chr10_1-16000.region_bed.versions.yml"
             ]
         ],
-        "timestamp": "2026-09-28T08:15:20.1131",
+        "timestamp": "2026-09-29T21:06:24.021282",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

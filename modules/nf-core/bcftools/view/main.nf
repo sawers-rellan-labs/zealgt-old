@@ -36,17 +36,14 @@ process BCFTOOLS_VIEW {
                 : args.contains("--output-type v") || args.contains("-Ov")
                     ? "vcf"
                     : "vcf"
-    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads come from bin/export_slurm_resources.sh at run
-    // time (ZG_CPUS), not from task.cpus, so reallocating resources keeps the task hash.
     """
-    source export_slurm_resources.sh
     bcftools view \\
         --output ${prefix}.${extension} \\
         ${regions_file} \\
         ${targets_file} \\
         ${samples_file} \\
         ${args} \\
-        --threads \${ZG_CPUS} \\
+        --threads ${task.cpus} \\
         ${vcf}
     """
 

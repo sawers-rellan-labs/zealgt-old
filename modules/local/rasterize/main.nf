@@ -4,13 +4,13 @@
 // templates/rasterize_genotypes.py (module template, hashed by content). imputation_method = raster; the PHG path is a later
 // work package.
 // Inputs: DONOR_FOUNDER's table, the RTIGER segments CSV and line_qc.tsv (stage-4 store; line_qc optional: []).
-// storeDir <store>/genotype/<key>/genotypes/<set> (conf/genotype_modules.config) -> versions.yml (storeDir forbids `eval`).
-// Shared python env (envs/process_aliases.tsv RASTERIZE -> pooled_likelihood_tiers). ext.args: none.
+// published to <store>/genotype/<key>/genotypes/<set> (conf/genotype_modules.config) -> versions.yml (a module template: `eval` outputs need a Bash script).
+// Own environment.yml (python only). ext.args: none.
 process RASTERIZE {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(donor_alleles), path(segments), path(line_qc)

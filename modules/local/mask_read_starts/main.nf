@@ -2,7 +2,7 @@
 // agent/20260928_163000_alt_by_read_position.md: batch-1 R1 cycles 1-12 and BC1 cycles 1-2 carry non-genomic bases).
 //
 // One task per donor x region x role (all the donor's BC1 samples, or all its lines, or the B73 controls; review #8: no
-// per-sample tasks). Per sample, one pipe, run for ZG_CPUS samples at a time:
+// per-sample tasks). Per sample, one pipe, run for task.cpus samples at a time:
 //   samtools view -h -M -L <region.bed> --reference <fasta> <cram> <region>          reads overlapping the region's ranges
 //   | gawk <mask>                                                                    QUAL -> '!' on the first N cycles
 //   | samtools addreplacerg -m overwrite_all -r '@RG ID:<s> SM:<s>' -O BAM             one RG, SM = sample id
@@ -17,8 +17,8 @@
 // no @RG; PLAN §4 #1b).
 // Inputs: crams / crais in sheet order, ids = sample ids (the output names masked/<id>.bam), masks = [[mask_r1, mask_r2], ...]
 // in the same order. <prefix>.masks.tsv records sample, input file, masks and records written.
-// Threads: ZG_CPUS parallel samples (bin/export_slurm_resources.sh); versions in a versions.yml (samtools, gawk) so a stub
-// reports the environment.yml pins.
+// Threads: task.cpus parallel samples (conf/genotype_hazel.config; not hashed); versions: one `versions` topic tuple per
+// tool (samtools, gawk).
 process MASK_READ_STARTS {
     tag "${meta.id}"
     label 'process_low'
@@ -34,7 +34,8 @@ process MASK_READ_STARTS {
     output:
     tuple val(meta), path("masked/*.bam"), path("masked/*.bam.bai"), emit: bam
     tuple val(meta), path("${task.ext.prefix ?: meta.id}.masks.tsv"), emit: masks
-    path "${task.ext.prefix ?: meta.id}.mask_read_starts.versions.yml", emit: versions, topic: versions
+    tuple val("${task.process}"), val('samtools'), eval("samtools version | sed '1!d; s/.* //'"), emit: versions_samtools, topic: versions
+    tuple val("${task.process}"), val('gawk'), eval("gawk --version | sed '1!d; s/GNU Awk //; s/,.*//'"), emit: versions_gawk, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -64,7 +65,6 @@ process MASK_READ_STARTS {
         "'${id}' '${cram}' '${mask[0]}' '${mask[1]}'"
     }.join(' ')
     """
-    source export_slurm_resources.sh
     set -o pipefail
     mkdir masked
 
@@ -100,7 +100,7 @@ process MASK_READ_STARTS {
         mask_one "\$s" "\$f" "\$n1" "\$n2" &
         pids="\$pids \$!"
         n=\$(( n + 1 ))
-        if [ "\$n" -ge "\$ZG_CPUS" ]; then
+        if [ "\$n" -ge ${task.cpus} ]; then
             for p in \$pids; do wait "\$p" || fail=1; done
             pids=""
             n=0
@@ -113,27 +113,16 @@ process MASK_READ_STARTS {
     while IFS=\$'\\t' read -r s f n1 n2; do cat masked/"\$s".row; done < samples.tsv >> ${prefix}.masks.tsv
     rm -f masked/*.row
 
-    cat <<-END_VERSIONS > ${prefix}.mask_read_starts.versions.yml
-    "${task.process}":
-        samtools: \$(samtools version | sed '1!d; s/.* //')
-        gawk: \$(gawk --version | sed '1!d; s/GNU Awk //; s/,.*//')
-    END_VERSIONS
     """
 
     stub:
     def prefix  = task.ext.prefix ?: "${meta.id}"
     def id_list = ids instanceof List ? ids : [ids]
     def touches = id_list.collect { id -> "touch masked/${id}.bam masked/${id}.bam.bai" }.join('\n    ')
-    // Stub versions are the environment.yml pins (the tools are not run in a stub).
     """
     mkdir masked
     ${touches}
     printf 'sample\\tinput\\tmask_r1\\tmask_r2\\trecords\\n' > ${prefix}.masks.tsv
 
-    cat <<-END_VERSIONS > ${prefix}.mask_read_starts.versions.yml
-    "${task.process}":
-        samtools: 1.21
-        gawk: 5.4.1
-    END_VERSIONS
     """
 }

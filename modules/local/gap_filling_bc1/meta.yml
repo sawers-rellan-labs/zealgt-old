@@ -1,9 +1,8 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-# zealgt local module. No own environment.yml: it runs in the shared python env of the genotype python modules
-# (conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml", envs/process_aliases.tsv GAP_FILLING_BC1 -> pooled_likelihood_tiers).
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: gap_filling_bc1
-description: Stage-6 gap filling step 1 for every run donor of a set in one region (math supplement Eq. S4.1, S5.3) - own tier A -> ALT; gap -> REF if LLR <= -4 and pooled depth >= 12, ALT if LLR + logit(pi) >= logit(0.999) and not flagged hidepth / af_gt_half, else NA; prior pi from gap_prior_source (other_donors over the other run donors and the reference donors, fixed, mu_only). storeDir <store>/genotype/<key>/gap_bc1.
+description: Stage-6 gap filling step 1 for every run donor of a set in one region (math supplement Eq. S4.1, S5.3) - own tier A -> ALT; gap -> REF if LLR <= -4 and pooled depth >= 12, ALT if LLR + logit(pi) >= logit(0.999) and not flagged hidepth / af_gt_half, else NA; prior pi from gap_prior_source (other_donors over the other run donors and the reference donors, fixed, mu_only). published to <store>/genotype/<key>/gap_bc1.
 keywords:
   - genotyping
   - gap filling
@@ -61,7 +60,7 @@ output:
   versions:
     - "*.gap_filling_bc1.versions.yml":
         type: file
-        description: Tool versions (python); storeDir forbids `eval` version outputs
+        description: Tool versions (python); a module template: `eval` outputs need a Bash script
         pattern: "*.gap_filling_bc1.versions.yml"
         ontologies: []
 authors:

@@ -7,13 +7,12 @@
 // Outputs: <prefix>.vetoed.vcf.gz (BGZF-compressed, so tabix / bcftools read it; written by the standard-library template),
 // <prefix>.kept_sites.tsv (chrom pos ref alt of the kept records, no header: the site list of B73_CONTROL_COUNTS),
 // <prefix>.veto_summary.tsv.
-// No own environment.yml: python env of POOLED_LIKELIHOOD_TIERS (design §0.8; envs/process_aliases.tsv WITNESS_VETO ->
-// pooled_likelihood_tiers). Template templates/veto_by_witness.py writes the versions.yml.
+// Own environment.yml (python only). Template templates/veto_by_witness.py writes the versions.yml.
 process WITNESS_VETO {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(vcf, stageAs: 'input/*')

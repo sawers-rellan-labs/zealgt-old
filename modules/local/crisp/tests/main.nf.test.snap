@@ -24,7 +24,18 @@
                     ]
                 ],
                 "2": [
-                    "Zx.0540_P3.chrA.crisp.versions.yml:md5,8c225900c2d69bd60ca366a9312e639d"
+                    [
+                        "CRISP",
+                        "crisp",
+                        "1a9027e"
+                    ]
+                ],
+                "3": [
+                    [
+                        "CRISP",
+                        "htslib",
+                        "1.23"
+                    ]
                 ],
                 "log": [
                     [
@@ -47,12 +58,23 @@
                         "Zx.0540_P3.chrA.crisp.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
-                "versions": [
-                    "Zx.0540_P3.chrA.crisp.versions.yml:md5,8c225900c2d69bd60ca366a9312e639d"
+                "versions_crisp": [
+                    [
+                        "CRISP",
+                        "crisp",
+                        "1a9027e"
+                    ]
+                ],
+                "versions_htslib": [
+                    [
+                        "CRISP",
+                        "htslib",
+                        "1.23"
+                    ]
                 ]
             }
         ],
-        "timestamp": "2026-09-28T07:59:11.39549",
+        "timestamp": "2026-09-29T21:00:40.960476",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

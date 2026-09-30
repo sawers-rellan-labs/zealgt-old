@@ -5,14 +5,13 @@
 // abutting ranges are merged, ranges are sorted by position. <label>.regions.txt lists the same ranges as 1-based
 // `chr:start-end` strings (samtools / bcftools region syntax). A region that keeps no range stops the task (no silent
 // empty unit), unless ext.args has --allow-empty.
-// No own environment.yml: it runs in the python env of POOLED_LIKELIHOOD_TIERS (design §0.8; envs/process_aliases.tsv
-// REGION_BED -> pooled_likelihood_tiers). Python standard library only (templates/clip_bed_to_region.py).
+// Own environment.yml (python only). Python standard library only (templates/clip_bed_to_region.py).
 // Version: one versions.yml written by the template (house python modules; a stub reports the pinned python).
 process REGION_BED {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(bed, stageAs: 'input/*')

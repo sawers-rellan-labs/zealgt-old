@@ -11,8 +11,8 @@
 // the donor's LINE_UNION_COUNTS table (bcftools query -H AD at the union sites; sample names = line ids), its RTIGER segments
 // CSV and line_qc.tsv (stage-4 store; line_qc optional: []), and the mappability prior <taxon>.prior.tsv (columns c, weight;
 // optional [] only with --mappability-prior-mode flat).
-// storeDir <store>/genotype/<key>/gap_lines/<set> (conf/genotype_modules.config) -> versions.yml (storeDir forbids `eval`).
-// Shared python env (envs/process_aliases.tsv GAP_FILLING_LINES -> pooled_likelihood_tiers).
+// published to <store>/genotype/<key>/gap_lines/<set> (conf/genotype_modules.config) -> versions.yml (a module template: `eval` outputs need a Bash script).
+// Own environment.yml (python only).
 // ext.args = fill_gaps_lines.py options: --gap-alt-posterior (0.999) --eps-prior-alpha (1) --eps-prior-beta (200)
 // --b73-lines-alt-p (0.01) --b73-lines-min-alt (1) --ks-floor (0.02) --mappability-prior-mode (taxon|flat) --c-grid-max (1.5) --c-grid-step (0.05)
 // --lambda-sites (all|candidates) --block-flags (hidepth,af_gt_half).
@@ -20,7 +20,7 @@ process GAP_FILLING_LINES {
     tag "${meta.id}"
     label 'process_single'
 
-    conda "${moduleDir}/../pooled_likelihood_tiers/environment.yml"
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(gap_bc1), path(lines_counts), path(segments), path(line_qc), path(c_prior)

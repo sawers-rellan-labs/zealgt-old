@@ -1,11 +1,11 @@
 //
 // DONOR_ALLELE_CALLING (stage 6; PLAN §3 row 6, "Stage 6 — two-step gap filling"; genotype design §2.5):
 //   per donor x region  MASK(bc1)   -> UNION_SITE_COUNTS  --+
-//   per set x region    MASK(b73)   -> B73_UNION_COUNTS   --+-> JOINT_POOLED_LIKELIHOOD (set; storeDir joint_step4/<set>)
-//                                                                -> GAP_FILLING_BC1 (set, step 1; storeDir gap_bc1)
+//   per set x region    MASK(b73)   -> B73_UNION_COUNTS   --+-> JOINT_POOLED_LIKELIHOOD (set; stored in joint_step4/<set>)
+//                                                                -> GAP_FILLING_BC1 (set, step 1; stored in gap_bc1)
 //   per donor x region  MASK(lines) -> LINE_UNION_COUNTS -> GAP_FILLING_LINES (step 2; + RTIGER segments, line_qc, the
-//                                                           taxon's mappability prior; storeDir gap_lines/<set>)
-//                                                        -> DONOR_FOUNDER (storeDir donor_alleles/<set>: <donor>.<label>.tsv.gz)
+//                                                           taxon's mappability prior; stored in gap_lines/<set>)
+//                                                        -> DONOR_FOUNDER (stored in donor_alleles/<set>: <donor>.<label>.tsv.gz)
 // Counts are batched per donor x region x role or per set x region (review #8). The union and its site list
 // (MARKER_UNION) and the stage-4 segments / line_qc come from the store.
 //
@@ -141,7 +141,6 @@ workflow DONOR_ALLELE_CALLING {
     gap_bc1       = GAP_FILLING_BC1.out.calls        // channel: [ val(setmeta), <set>.<label>.tsv.gz ]
     gap_lines     = GAP_FILLING_LINES.out.calls      // channel: [ val(unit), <donor>.<label>.tsv.gz ]
     joint         = JOINT_POOLED_LIKELIHOOD.out.sites // channel: [ val(setmeta), [ <donor>.<label>.sites.tsv.gz ] ]
-    versions      = REGION_BED.out.versions.mix(MASK_READ_STARTS.out.versions, UNION_SITE_COUNTS.out.versions, LINE_UNION_COUNTS.out.versions,
-                                                B73_UNION_COUNTS.out.versions, JOINT_POOLED_LIKELIHOOD.out.versions, GAP_FILLING_BC1.out.versions,
-                                                GAP_FILLING_LINES.out.versions, DONOR_FOUNDER.out.versions) // channel: versions.yml
+    versions      = REGION_BED.out.versions.mix(JOINT_POOLED_LIKELIHOOD.out.versions, GAP_FILLING_BC1.out.versions,
+                                                GAP_FILLING_LINES.out.versions, DONOR_FOUNDER.out.versions) // channel: versions.yml (the eval tuples of the bash modules: topic `versions` only)
 }

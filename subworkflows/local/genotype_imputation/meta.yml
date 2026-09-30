@@ -20,7 +20,7 @@ output:
   - genotypes:
       type: file
       description: |
-        channel: [ val(unit), <donor>.<label>.genotypes.tsv.gz ]  (storeDir genotypes/<set>/)
+        channel: [ val(unit), <donor>.<label>.genotypes.tsv.gz ]  (stored in genotypes/<set>/)
   - matrix:
       type: file
       description: |

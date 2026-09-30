@@ -51,7 +51,7 @@ output:
   - sample_qc:
       type: file
       description: |
-        channel: [ val(meta), cohort.sample_qc.tsv ]  (storeDir sample_qc/)
+        channel: [ val(meta), cohort.sample_qc.tsv ]  (stored in sample_qc/)
   - min_coverage:
       type: file
       description: |
