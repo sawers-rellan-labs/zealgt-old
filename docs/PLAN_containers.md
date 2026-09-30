@@ -53,6 +53,8 @@ Unique inodes (`find -printf '%i' | sort -u`: a hardlink counted once, as the qu
    declaration order (`nextflow.config`), so a container layer declared after `hazel` can switch conda off without editing it.
 6. PROVENANCE records tool versions (`versions.yml`) but not the software source (prefix sha8 / image digest): needed once the
    store holds CRAMs made both ways.
+7. Not everything is conda: the genotype modules `rtiger` (nilHMM from GitHub) and `crisp` (CRISP compiled from GitHub) run a
+   `build.sh` on top of their conda env. Their images need a Dockerfile (§5 P3b); every other module is pure conda.
 
 ## 4. Cache and resume
 
@@ -90,10 +92,40 @@ Nothing is deleted by any step; every removal is a separate, consented action (`
   Validation: `-profile hazel,apptainer_hazel,stub` and a Gate 0 run with no "Pulling" / download line in `.nextflow.log`.
 
 **Process definitions and software**
-- **P3** Images for the 7 local modules from their pinned `environment.yml` (Seqera Containers: Docker + SIF URL from the same
-  conda specs); add the nf-core `container` ternary to each `main.nf`. Compare every image's package list (`conda-meta`) with its
+- **P3** Images for the pure-conda local modules — the CRAM workflow's 7 and, after the genotype merge, the genotype modules
+  without a `build.sh` — from their pinned `environment.yml` (Seqera Containers: Docker + SIF URL from the same conda specs;
+  the two `build.sh` modules: P3b); add the nf-core `container` ternary to each `main.nf`. Compare every image's package list (`conda-meta`) with its
   prefix's `conda list --explicit` (the nf-core module ymls pin versions only: their image builds may differ from our prefixes).
   nf-test, lint, `run_checks.sh`; CodeRabbit before any costly run.
+- **P3b Custom images for the software that is not on conda** (added 2026-09-29, user decision: nilHMM stays off conda until it
+  is on CRAN; containerisation does not wait for CRAN). Two genotype modules install code from GitHub with a `build.sh` on top of
+  their conda env (scan of `origin/genotype`): the module `rtiger` installs **nilHMM** (the lab's R package; the RTIGER-style
+  caller is a method inside it — the old Julia RTIGER package is not used; module name `rtiger` is the genotype session's call),
+  and `crisp` compiles **CRISP** (vibansal/crisp @ 1a9027e). Seqera Containers builds only from conda/pip packages, so these two
+  get a Dockerfile.
+  1. **nilHMM releases** (in `sawers-rellan-labs/nilhmm`, public): every version the pipeline uses is a git tag `vX.Y.Z` whose
+     `DESCRIPTION` `Version` matches, with a GitHub release. Found 2026-09-29: the pipeline pins 248e67e (`main` HEAD), which is
+     **49 commits after tag `v0.3.0`** while `DESCRIPTION` still says 0.3.0 — two different codes under one version. First
+     release: bump `DESCRIPTION` to the next version (number: user's choice, e.g. 0.3.1), tag, release; the only difference from
+     248e67e is `DESCRIPTION`, so the code is the one the benchmark ran.
+  2. **Pin the tag in zealgt**: `build.sh` downloads the tag's tarball, checks its sha256 and asserts `packageVersion` = the tag
+     (today: commit 248e67e and `== "0.3.0"`). New prefix and task hashes for that module (fine after the benchmark record).
+  3. **Dockerfile per module** next to its `environment.yml` (`modules/local/<module>/Dockerfile`): `FROM` a micromamba base pinned
+     by digest; install the same `environment.yml` into the image's base env; run the **same `build.sh`** (`CONDA_PREFIX=/opt/conda`,
+     `ZG_BUILD_DIR` a temp dir). One recipe feeds both the hazel conda prefix and the image.
+  4. **Image build by GitHub Actions** (`.github/workflows/build_images.yml`, the first workflow in `.github/`; P7 adds the check
+     jobs beside it): on a change to those module dirs or by manual dispatch, `docker build` (linux/amd64), push
+     `ghcr.io/sawers-rellan-labs/zealgt-<module>:<version>-<sha8 of recipe content>` (content-keyed, like the env prefixes), build
+     the SIF from it with Apptainer in the job and push it as `oras://ghcr.io/sawers-rellan-labs/zealgt-<module>:<tag>-sif`. GHCR
+     packages public (the repository is), so hazel downloads without credentials; `scripts/pull_images.sh` fetches the SIF as one
+     file (no docker:// conversion on hazel, no layer cache).
+  5. The module's `container` directive: the nf-core ternary with the `oras://` SIF and the GHCR Docker image.
+  6. Validation: smoke test inside the image (`packageVersion("nilHMM")`, `CRISP` runs), then P5 equivalence against the conda
+     prefix on the genotype Gate 1 fixture.
+  - **Later, after CRAN accepts nilHMM**: an `r-nilhmm` recipe on conda-forge (`grayskull` from CRAN; their bot follows new CRAN
+    versions); the module becomes pure conda, joins the Seqera Containers route, and its Dockerfile goes. Optional meanwhile:
+    `sawers-rellan-labs.r-universe.dev` (builds from GitHub, runs `R CMD check` on every push, no approval) as CRAN preparation.
+    CRISP stays a custom image unless someone writes a bioconda recipe.
 - **P4** PROVENANCE records the software source per step (image URL + sha256, or prefix sha8).
 - **P5 Equivalence**: Gate 1 fixture / subsample under conda and under Apptainer; equal: decompressed FASTQ md5 (gzip bytes may
   differ), `samtools view | md5` of CRAM records, samtools stats / Picard metrics, `versions.yml`. Then a containerised Gate 2
