@@ -155,7 +155,13 @@ Nextflow start-up to the first task ≈ 40 s every time; almost every task waite
 (`duration - realtime`), and every head job ended ≈ 62 s after its last task: the **1-min `executor.pollInterval`**, paid
 once per dependency step, not Slurm queueing. ≈ 7 min of real work, ≈ 5 min of start-up, ≈ 30 min of polling delay.
 `pollInterval` only checks each task's `.exitcode` (Nextflow default 5 s for grid executors); the scheduler is queried by
-`queueStatInterval` (5 min here). Set to 10 s on 2026-09-30 (`conf/hazel.config`), before the containers' genotype Gate 1. Per stage at whole chr10 (CPU): variant_discovery 1,672 s (mostly CRISP), reporting 1,056 s,
+`queueStatInterval` (5 min here). Set to 10 s on 2026-09-30 (`conf/hazel.config`), before the containers' genotype Gate 1:
+the same chain then took 21 min 21 s (46 before), each stage 40-55 % of its old time.
+Nextflow start-up of one head job (≈ 40 s; `.nextflow.log` of two containers Gate 1 entries,
+`agent/20260930_182000_profile_startup.sh`): Java + config + profiles + nf-schema ≈ 7-9 s; **parsing and compiling the
+pipeline scripts** ("Session start" → "Launching execution") ≈ 16-19 s, likely slow because the checkout is on `/rsstu`
+(to test from a `/share` checkout); nf-schema validation of `meta/samples.csv` (2,283 rows, the CRAM `--input`, validated
+even for `--workflow genotype`) ≈ 3.5 s; genotype initialisation (settings guard, store) ≈ 2-4 s. Per stage at whole chr10 (CPU): variant_discovery 1,672 s (mostly CRISP), reporting 1,056 s,
 donor_allele_calling 920 s, ancestry_inference 384 s, the other three ≈ 35 s.
 
 Full dataset (`meta/samples.csv`): **95 genotypable donors, 384 BC1 pools, 1,766 lines** (vs 2 / 10 / 84). Whole genome

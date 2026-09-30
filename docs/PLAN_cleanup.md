@@ -115,6 +115,18 @@ Categories:
      order before the comparison with `tests/expected_resources.tsv`; a failed run still stops the check with its log.
   A small code commit of its own after the switch, checked like any other.
 - Each hazel test run's run card names its run dirs, and the write-up of the run ends with the cleanup listing for them.
+- **Fast gates: a `gate` profile + one head job per chain** (user, 2026-09-30). After the polling fix a Gate 0/1 chain is
+  still mostly overhead (genotype Gate 1: critical path ≈ 3-4 min of work, longest task CRISP 76 s): every task is its own
+  Slurm job, and the 7 entries are 7 head jobs, each queued after the previous one and each paying ≈ 40 s of Nextflow
+  start-up. `conf/gate.config`, profile `gate` (after `hazel`): local executor inside one short-QOS allocation (e.g. 16
+  cpus / 64 GB), `queueSize` ≈ 8, `resourceLimits` = the allocation; not the existing `local` profile (one task at a time,
+  4 cpus, conda forced on: it is for debugging one task). A gate chain becomes one head job running the entries in
+  sequence. Executor and resource settings are not in the task hash, so outputs and caching are unchanged;
+  `scripts/check_resources.sh` keeps checking what the `hazel` profiles request. Gates only: Gate 2 and production keep one
+  Slurm job per task. Expected genotype Gate 1 ≈ 8-10 min (from ≈ 15-20). Measure with the next Gate 0/1.
+- **Nextflow start-up (≈ 40 s per head job)**, profiled 2026-09-30 (docs/REQUIREMENTS.md): (1) test a gate from a checkout
+  on `/share` instead of `/rsstu` (script compilation ≈ 16-19 s); (2) validate `meta/samples.csv` only for `--workflow cram`
+  (≈ 3.5 s per genotype head job; a small code change, with the switch).
 
 ## 6. Order
 

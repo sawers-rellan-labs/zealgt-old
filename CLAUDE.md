@@ -22,10 +22,11 @@ Writing, reviewing or pushing pipeline code (modules, subworkflows, configs, sch
 Adopted from zealbc1 (`CLAUDE.md`, "R script conventions"). Every module template logs timestamped, tagged messages to
 **stderr** (so they land in the task's `.command.err`), never bare `print`/`cat`/`message`:
 
-- **R:** the `logger` package (lab convention), sprintf-style: `log_info("[rtiger] donor %s | %d lines", donor, n)`;
+- **R:** the `logger` package (lab convention; its default layout stamps to the second), sprintf-style: `log_info("[rtiger] donor %s | %d lines", donor, n)`;
   `log_info/log_warn/log_error`, no `paste`/`sprintf` inside.
 - **Python:** the standard `logging` module, configured once per template:
-  `logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")`,
+  `logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+  datefmt="%Y-%m-%d %H:%M:%S")` (timestamps to the second; the default adds milliseconds),
   logger named after the process (`log = logging.getLogger("pooled_likelihood_tiers")`).
 - **Progress about once a minute** (user, 2026-09-30): any step that can run longer than a minute logs a progress line
   roughly every minute, throttled by time, not by iteration count, with a running ETA, so a slow task can be told from a

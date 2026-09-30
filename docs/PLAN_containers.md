@@ -145,3 +145,20 @@ Peak RSS per process (trace `peak_rss`, max over tasks; containers / conda / req
 FASTQC 491 / 451 / 3 GB; DEMUX 350 / 414 / 2 GB; CUTADAPT 189 / 176 / 1 GB; the rest < 70 MB. No process near its limit.
 The trace likely excludes the squashfuse helper; with it SAMTOOLS_STATS is ≈ 84 % of 1 GB at Gate 1 size, the one to
 watch at Gate 2.
+
+**Step 4, genotype workflow** (run card `docs/runs/containers_genotype_gate01.md`; containers code ffcbf01, baseline the
+stored conda run `gate1_mex2_port_r1`, code = `main` apart from 14 meta.yml files):
+- Gate 0, 7 entries (jobs 1000754-1000760): SUCCESS, 51 tasks, every one via `apptainer exec` (CRISP and RTIGER from the
+  GHCR images), 0 "Creating env", 0 pulls.
+- Gate 1, first attempt (key `_r1`, jobs 1000989-): stage 2 failed, `cmp: command not found` in ALLELE_COUNTS; an audit of
+  every host program named in each module's script/stub against its own SIF (job 1001550) found only this one; diffutils
+  added (ffcbf01, with the 10 s polling). Rerun under key `gate1_mex2_containers_r2` (jobs 1002943-1002949): all 7 SUCCESS,
+  **21 min 21 s** (conda chain 46 min; per stage 40-55 % of the old time, the polling change).
+- Comparison (jobs 1003117 + a recount on this run's traces only): **70 = 70 files; 56 byte-identical, 4 identical after
+  decompression** (the step-4 `sites.tsv.gz`: gzip write time); `rtiger.versions.yml` differs only in `nilhmm 0.3.1` vs
+  `0.3.0` (same code); `union/*.per_donor.tsv` only in `table_sha256` of the compressed step-4 files (all counts equal);
+  the 7 `settings/*.json` in store key, session and module code hashes (the container lines). RTIGER segments, genotype
+  calls, gap filling and union identical. Task counts identical for all 27 processes; peak RSS within ~10 MB except tiny
+  tasks (POOLED_LIKELIHOOD_TIERS 2,458 MB in both; CRISP 178 / 178 MB, 60 / 76 s; RTIGER 128 / 129 MB).
+
+**Step 4 done: both workflows pass Gate 0 and Gate 1 on containers with results identical to conda.**
