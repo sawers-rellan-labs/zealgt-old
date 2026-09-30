@@ -99,21 +99,13 @@ Categories:
 - `scripts/run_checks.sh` / `scripts/check_resources.sh`: keep only the latest `agent/check_resources/<timestamp>/` (or
   write into one fixed scratch dir, replaced each run).
 - nf-test: one fixed `NFT_WORKDIR` per checkout (`agent/nftest/`), reused, instead of a new dated dir per run.
-- `scripts/check_resources.sh`, the slowest check (≈ 20 stub runs of the entries under `hazel,normal` and `hazel,short`,
-  one after another; measured 2026-09-30 ≈ 25 of the suite's ≈ 30 min, each run over a minute although its stub tasks only
-  `touch` files and the 16-cpu / 48 GB requests are only recorded, not used: the override's local executor claims 64 cpus
-  and 1 TB).
-  1. **First: fast polling.** `conf/hazel.config` sets `executor.pollInterval = '1 min'` (right for Slurm); the override
-     switches to the local executor but keeps that interval, so every dependency step of a stub run waits up to a minute
-     for tasks that finished in milliseconds. Add `pollInterval = '1 sec'` to the override's `executor` block (polling is
-     not a resource request, so the check measures the same thing); time the check before and after (test the tool's
-     behaviour first).
-  2. **Only if still slow: parallel runs.** The runs are independent: every genotype entry has its own directory and a store
-     freshly seeded from `tests/fixtures/genotype/store_seed`, and the two profiles are separate; only the two CRAM entries
-     of a profile share a launch directory and store (give each its own). Run them as background jobs, 4-6 at a time (each
-     is one Nextflow JVM, ≈ 1 core while starting, ≈ 0.5-1 GB); each writes its own trace rows, concatenated in a fixed
-     order before the comparison with `tests/expected_resources.tsv`; a failed run still stops the check with its log.
-  A small code commit of its own after the switch, checked like any other.
+- **Done 2026-09-30: faster, readable checks.** `scripts/check_resources.sh`: fast polling in its override (`pollInterval
+  1 sec`; measured: hardly faster than hazel's 10 s, each stub run is dominated by Nextflow start-up, 7-77 s) and the 22
+  stub runs as a pool of 4 background jobs (`ZG_RES_JOBS`), each in its own launch directory (the two CRAM entries used to
+  share one), rows merged in run order: **≈ 13 min -> 3 min 19 s**. `scripts/run_checks.sh`: every line stamped
+  `[HH:MM:SS]`, written line by line to `agent/run_checks_<time>.log` with `agent/run_checks_latest.log` linking to the
+  newest, elapsed time per step; one `start` / `done` line per stub run. Suite ≈ 31 min (1-min polling) -> 16 min (10 s)
+  -> **8 min 29 s**. Next: nf-test in 4 shards (the ≈ 4 1/2 min left) and a summary line at the end of the log.
 - Each hazel test run's run card names its run dirs, and the write-up of the run ends with the cleanup listing for them.
 - **Fast gates: a `gate` profile + one head job per chain** (user, 2026-09-30). After the polling fix a Gate 0/1 chain is
   still mostly overhead (genotype Gate 1: critical path ≈ 3-4 min of work, longest task CRISP 76 s): every task is its own
