@@ -24,6 +24,35 @@ import platform
 import shlex
 import subprocess
 import sys
+import logging
+import time
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("read_position_qc")
+
+
+class Progress:
+    """A progress line about once a minute (CLAUDE.md): n[/total] done, elapsed, ETA; done() logs the total once."""
+
+    def __init__(self, what, total=None, every=60.0):
+        self.what, self.total, self.every = what, total, every
+        self.n, self.t0 = 0, time.monotonic()
+        self.last = self.t0
+
+    def tick(self, k=1):
+        self.n += k
+        now = time.monotonic()
+        if now - self.last >= self.every:
+            self.last = now
+            el = (now - self.t0) / 60
+            if self.total:
+                LOG.info(">>> %d/%d %s done | elapsed %.1f min | ETA ~%.1f min remaining", self.n, self.total, self.what,
+                         el, el / self.n * (self.total - self.n))
+            else:
+                LOG.info(">>> %d %s done | elapsed %.1f min", self.n, self.what, el)
+
+    def done(self):
+        LOG.info("%d %s done in %.1f min", self.n, self.what, (time.monotonic() - self.t0) / 60)
 
 TAB = chr(9)
 NL = chr(10)
@@ -32,7 +61,7 @@ DEFAULT_BINS = "1-2,3-4,5-8,9-12,13-20,21-40,41-80,81-"
 
 
 def log(msg):
-    sys.stderr.write("[read_position_qc] " + msg + NL)
+    LOG.info(msg)
 
 
 def parse_args(argv):
@@ -130,7 +159,9 @@ def count_sample(job):
     counts = {}
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
     nrec = 0
+    prog = Progress("reads read")
     for line in proc.stdout:
+        prog.tick()
         t = line.rstrip(NL).split(TAB, 11)
         if len(t) < 11:
             # not a SAM record (e.g. a samtools wrapper that printed something else): fail with the line, not an IndexError
@@ -144,6 +175,7 @@ def count_sample(job):
             c = counts.setdefault((mate, b), [0, 0, 0, 0])
             c[0] += 1
             c[cls] += 1
+    prog.done()
     if proc.wait() != 0:
         # an Exception (not SystemExit) so that pool.map hands it back to the parent
         raise RuntimeError(f"READ_POSITION_QC: samtools view failed for {sample} (status {proc.returncode})")

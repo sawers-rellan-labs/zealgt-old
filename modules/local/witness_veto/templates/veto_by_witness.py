@@ -23,6 +23,10 @@ import shlex
 import struct
 import sys
 import zlib
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("witness_veto")
 
 TAB = chr(9)
 NL = chr(10)
@@ -128,8 +132,7 @@ def main():
         fh.write(TAB.join(["witness", "min_alt_reads", "records_in", "kept", "dropped", "kept_share"]) + NL)
         share = f"{kept / n_in:.6f}" if n_in else "NA"
         fh.write(TAB.join([WITNESS, str(a.min_alt_reads), str(n_in), str(kept), str(n_in - kept), share]) + NL)
-    print(f"WITNESS_VETO {PREFIX}: {kept} of {n_in} records kept (witness {WITNESS} ALT reads >= {a.min_alt_reads})",
-          file=sys.stderr)
+    LOG.info(f"WITNESS_VETO {PREFIX}: {kept} of {n_in} records kept (witness {WITNESS} ALT reads >= {a.min_alt_reads})")
 
     with open(f"{PREFIX}.witness_veto.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')

@@ -36,6 +36,10 @@ import io
 import platform
 import shlex
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("sample_labels")
 
 TAB = chr(9)
 NL = chr(10)
@@ -52,7 +56,7 @@ class LabelError(Exception):
 
 
 def log(msg):
-    sys.stderr.write("[sample_labels] " + msg + NL)
+    LOG.info(msg)
 
 
 def open_text(path):

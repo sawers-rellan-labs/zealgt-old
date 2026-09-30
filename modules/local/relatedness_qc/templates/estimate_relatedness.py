@@ -34,6 +34,10 @@ import random
 import shlex
 import statistics
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("relatedness_qc")
 
 TAB = chr(9)
 NL = chr(10)
@@ -124,8 +128,7 @@ def read_counts(paths, panel):
                     keep = []
                     for i, s in enumerate(cols):
                         if s in seen:
-                            print(f"{PROCESS}: sample {s} is in more than one count table; first one kept ({path} skipped)",
-                                  file=sys.stderr)
+                            LOG.info(f"{PROCESS}: sample {s} is in more than one count table; first one kept ({path} skipped)")
                         else:
                             keep.append(i)
                             seen.add(s)
@@ -289,7 +292,7 @@ def main():
             for d in donors:
                 k, n = kin[(s, d)]
                 out.write(TAB.join([s, role[s], donor[s] or ".", d, fmt(k), str(n)]) + NL)
-    print(f"relatedness_qc {PREFIX}: {len(order)} samples, {len(donors)} donors, {len(informative)} informative of "
+    LOG.info(f"relatedness_qc {PREFIX}: {len(order)} samples, {len(donors)} donors, {len(informative)} informative of "
           f"{len(panel)} panel sites, method {a.method}, seed {a.seed}, {n_flag} flagged")
     with open(f"{PREFIX}.relatedness_qc.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')

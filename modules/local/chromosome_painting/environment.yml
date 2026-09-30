@@ -9,3 +9,4 @@ dependencies:
   - conda-forge::r-base=4.4.3
   - conda-forge::r-data.table=1.18.6.1
   - conda-forge::r-ggplot2=4.0.3
+  - conda-forge::r-logger=0.4.3

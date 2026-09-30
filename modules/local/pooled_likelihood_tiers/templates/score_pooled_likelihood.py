@@ -59,6 +59,35 @@ import shlex
 import statistics
 import sys
 from collections import Counter
+import logging
+import time
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("pooled_likelihood_tiers")
+
+
+class Progress:
+    """A progress line about once a minute (CLAUDE.md): n[/total] done, elapsed, ETA; done() logs the total once."""
+
+    def __init__(self, what, total=None, every=60.0):
+        self.what, self.total, self.every = what, total, every
+        self.n, self.t0 = 0, time.monotonic()
+        self.last = self.t0
+
+    def tick(self, k=1):
+        self.n += k
+        now = time.monotonic()
+        if now - self.last >= self.every:
+            self.last = now
+            el = (now - self.t0) / 60
+            if self.total:
+                LOG.info(">>> %d/%d %s done | elapsed %.1f min | ETA ~%.1f min remaining", self.n, self.total, self.what,
+                         el, el / self.n * (self.total - self.n))
+            else:
+                LOG.info(">>> %d %s done | elapsed %.1f min", self.n, self.what, el)
+
+    def done(self):
+        LOG.info("%d %s done in %.1f min", self.n, self.what, (time.monotonic() - self.t0) / 60)
 
 TAB = chr(9)
 NL = chr(10)
@@ -171,7 +200,9 @@ def read_counts_table(path):
         if header[:4] != ["chrom", "pos", "ref", "alt"]:
             sys.exit(f"POOLED_LIKELIHOOD_TIERS: {path}: header must start CHROM POS REF ALT, got {header[:4]}")
         samples = header[4:]
+        prog = Progress(f"count rows read ({path})")
         for line in fh:
+            prog.tick()
             x = line.rstrip(NL).split(TAB)
             if len(x) != len(header):
                 sys.exit(f"POOLED_LIKELIHOOD_TIERS: {path}: {len(x)} fields, header has {len(header)}")
@@ -180,6 +211,7 @@ def read_counts_table(path):
             for cell in x[4:]:
                 ads.append([int(v) if v not in (".", "") else 0 for v in cell.split(",")] if cell not in (".", "") else [0])
             rows[(x[0], int(x[1]))] = (x[2], alts, ads)
+        prog.done()
     return samples, rows
 
 
@@ -198,6 +230,7 @@ def table_counts(entry, ref, alt, n_samples):
 
 def read_crisp_vcf(path, info):
     pools, recs = None, []
+    prog = Progress("VCF records read")
     with open_text(path) as fh:
         for line in fh:
             if line.startswith("##"):
@@ -207,6 +240,7 @@ def read_crisp_vcf(path, info):
                 continue
             if pools is None:
                 sys.exit(f"POOLED_LIKELIHOOD_TIERS: {path}: record before #CHROM")
+            prog.tick()
             info["records_in"] += 1
             x = line.rstrip(NL).split(TAB)
             if not is_snp(x[3], x[4]):
@@ -230,6 +264,7 @@ def read_crisp_vcf(path, info):
             recs.append((x[0], int(x[1]), x[3], x[4], cnt))
     if pools is None:
         sys.exit(f"POOLED_LIKELIHOOD_TIERS: {path}: no #CHROM line")
+    prog.done()
     return pools, recs
 
 
@@ -355,7 +390,9 @@ def main():
     poolqc = [[0, 0, 0, 0] for _ in pools]
     hard = {"hidepth", "af_gt_half"}
 
+    prog = Progress("sites scored", len(recs))
     for (c, pos, ref, alt, cnt), total in zip(recs, totals):
+        prog.tick()
         hidepth = total > a.hidepth_factor * med
         llr0 = {d: sum(model.llr_pool(cnt[i][0], cnt[i][1], terms0) for i in dpools[d]) for d in zero_eligible}
         zero = [d for d in zero_eligible if llr0[d] < a.zero_class_llr]
@@ -423,6 +460,7 @@ def main():
             row += [str(h) for h in in_annot]
             row.append(";".join(f"{pools[i]}:{cnt[i][1]}/{cnt[i][0]}" for i in ps))
             out[d].write(TAB.join(row) + NL)
+    prog.done()
     for d in called:
         out[d].close()
 
@@ -455,9 +493,9 @@ def main():
             fh.write(f"option_{k}{TAB}{v}{NL}")
         for nm, s in annots:
             fh.write(f"annotation_{nm}{TAB}{len(s)} sites{NL}")
-    print(f"POOLED_LIKELIHOOD_TIERS {PREFIX}: {len(recs)} records, {len(pools)} pools, donors {donors}, "
+    LOG.info(f"POOLED_LIKELIHOOD_TIERS {PREFIX}: {len(recs)} records, {len(pools)} pools, donors {donors}, "
           f"median depth {med}; " + "; ".join(f"{d}: A {summ[d]['A']} B {summ[d]['B']} C {summ[d]['C']} ref {summ[d]['ref']}"
-                                              for d in called), file=sys.stderr)
+                                              for d in called))
 
     with open(f"{PREFIX}.pooled_likelihood_tiers.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')

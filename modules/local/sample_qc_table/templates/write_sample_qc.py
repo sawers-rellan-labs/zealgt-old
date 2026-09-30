@@ -21,6 +21,10 @@ import json
 import platform
 import shlex
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("sample_qc_table")
 
 TAB = chr(9)
 NL = chr(10)
@@ -74,7 +78,7 @@ def main():
     for name, tab in (("min_coverage", mc), ("panel_coverage", pc), ("relatedness", rel), ("donor_content", dc)):
         extra = sorted(set(tab) - known)
         if extra:
-            print(f"{PROCESS}: {name} has {len(extra)} samples not in the sample map (ignored): {extra[:5]}", file=sys.stderr)
+            LOG.info(f"{PROCESS}: {name} has {len(extra)} samples not in the sample map (ignored): {extra[:5]}")
 
     hdr = ["sample", "role", "donor", "pass", "reasons", "notes", "mean_coverage", "pct_1x", "panel_qc", "panel_min_covered",
            "panel_contigs_below_floor", "kinship_own", "own_z", "closest_other_donor", "kinship_closest_other",
@@ -124,7 +128,7 @@ def main():
                    r.get("kinship_closest_other", "NA"), r.get("reason", "NA"),
                    d.get("alt_read_fraction", "NA"), d.get("reason", "NA")]
             out.write(TAB.join(row) + NL)
-    print(f"sample_qc_table {PREFIX}: {len(SAMPLE_MAP)} samples, {n_fail} fail, panel_qc {panel_qc}, "
+    LOG.info(f"sample_qc_table {PREFIX}: {len(SAMPLE_MAP)} samples, {n_fail} fail, panel_qc {panel_qc}, "
           f"fail_on {sorted(fail_on)}")
     with open(f"{PREFIX}.sample_qc_table.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')

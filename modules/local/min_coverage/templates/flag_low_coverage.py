@@ -16,6 +16,10 @@ import json
 import os
 import platform
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("min_coverage")
 
 TAB = chr(9)
 NL = chr(10)
@@ -74,7 +78,7 @@ def main():
         for r in rows:
             out.write(TAB.join(str(v) for v in r) + NL)
     n_fail = sum(1 for r in rows if r[4] == "false")
-    print(f"min_coverage {PREFIX}: {len(rows)} samples, {n_fail} fail (min_coverage {MIN_COVERAGE})")
+    LOG.info(f"min_coverage {PREFIX}: {len(rows)} samples, {n_fail} fail (min_coverage {MIN_COVERAGE})")
     with open(f"{PREFIX}.min_coverage.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')
 

@@ -36,8 +36,8 @@ jobs:
             smoke: "{ CRISP 2>&1 || true; } | grep -q CRISP_command_line && tabix --version | head -1"
           - module: rtiger
             image: ghcr.io/sawers-rellan-labs/zealgt-nilhmm
-            tag: 0.3.1
-            smoke: 'Rscript -e ''library(nilHMM); cat(as.character(packageVersion("nilHMM")))'''
+            tag: 0.3.1-1
+            smoke: 'Rscript -e ''library(nilHMM); library(logger); cat(as.character(packageVersion("nilHMM")))'''
     steps:
       - uses: actions/checkout@v5
 

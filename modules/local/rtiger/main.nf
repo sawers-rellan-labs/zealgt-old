@@ -14,7 +14,7 @@ process RTIGER {
     tag "${meta.id}"
     label 'process_medium'
 
-    container "ghcr.io/sawers-rellan-labs/zealgt-nilhmm:0.3.1"    // modules/local/rtiger/Dockerfile (.github/workflows/build_images.yml)
+    container "ghcr.io/sawers-rellan-labs/zealgt-nilhmm:0.3.1-1"    // modules/local/rtiger/Dockerfile (.github/workflows/build_images.yml)
 
     input:
     tuple val(meta), path(counts)

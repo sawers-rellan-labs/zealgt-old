@@ -43,6 +43,35 @@ import os
 import platform
 import shlex
 import sys
+import logging
+import time
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("gap_filling_bc1")
+
+
+class Progress:
+    """A progress line about once a minute (CLAUDE.md): n[/total] done, elapsed, ETA; done() logs the total once."""
+
+    def __init__(self, what, total=None, every=60.0):
+        self.what, self.total, self.every = what, total, every
+        self.n, self.t0 = 0, time.monotonic()
+        self.last = self.t0
+
+    def tick(self, k=1):
+        self.n += k
+        now = time.monotonic()
+        if now - self.last >= self.every:
+            self.last = now
+            el = (now - self.t0) / 60
+            if self.total:
+                LOG.info(">>> %d/%d %s done | elapsed %.1f min | ETA ~%.1f min remaining", self.n, self.total, self.what,
+                         el, el / self.n * (self.total - self.n))
+            else:
+                LOG.info(">>> %d %s done | elapsed %.1f min", self.n, self.what, el)
+
+    def done(self):
+        LOG.info("%d %s done in %.1f min", self.n, self.what, (time.monotonic() - self.t0) / 60)
 
 TAB = chr(9)
 NL = chr(10)
@@ -51,7 +80,7 @@ DOT = "."
 
 
 def log(msg):
-    sys.stderr.write("[gap_filling_bc1] " + msg + NL)
+    LOG.info(msg)
 
 
 def gz_write(path):
@@ -281,13 +310,16 @@ SUMMARY_COLS = ["donor", "taxon", "mu", "gap_tierA", "gap_ref", "prior_source_re
 def write_outputs(prefix, rows, summ):
     with gz_write(f"{prefix}.tsv.gz") as o:
         o.write(TAB.join(COLS) + NL)
+        prog = Progress("rows filled", len(rows))
         for r in rows:
+            prog.tick()
             rec = r["rec"] or {}
             vals = [r["key"][0], r["key"][1], r["key"][2], r["key"][3], r["donor"], r["src"],
                     rec.get("tier", "absent"), rec.get("n", 0), rec.get("a", 0), rec.get("n_pools_alt"), rec.get("n0"),
                     rec.get("a0"), rec.get("eps"), rec.get("flags", DOT), rec.get("llr", float("nan")),
                     r["k"], r["m"], r["prior"], r["prior_source"], r["logodds"], r["state"], r["reason"]]
             o.write(TAB.join(fmt(v) for v in vals) + NL)
+        prog.done()
     with open(f"{prefix}.summary.tsv", "w") as o:
         o.write(TAB.join(SUMMARY_COLS) + NL)
         for s in summ:

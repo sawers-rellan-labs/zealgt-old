@@ -13,7 +13,9 @@
 suppressPackageStartupMessages({
     library(data.table)
     library(ggplot2)
+    library(logger)
 })
+log_formatter(formatter_sprintf)   # CLAUDE.md "Logging in task scripts": logger, sprintf-style, to stderr, to the second
 
 opt_path <- function(s) {
     s <- trimws(s)
@@ -115,8 +117,8 @@ main <- function() {
         ggsave(paste0(prefix, ".painting.png"), p, width = opts[["width"]], height = h, dpi = 150)
     }
     ggsave(paste0(prefix, ".painting.pdf"), p, width = opts[["width"]], height = h)
-    message(sprintf("[chromosome_painting] %s: %d lines (%d excluded), %d segments", prefix, n, sum(!qc[["pass"]]),
-                    if (is.null(seg)) 0L else nrow(seg)))
+    log_info("[chromosome_painting] %s: %d lines (%d excluded), %d segments", prefix, n, sum(!qc[["pass"]]),
+             if (is.null(seg)) 0L else nrow(seg))
     writeLines(c(paste0('"', process, '":'),
                  paste0("    r-base: ", format(getRversion())),
                  paste0("    r-data.table: ", format(packageVersion("data.table"))),

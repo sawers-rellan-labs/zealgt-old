@@ -20,6 +20,10 @@ import argparse
 import platform
 import shlex
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("region_bed")
 
 TAB = chr(9)
 NL = chr(10)
@@ -99,8 +103,7 @@ def main():
         for s, e in ranges:
             out.write(f"{chrom}:{s + 1}-{e}{NL}")
     bases = sum(e - s for s, e in ranges)
-    print(f"REGION_BED {PREFIX}: {REGION}: {len(raw)} ranges on {chrom} -> {len(ranges)} clipped/merged, {bases} bp",
-          file=sys.stderr)
+    LOG.info(f"REGION_BED {PREFIX}: {REGION}: {len(raw)} ranges on {chrom} -> {len(ranges)} clipped/merged, {bases} bp")
 
     with open(f"{PREFIX}.region_bed.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')
