@@ -34,8 +34,11 @@ aligned with `main` and merged (in progress in the genotype session). Nothing he
 
 ## 4. Decisions already made
 
-- **nilHMM**: the pipeline uses tagged releases. v0.3.1 = the code of commit 248e67e (the benchmark's), plus the pkgdown site fix
-  (release in progress, 2026-09-29). The Dockerfile installs from the tag. Later, once nilHMM is on CRAN: a conda-forge recipe;
+- **nilHMM**: the pipeline uses tagged releases. **v0.3.1** (released 2026-09-30, PR #29) = the code of commit 248e67e (the
+  benchmark's); only `DESCRIPTION`, `NEWS.md` and `_pkgdown.yml` differ. Pin: tag `v0.3.1` -> commit
+  6e9b40833b7abe8065284f9c35f52cd7017c727d; archive
+  `https://github.com/sawers-rellan-labs/nilhmm/archive/refs/tags/v0.3.1.tar.gz`, sha256
+  `d9b5826afb9af7efd5e596e0d74bbf41c3194bad6f6da844ea48fea8d20ef7a0`. The Dockerfile installs from the tag. Later, once nilHMM is on CRAN: a conda-forge recipe;
   the module becomes pure conda and its Dockerfile goes.
 - **CRISP**: installed from upstream `vibansal/crisp` (no fork), pinned by `git clone` + checkout of commit 1a9027e + a check
   that `git rev-parse HEAD` matches (not a downloaded archive, whose bytes GitHub may change).
