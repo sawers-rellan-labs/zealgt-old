@@ -1,6 +1,6 @@
 # PLAN: Apptainer containers on hazel (inode quota + nf-core software requirements)
 
-Branch `containers` (off `main` 1760b4f, 2026-09-29). Status: **assessment done; (a) and (b) done (§6: nothing prunable yet, SIF test passed); nothing
+Branch `containers` (off `main` 1760b4f, 2026-09-29; starts after the genotype branch is aligned and merged into main). Status: **assessment done; (a) and (b) done (§6: nothing prunable yet, SIF test passed); nothing
 else implemented.** Merged into `main` only after the containerised path passes the gates of §5; until then `main` keeps the conda
 prefixes unchanged. Related: `docs/PLAN_pipeline.md` §2 (deviations), §5 (storage), §6 (gates); `nextflow-cache`,
 `nfcore-compliance` and `hazel-debug-loop` skills.
@@ -103,6 +103,23 @@ Nothing is deleted by any step; every removal is a separate, consented action (`
   Conda prefixes stay as fallback until the containerised Gate 2 passes; then removal of prefixes / pkgs with consent, and
   `mmlsquota` before / after.
 
+**CI** (after P6; added 2026-09-29)
+- **P7 GitHub Actions CI** (removes the "No GitHub Actions CI" deviation). The deviation's reason ("private offline cluster") does
+  not hold: CI runs on GitHub's runners against `tests/fixtures`, never on hazel, and the repository is public (Actions minutes
+  free). What actually blocked it: no containers (every conda env built on each run), and the nf-test stub snapshots recorded with
+  the laptop's version shims (`agent/stubbin`, untracked; stub runs still evaluate each tool's version). With P3's images the real
+  tools print the pinned versions, so no shims.
+  - `.github/workflows/`: a **lint** job (`scripts/run_checks.sh --quick`: registry rebuild, env-prefix config, nf-core lint,
+    schema lint, nextflow lint, no `task.*` in `ext.args`) and an **nf-test** job (`nf-test test` with `-profile docker` on the
+    fixtures, stub + real-mode tests; pinned `NXF_VER` = the hazel launcher's). Start from the nf-core template's workflow files
+    (`nf-core pipelines sync` / template), keep only these jobs; drop the AWS / release / download ones.
+  - `scripts/check_resources.sh` and the env-prefix checks read config only: run them in the lint job too (hazel paths are strings).
+  - Branch protection on `main`: merge only when both jobs pass (GitHub repository setting, user action).
+  - Remove the `.github/*` entries from `.nf-core.yml` `lint.files_unchanged` / `files_exist` as far as the restored files allow.
+  - Rewrite the deviation in its 4 places (`.nf-core.yml`, `docs/usage.md`, PLAN §2, nfcore-compliance skill);
+    `docs/CONTRIBUTING.md`: `run_checks.sh` stays the pre-push check, CI enforces it.
+  - Validation: a PR with a deliberate lint error and one with a broken snapshot both fail CI; a clean PR passes; timings noted.
+
 ## 6. Results
 
 **(a) Stale prefixes (job 993243): nothing is removable now.** `--list-stale --all-refs` lists no prefix: the 11 CRAM-workflow
@@ -136,7 +153,8 @@ The full ≈ 170 K comes back only if **both** workflows move to containers.
 - Remaining documented deviations (unchanged, `.nf-core.yml`): no GitHub Actions CI, build-pinned conda prefixes on hazel (only
   if the conda path stays in use), cache test as an operator script, store + checkpoint outside `--outdir`, `versions.yml` in
   five local modules, stage-2 samplesheet written by the pipeline, integer-or-string CLI params, per-source read structures, CRAM only.
-- Containers make GitHub Actions CI possible (nf-test with Docker on the bundled fixtures): candidate to remove that deviation later.
+- Containers make GitHub Actions CI possible (nf-test with Docker on the bundled fixtures): planned as P7, which removes the
+  "No GitHub Actions CI" deviation.
 
 ## 8. Alternatives considered
 
