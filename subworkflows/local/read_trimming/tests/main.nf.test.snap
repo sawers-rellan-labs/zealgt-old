@@ -5,22 +5,21 @@
                 [
                     "LX_1",
                     [
-                        "LX_1.paired.trim_1.fastq.gz",
-                        "LX_1.paired.trim_2.fastq.gz"
+                        "LX_1_1.trim.fastq.gz",
+                        "LX_1_2.trim.fastq.gz"
                     ]
                 ]
             ],
             [
-                "LX_1 LX_1.summary",
-                "LX_1 LX_1.zip",
-                "LX_1 LX_1_out.log"
+                "LX_1 LX_1.cutadapt.log",
+                "LX_1 LX_1.zip"
             ],
             [
-                "[READ_TRIMMING:FASTQC, fastqc, 0.12.1]",
-                "[READ_TRIMMING:TRIMMOMATIC, trimmomatic, 0.39]"
+                "[READ_TRIMMING:CUTADAPT, cutadapt, 5.2]",
+                "[READ_TRIMMING:FASTQC, fastqc, 0.12.1]"
             ]
         ],
-        "timestamp": "2026-09-28T01:36:45.679283",
+        "timestamp": "2026-09-29T13:22:30.068121",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

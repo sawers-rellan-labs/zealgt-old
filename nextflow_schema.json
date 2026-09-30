@@ -26,6 +26,17 @@
                     "help_text": "Validated against assets/schema_input.json at parameter validation and parsed with samplesheetToList.",
                     "fa_icon": "fas fa-file-csv"
                 },
+                "registry": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "default": "${projectDir}/meta/registry.csv",
+                    "description": "The sample-identity registry (meta/registry.csv, built by meta/build_samples.py): each provenance record holds a snapshot of its sample's row (raw columns, and the *_resolved columns and correction_ids separately).",
+                    "help_text": "Read as text (every row, all columns as strings). Its rows must agree with --input on source and library. --workflow genotype (SAMPLE_LABELS, stage 8): the edge translation reads only its resolved columns (nil_id_resolved, else pedigree_resolved, else sample_id; meta/corrections.csv applied) and refuses a row with exclude = TRUE; its path, sha256 and the repo commit are recorded in <unit>.sample_labels.tsv, and it is not part of the genotype settings guard.",
+                    "fa_icon": "fas fa-id-card"
+                },
                 "import_sheet": {
                     "type": "string",
                     "format": "file-path",
@@ -69,6 +80,7 @@
                     "type": "string",
                     "enum": [
                         "read_demultiplexing",
+                        "read_alignment",
                         "markdup_import",
                         "sample_quality_control",
                         "variant_discovery",
@@ -79,12 +91,12 @@
                         "reporting"
                     ],
                     "default": "read_demultiplexing",
-                    "description": "Entry of the chosen workflow. cram: read_demultiplexing (raw library -> CRAMs) or markdup_import (existing CRAMs -> duplicate marking + read groups), both ending at the CRAM stop point. genotype: one stage, run alone on the store outputs of the stages before it: sample_quality_control, variant_discovery, ancestry_inference, marker_union, donor_allele_calling, genotype_imputation, reporting. An entry of the other workflow is refused."
+                    "description": "Entry of the chosen workflow. cram: read_demultiplexing (stage 1: raw library -> trimmed FASTQ checkpoint, then stage 2 in the same run -> CRAMs), read_alignment (stage 2 alone: FASTQ checkpoint -> CRAMs) or markdup_import (existing CRAMs -> duplicate marking + read groups); all end at the CRAM stop point. genotype: one stage, run alone on the store outputs of the stages before it: sample_quality_control, variant_discovery, ancestry_inference, marker_union, donor_allele_calling, genotype_imputation, reporting. An entry of the other workflow is refused."
                 },
                 "libraries": {
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$",
-                    "description": "read_demultiplexing: library ids (meta/samples.csv 'library'), comma-separated."
+                    "description": "read_demultiplexing / read_alignment: library ids (meta/samples.csv 'library'), comma-separated."
                 },
                 "force_demux": {
                     "type": "string",
@@ -97,8 +109,8 @@
                         "string"
                     ],
                     "pattern": "^[1-9]\\d*$",
-                    "default": 1,
-                    "description": "Libraries per read_demultiplexing run (one library in flight, PLAN §5 rule 3).",
+                    "default": 4,
+                    "description": "read_demultiplexing: the run is refused when the requested libraries plus the libraries already holding a checkpoint dir under --fastq_checkpoint are more than this (PLAN §5 rule 3: nothing is removed automatically, so this bounds the FASTQs on disk). The requested libraries run concurrently.",
                     "minimum": 1
                 },
                 "subsample": {
@@ -108,7 +120,7 @@
                     ],
                     "pattern": "^\\d+$",
                     "default": 0,
-                    "description": "Read pairs per library for Gate 1 (0 = all); each lane gives its first ceil(N / lanes) pairs. With N > 0, --store must be a directory named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs go.",
+                    "description": "Read pairs per library for Gate 1 (0 = all); each lane gives its first ceil(N / lanes) pairs. With N > 0, --store and --fastq_checkpoint must be directories named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs or FASTQs go.",
                     "minimum": 0
                 },
                 "import_samples": {
@@ -139,12 +151,18 @@
             "title": "Store and reference",
             "type": "object",
             "fa_icon": "fas fa-database",
-            "description": "Permanent store (storeDir, /rsstu) and the B73 v5 reference.",
+            "description": "Permanent store (/rsstu), FASTQ checkpoint (/share) and the B73 v5 reference.",
             "properties": {
                 "store": {
                     "type": "string",
                     "default": "/rsstu/users/r/rrellan/BZea/ZEAL/store",
-                    "description": "Store root: demux_qc/, cram/, cram_import/, registry/ (PLAN §5 rule 2). A --subsample run needs a store named subsample_<N>; a stub run one named store_stub* (conf/stub.config).",
+                    "description": "Store root: demux_qc/, cram/, cram_import/, registry/ (PLAN §5 rule 2). Outputs are copied in and never overwritten; stored work is skipped. A --subsample run needs a store named subsample_<N>; a stub run one named store_stub* (conf/stub.config).",
+                    "format": "directory-path"
+                },
+                "fastq_checkpoint": {
+                    "type": "string",
+                    "default": "/share/maize/frodrig4/fastq_checkpoint",
+                    "description": "FASTQ checkpoint root: <library>/ holds the trimmed pairs (hardlinks of the work/ files, so it must be on the filesystem of work/), samplesheet.csv (read by --entry read_alignment) and cleanup_status.tsv. A --subsample run needs a directory named subsample_<N>; a stub run one named checkpoint_stub* (conf/stub.config).",
                     "format": "directory-path"
                 },
                 "fasta": {
@@ -187,22 +205,22 @@
                     "default": "-e 0 --no-indels --discard-untrimmed -Z",
                     "description": "cutadapt flags of DEMUX (exact match)."
                 },
-                "trim_adapters": {
+                "trim_adapter_r1": {
                     "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "default": "${projectDir}/assets/adapters/TruSeq3-PE-2.fa",
-                    "description": "Adapter FASTA for Trimmomatic ILLUMINACLIP (TruSeq3-PE-2.fa as shipped with trimmomatic 0.39)."
+                    "pattern": "^[ACGTN]+$",
+                    "default": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+                    "description": "3' adapter of R1 for CUTADAPT (-a; full TruSeq read-through adapter)."
                 },
-                "trim_illuminaclip": {
+                "trim_adapter_r2": {
                     "type": "string",
-                    "default": "2:30:10",
-                    "description": "ILLUMINACLIP seed mismatches : palindrome : simple thresholds."
+                    "pattern": "^[ACGTN]+$",
+                    "default": "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT",
+                    "description": "3' adapter of R2 for CUTADAPT (-A; full TruSeq read-through adapter)."
                 },
                 "trim_args": {
                     "type": "string",
-                    "default": "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36",
-                    "description": "Trimmomatic steps after ILLUMINACLIP (batch 1's parameters, PLAN §3 row 1b)."
+                    "default": "--nextseq-trim=15 -m 36 --compression-level 4",
+                    "description": "Further CUTADAPT flags after the adapters (poly-G-aware 3' quality trim, minimum length, gzip level of the output; PLAN §3 row 1b)."
                 },
                 "align_args": {
                     "type": "string",
@@ -213,6 +231,162 @@
                     "type": "string",
                     "default": "-d 2500",
                     "description": "samtools markdup flags (optical distance, PLAN §4 #1)."
+                }
+            }
+        },
+        "align_resource_options": {
+            "title": "Memory tuning options",
+            "type": "object",
+            "fa_icon": "fas fa-memory",
+            "description": "ALIGN_MARKDUP / MARKDUP_IMPORT memory tuning (Gate 2 values).",
+            "properties": {
+                "align_memory_gb": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^\\d+$",
+                    "default": 48,
+                    "minimum": 1,
+                    "description": "ALIGN_MARKDUP first-attempt memory in GB (conf/hazel.config; multiplied by the attempt number).",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                },
+                "align_mem_reserve_gb": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^\\d+$",
+                    "default": 28,
+                    "minimum": 0,
+                    "description": "GB of an ALIGN_MARKDUP task kept out of samtools sort -m (minibwa index and mapping, fixmate, markdup).",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                },
+                "align_sort_mem_share": {
+                    "type": [
+                        "number",
+                        "string"
+                    ],
+                    "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+                    "default": 0.75,
+                    "minimum": 0.05,
+                    "maximum": 1,
+                    "description": "Share of (task memory - reserve) given to samtools sort (-m x threads), in ALIGN_MARKDUP and MARKDUP_IMPORT; -m is at least 768 MB.",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                },
+                "import_mem_reserve_gb": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ],
+                    "pattern": "^\\d+$",
+                    "default": 2,
+                    "minimum": 0,
+                    "description": "GB of a MARKDUP_IMPORT task kept out of samtools sort -m (view, addreplacerg, collate, fixmate, markdup).",
+                    "fa_icon": "fas fa-memory",
+                    "hidden": true
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-file-import",
+            "description": "Less common options for the pipeline, typically set in a config file.",
+            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+            "properties": {
+                "version": {
+                    "type": "boolean",
+                    "description": "Display version and exit.",
+                    "fa_icon": "fas fa-question-circle",
+                    "hidden": true
+                },
+                "publish_dir_mode": {
+                    "type": "string",
+                    "default": "copy",
+                    "description": "Method used to save pipeline results to output directory.",
+                    "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
+                    "fa_icon": "fas fa-copy",
+                    "enum": [
+                        "symlink",
+                        "rellink",
+                        "link",
+                        "copy",
+                        "copyNoFollow",
+                        "move"
+                    ],
+                    "hidden": true
+                },
+                "monochrome_logs": {
+                    "type": "boolean",
+                    "description": "Do not use coloured log outputs.",
+                    "fa_icon": "fas fa-palette",
+                    "hidden": true
+                },
+                "multiqc_config": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Custom config file to supply to MultiQC.",
+                    "fa_icon": "fas fa-cog",
+                    "hidden": true
+                },
+                "multiqc_logo": {
+                    "type": "string",
+                    "description": "Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file",
+                    "fa_icon": "fas fa-image",
+                    "hidden": true
+                },
+                "validate_params": {
+                    "type": "boolean",
+                    "description": "Boolean whether to validate parameters against the schema at runtime",
+                    "default": true,
+                    "fa_icon": "fas fa-check-square",
+                    "hidden": true
+                },
+                "trace_report_suffix": {
+                    "type": "string",
+                    "fa_icon": "far calendar",
+                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                    "hidden": true
+                },
+                "help": {
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
+                    "description": "Display the help message."
+                },
+                "help_full": {
+                    "type": "boolean",
+                    "description": "Display the full detailed help message."
+                },
+                "show_hidden": {
+                    "type": "boolean",
+                    "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
+                },
+                "pipelines_testdata_base_path": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Base URL or local path to location of pipeline test dataset files (template; zealgt tests use tests/fixtures)",
+                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+                    "hidden": true
+                }
+            }
+        },
+        "zealgt_run_options": {
+            "title": "zealgt run options",
+            "type": "object",
+            "fa_icon": "fas fa-server",
+            "description": "Options of a zealgt run on hazel.",
+            "properties": {
+                "run_id": {
+                    "type": "string",
+                    "description": "Run name; the run's work/ and TMPDIR go to /share/maize/frodrig4/nf_work/<run_id> (profile hazel).",
+                    "pattern": "^[A-Za-z0-9._-]+$",
+                    "fa_icon": "fas fa-tag"
                 }
             }
         },
@@ -845,116 +1019,6 @@
                     "pattern": "^-?\\d+$",
                     "default": 500,
                     "description": "8: window (markers) around a RTIGER breakpoint for the breakpoint-density check (review #12)."
-                },
-                "registry": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
-                    "default": "${projectDir}/meta/registry.csv",
-                    "fa_icon": "fas fa-file-csv",
-                    "description": "8: sample registry for the edge translation (meta/PROVENANCE.md \"Identifiers\"): final outputs carry nil_id_resolved, else pedigree_resolved, else sample_id.",
-                    "help_text": "meta/registry.csv (built by meta/build_samples.py); only its resolved columns are read (meta/corrections.csv applied), and a row with exclude = TRUE is refused. SAMPLE_LABELS joins the internal sample_id on it once, at reporting. Its path, sha256 and the repo commit are recorded in <unit>.sample_labels.tsv, with each sample's correction_ids; it is not part of the settings guard, so a registry commit does not refuse a rerun under the same key."
-                }
-            }
-        },
-        "generic_options": {
-            "title": "Generic options",
-            "type": "object",
-            "fa_icon": "fas fa-file-import",
-            "description": "Less common options for the pipeline, typically set in a config file.",
-            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
-            "properties": {
-                "version": {
-                    "type": "boolean",
-                    "description": "Display version and exit.",
-                    "fa_icon": "fas fa-question-circle",
-                    "hidden": true
-                },
-                "publish_dir_mode": {
-                    "type": "string",
-                    "default": "copy",
-                    "description": "Method used to save pipeline results to output directory.",
-                    "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
-                    "fa_icon": "fas fa-copy",
-                    "enum": [
-                        "symlink",
-                        "rellink",
-                        "link",
-                        "copy",
-                        "copyNoFollow",
-                        "move"
-                    ],
-                    "hidden": true
-                },
-                "monochrome_logs": {
-                    "type": "boolean",
-                    "description": "Do not use coloured log outputs.",
-                    "fa_icon": "fas fa-palette",
-                    "hidden": true
-                },
-                "multiqc_config": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "Custom config file to supply to MultiQC.",
-                    "fa_icon": "fas fa-cog",
-                    "hidden": true
-                },
-                "multiqc_logo": {
-                    "type": "string",
-                    "description": "Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file",
-                    "fa_icon": "fas fa-image",
-                    "hidden": true
-                },
-                "validate_params": {
-                    "type": "boolean",
-                    "description": "Boolean whether to validate parameters against the schema at runtime",
-                    "default": true,
-                    "fa_icon": "fas fa-check-square",
-                    "hidden": true
-                },
-                "trace_report_suffix": {
-                    "type": "string",
-                    "fa_icon": "far calendar",
-                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
-                    "hidden": true
-                },
-                "help": {
-                    "type": [
-                        "boolean",
-                        "string"
-                    ],
-                    "description": "Display the help message."
-                },
-                "help_full": {
-                    "type": "boolean",
-                    "description": "Display the full detailed help message."
-                },
-                "show_hidden": {
-                    "type": "boolean",
-                    "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
-                },
-                "pipelines_testdata_base_path": {
-                    "type": "string",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Base URL or local path to location of pipeline test dataset files (template; zealgt tests use tests/fixtures)",
-                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
-                    "hidden": true
-                }
-            }
-        },
-        "zealgt_run_options": {
-            "title": "zealgt run options",
-            "type": "object",
-            "fa_icon": "fas fa-server",
-            "description": "Options of a zealgt run on hazel.",
-            "properties": {
-                "run_id": {
-                    "type": "string",
-                    "description": "Run name; the run's work/ and TMPDIR go to /share/maize/frodrig4/nf_work/<run_id> (profile hazel).",
-                    "pattern": "^[A-Za-z0-9._-]+$",
-                    "fa_icon": "fas fa-tag"
                 }
             }
         }
@@ -977,6 +1041,9 @@
         },
         {
             "$ref": "#/$defs/zealgt_run_options"
+        },
+        {
+            "$ref": "#/$defs/align_resource_options"
         },
         {
             "$ref": "#/$defs/generic_options"

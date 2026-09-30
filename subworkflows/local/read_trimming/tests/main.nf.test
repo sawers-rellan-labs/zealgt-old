@@ -7,7 +7,7 @@ nextflow_workflow {
     tag "subworkflows"
     tag "subworkflows_local"
     tag "read_trimming"
-    tag "trimmomatic"
+    tag "cutadapt"
     tag "fastqc"
     tag "stub"
 
@@ -17,7 +17,8 @@ nextflow_workflow {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                store            = "${outputDir}/store_stub"
+                fastq_checkpoint = "${outputDir}/checkpoint_stub"
             }
             workflow {
                 """
@@ -25,7 +26,6 @@ nextflow_workflow {
                     [ id:'LX_1', sample:'LX_1', library:'LIBX', source:'bc1', qc_group:'LIBX', single_end:false ],
                     [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true) ]
                 ])
-                input[1] = channel.value(file("${projectDir}/assets/adapters/TruSeq3-PE-2.fa", checkIfExists: true))
                 """
             }
         }
@@ -33,6 +33,10 @@ nextflow_workflow {
         then {
             assertAll(
                 { assert workflow.success },
+                // the trimmed pair and the cutadapt log are hardlinked into the FASTQ checkpoint (conf/modules.config)
+                { assert file("${outputDir}/checkpoint_stub/LIBX/LX_1_1.trim.fastq.gz").exists() },
+                { assert file("${outputDir}/checkpoint_stub/LIBX/LX_1_2.trim.fastq.gz").exists() },
+                { assert file("${outputDir}/checkpoint_stub/LIBX/LX_1.cutadapt.log").exists() },
                 { assert snapshot(
                     workflow.out.reads.collect { meta, reads -> [meta.id, reads.collect { f -> file(f).name }.sort()] },
                     workflow.out.qc.collect { meta, f -> "${meta.id} ${file(f).name}".toString() }.sort(),

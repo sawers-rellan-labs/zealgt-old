@@ -231,11 +231,49 @@ The likelihood ratio models sequencing error but not artifacts; a site that is t
 clean in the B73 pools is independent evidence that the site is real, which is what the prior carries. A mis-mapped paralog shows ALT in all
 donors, so sharing alone does not separate real alleles from artifacts; the B73 zero class and the flags do.
 
+\subsection{Gap filling, step 2: evidence from the lines}
+\label{sec:step2}
+Equation~\eqref{eq:eb} leaves a gap missing when the BC$_1$ reads are neither REF (tier \code{ref}) nor ALT at posterior $\ge0.999$. The
+donor's BC$_2$S$_3$ lines add independent evidence, because the ancestry inference (Text~\ref{sec:checks}) tells, for every line $i$ and
+site $s$, how many copies of $\Hd$'s segment the line carries, $x_i\in\{0,1,2\}$. A read from a donor copy shows $D_{ds}$; a read from a
+B73 copy shows REF whatever $D_{ds}$ is. With $n_i$ reads and $a_i$ ALT reads in line $i$, and $c_s$ the mappability of the donor copy
+relative to B73 at $s$ (the share of donor-copy reads that reach $s$; the teosinte copy maps less well where it has diverged),
+\begin{align}
+n_i &\sim \Pois\!\big(k_s\lambda_i\,[(1-\tfrac{x_i}{2})+\tfrac{x_i}{2}c_s]\big),\\
+a_i\mid n_i,\ D_{ds}=\ALT &\sim \Bin\!\big(n_i,\ \rho_i(1-\epsilon)+(1-\rho_i)\epsilon\big),\qquad
+\rho_i=\frac{\tfrac{x_i}{2}c_s}{(1-\tfrac{x_i}{2})+\tfrac{x_i}{2}c_s},\\
+a_i\mid n_i,\ D_{ds}=\REF &\sim \Bin(n_i,\ \epsilon),
+\label{eq:lines}
+\end{align}
+with $\lambda_i$ the line's coverage (from its B73 segments), $k_s$ the site's B73 mappability (from the B73-ancestry lines at $s$), and
+$c_s$ summed out under a per-taxon prior (mexicana: from simulated TIL18 reads against B73 reads, median $0.85$, $10.6\%$ of sites below
+$0.25$). Lines with $x_i=0$ contribute the same term under both hypotheses and cancel. The evidence of the lines,
+$\LLR^{\text{lines}}_{ds}=\log L(\ALT)-\log L(\REF)$, is independent of the BC$_1$ reads given $D_{ds}$, so the log-odds add:
+\begin{equation}
+P(D_{ds}=\ALT\mid\text{BC}_1,\ \text{lines})=\sigma\!\left(\log\frac{\pi_{ds}}{1-\pi_{ds}}+\LLR_{ds}+\LLR^{\text{lines}}_{ds}\right),
+\label{eq:step2}
+\end{equation}
+and ALT is called at the same cut-off as Eq.~\eqref{eq:eb}, posterior $\ge0.999$. Step 2 never calls REF: one ALT read in a line with
+$x_i=2$ is $\sim1/\epsilon\approx200$ times more likely under ALT, while ruling ALT out needs many donor-copy reads, and at the sites that
+step 1 leaves missing there are about $0$--$1$ ($\approx5$ donor-segment lines among 40 at $\sim0.9\times$, the donor copy mapping poorly).
+
+On the simulated QC set (TIL18; 10 lines at $0.8\times$ and $1.2\times$; true and inferred ancestry; truth = the founder's own reads, see
+below) Eq.~\eqref{eq:step2} made \textbf{no false ALT call at any of the 29{,}098 truly-REF gap sites}, also with $\LLR_{ds}$ set to 0
+(false-ALT rate $<10^{-4}$, 95\% upper bound), and recovered $29$--$46\%$ of the 11{,}918 truly-ALT gap sites from the lines and prior
+alone and $93$--$94\%$ with the BC$_1$ evidence. On the two mexicana pilot donors (chr10) it filled 2{,}994 and 2{,}581 of the 11{,}819
+and 9{,}079 gaps left by step 1, leaving $10.7\%$ and $7.9\%$ of the union missing.
+
 \subsection{Benchmark}
-On the simulated QC set (founders Gigi and TIL18, five BC$_1$ pools of $\sim14\times$, tier A subsampled to the pilot's sizes; truth =
-assembly alleles in the lowcopy ranges; chr10), gap ALT at posterior $\ge0.999$ was truly ALT at the rate of the donors' own tier-A sites
-(0.74 and 0.75 vs.\ 0.68 and 0.74), gap REF was $97$--$98\%$ correct, and the Bayes rule and the heuristic ``tier A or B'' rule gave the
-same precision at this depth. The residual $\sim26\%$ false is inherited from discovery.
+On the simulated QC set (founders Gigi and TIL18, five BC$_1$ pools of $\sim14\times$, tier A subsampled to the pilot's sizes; chr10) the
+first truth was the founder assembly's AnchorWave SNPs in the lowcopy ranges, with every other position taken as REF. Against it, gap ALT
+at posterior $\ge0.999$ was truly ALT at the rate of the donors' own tier-A sites (0.74 and 0.75 vs.\ 0.68 and 0.74), gap REF was
+$97$--$98\%$ correct, and the Bayes rule and the heuristic ``tier A or B'' rule gave the same precision at this depth. At most of the sites
+scored as false, however, reads simulated from the same assembly and aligned with minibwa show the non-B73 base at normal depth: the
+assembly alignment and the read alignment place that sequence differently (or the position is unaligned, or the SNP was lost in the
+extraction). Because every step of the pipeline works on minibwa-aligned reads, the benchmark now uses as truth what the founder's own
+reads show at each site (ALT if $\ge50\%$ of $\ge5$ reads are ALT, REF if none of $\ge5$ reads is, unknown otherwise). Against it the
+precision is $\approx0.97$ for own tier-A sites and $\approx0.99$ for gap ALT. This is the right reference for the read-based steps, not a
+better truth about homology.
 
 %======================================================================
 \section{Ancestry inference, genotype imputation, and their checks}

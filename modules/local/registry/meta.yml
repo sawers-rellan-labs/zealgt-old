@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module. Wraps a python module template.
 name: registry
-description: Demux registry entry of one library, written only when its demux QC table and all its sample CRAMs are in the store; storeDir <store>/registry.
+description: Demux registry entry of one library, written only when its demux QC table and all its sample CRAMs are in the store; published to <store>/registry.
 keywords:
   - registry
   - demultiplexing
@@ -60,7 +60,7 @@ output:
   versions:
     - "*.registry.versions.yml":
         type: file
-        description: Tool versions (one line per tool); storeDir forbids `eval` version outputs
+        description: Tool versions (one line per tool), kept next to the output in the store (read back for an already-stored output)
         pattern: "*.registry.versions.yml"
         ontologies: []
 authors:

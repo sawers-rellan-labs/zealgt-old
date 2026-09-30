@@ -30,7 +30,8 @@ nextflow_workflow {
                     [ '6B2S+T', '6B2S+T' ],
                     [ [], [] ]
                 ])
-                input[1] = 0
+                input[1] = channel.of([ 'LIBX', [] ])
+                input[2] = 0
                 """
             }
         }
@@ -45,6 +46,47 @@ nextflow_workflow {
                     workflow.out.demux_qc.collect { meta, tsv -> [meta.id, file(tsv).name] },
                     workflow.out.summary.collect { meta, tsv -> [meta.id, file(tsv).name] },
                     workflow.out.versions.collect { v -> v.toString() }.sort()
+                ).match() }
+            )
+        }
+    }
+
+    test("LIBX, demux QC already stored - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                store = "${outputDir}/store_stub"
+            }
+            workflow {
+                """
+                input[0] = channel.of([
+                    [ id:'LIBX', library:'LIBX', source:'bc1', layout:'symmetric', n_samples:3, pu:'TESTFC01.1,TESTFC01.2' ],
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L2_1.fq.gz", checkIfExists: true) ],
+                    [ file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L2_2.fq.gz", checkIfExists: true) ],
+                    [ ['LX_1', 'GCCATA', 'GCCATA'], ['LX_2', 'TCTGGT', 'TCTGGT'], ['LX_3', 'TGGCTT', 'TGGCTT'] ],
+                    [ '6B2S+T', '6B2S+T' ],
+                    [ [], [] ]
+                ])
+                // the library's demux QC is "already stored": DEMUX_QC must not run, the stored files are emitted
+                def tsv = file("\${workDir}/LIBX.tsv")
+                tsv.text = 'sample_id\\tread_pairs\\n'
+                def summary = file("\${workDir}/LIBX.summary.tsv")
+                summary.text = 'input_pairs\\n'
+                input[1] = channel.of([ 'LIBX', [ tsv, summary ] ])
+                input[2] = 0
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert !workflow.trace.tasks().any { t -> t.name.contains('DEMUX_QC') } },
+                { assert snapshot(
+                    workflow.out.demux_qc.collect { meta, tsv -> [meta.id, file(tsv).name] },
+                    workflow.out.summary.collect { meta, tsv -> [meta.id, file(tsv).name] }
                 ).match() }
             )
         }

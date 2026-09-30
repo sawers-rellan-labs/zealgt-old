@@ -4,28 +4,24 @@
 # Versions: the modules publish their versions to the `versions` topic (collated in workflows/cram.nf);
 # `versions` here re-emits the eval tuples [ process, tool, version ] of the nf-core-style modules.
 name: read_trimming
-description: TRIMMOMATIC (ILLUMINACLIP on the staged adapter FASTA) then FASTQC of the trimmed pairs
+description: CUTADAPT (TruSeq adapter per read, poly-G-aware quality trimming, minimum length) then FASTQC of the trimmed pairs
 keywords:
   - zealgt
   - cram workflow
   - read_trimming
 components:
-  - trimmomatic
+  - cutadapt
   - fastqc
 input:
   - ch_reads:
       type: file
       description: |
-        channel: [ val(meta), [ R1, R2 ] ]
-  - ch_adapters:
-      type: file
-      description: |
-        channel: value adapter FASTA
+        channel: [ val(meta), [ R1, R2 ] ] (meta.single_end false)
 output:
   - reads:
       type: file
       description: |
-        channel: [ val(meta), [ paired.trim_1, paired.trim_2 ] ]
+        channel: [ val(meta), [ <prefix>_1.trim.fastq.gz, <prefix>_2.trim.fastq.gz ] ]
   - qc:
       type: file
       description: |
@@ -34,6 +30,11 @@ output:
       type: list
       description: |
         channel: [ process, tool, version ]
+  - task_outputs:
+      type: list
+      description: |
+        channel: [ library, process, one output file of the task ] for every CUTADAPT and FASTQC task (new or cached);
+        the CRAM workflow turns the file into its task work dir for the end-of-run cleanup report
 authors:
   - "@faustovrz"
 maintainers:

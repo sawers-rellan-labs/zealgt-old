@@ -2,13 +2,16 @@
 # scripts/run_checks.sh — the local replacement for nf-core's GitHub Actions CI (no GitHub CI for zealgt: .nf-core.yml,
 # docs/CONTRIBUTING.md). Run it on the laptop before every push; it stops at the first failing check.
 #
-#   bash scripts/run_checks.sh            registry rebuild check, nf-core lint, schema lint, nextflow lint, nf-test (stub)
-#   bash scripts/run_checks.sh --quick    registry rebuild check and the three lints only
+#   bash scripts/run_checks.sh            registry rebuild check, env prefix config check, nf-core lint, schema lint, nextflow
+#                                         lint, no task.* in ext.args closures, nf-test (all local tests, stub), resolved hazel
+#                                         resources (scripts/check_resources.sh)
+#   bash scripts/run_checks.sh --quick    registry rebuild check, env prefix config check, the three lints and the ext.args
+#                                         check only
 #
 # Needs on PATH: nextflow (>= 25.10.4; NXF_VER pins it), nf-core (tools 4.1), nf-test (0.9.x). ZG_CHECK_PATH is prepended to
-# PATH when set, e.g. the laptop's local tool dirs. The nf-test stub runs still evaluate the tool versions of the nf-core
-# modules (`eval` outputs), so on a machine without the tools ZG_CHECK_PATH must also hold version shims (fastqc, multiqc,
-# picard, samtools, trimmomatic, cutadapt, pigz) that print the pinned versions; the snapshots were recorded with those
+# PATH when set, e.g. the laptop's local tool dirs. The nf-test stub runs still evaluate the tool versions of the modules
+# (`eval` outputs), so on a machine without the tools ZG_CHECK_PATH must also hold version shims (fastqc, multiqc,
+# picard, samtools, cutadapt, pigz) that print the pinned versions; the snapshots were recorded with those
 # (docs/CONTRIBUTING.md). Laptop example:
 #   ZG_CHECK_PATH=$PWD/agent/bin:$PWD/agent/.venv_nfcore/bin:$PWD/agent/stubbin NXF_VER=26.04.6 bash scripts/run_checks.sh
 set -euo pipefail
@@ -22,6 +25,9 @@ step() { printf '\n##### %s\n' "$*"; }
 step "sample registry: rebuild meta/{registry,samples,accessions}.csv from meta/sources/ (sha256-pinned) and diff"
 python3 meta/build_samples.py --check
 
+step "conf/env_prefixes.config matches the environment.yml / build.sh contents (scripts/build_envs.sh --check-config)"
+bash scripts/build_envs.sh --check-config
+
 step "nf-core pipelines lint (must report 0 failed)"
 nf-core pipelines lint --dir . 2>&1 | tee /dev/stderr | grep -qE '\[✗\] +0 Tests Failed' || { echo "nf-core lint: failures" >&2; exit 1; }
 
@@ -31,6 +37,9 @@ nf-core pipelines schema lint nextflow_schema.json
 step "nextflow lint (errors fail, warnings are reported)"
 nextflow lint main.nf workflows subworkflows/local modules/local nextflow.config conf
 
+step "no task.* inside an ext.args closure in conf/*.config (it enters the task hash; nextflow-cache skill)"
+python3 scripts/check_ext_args.py
+
 if [ "${1:-}" = "--quick" ]; then
     echo "quick checks passed"
     exit 0
@@ -38,5 +47,8 @@ fi
 
 step "nf-test (local modules, local subworkflows, pipeline; stub)"
 nf-test test --tag stub
+
+step "resolved hazel resources per process (hazel,normal and hazel,short stub runs vs tests/expected_resources.tsv)"
+bash scripts/check_resources.sh
 
 echo "all checks passed"

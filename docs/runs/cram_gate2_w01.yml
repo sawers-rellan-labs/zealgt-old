@@ -1,0 +1,28 @@
+# Run card (params): CRAM Gate 2, wave 1 of 3 — genotype development donors at full depth into the production store
+# (docs/PLAN_pipeline.md §6 "CRAM Gate 2"). Approved by the user 2026-09-29; card docs/runs/cram_gate2_w01.md.
+# Also the full-depth ALIGN_MARKDUP memory test (PLAN §6 "Memory test"): the coordinator reviews its memory peaks before wave 2.
+# Code: main 258f4a3 (pipeline tree = simplify 63b48bf, Gates 0/1 + cache test passed there).
+# Sample sheet: docs/runs/cram_gate2_w01.csv = the rows of these libraries copied verbatim from meta/samples.csv
+# (validated against assets/schema_input.json). This file and the csv reach hazel only by git (commit, push, pull).
+#
+# Libraries (whole libraries: a library is demultiplexed once, all its samples; meta/registry.csv donor_resolved):
+#   2A    BC1  12 samples (Zx.0540_P3: 2)   3 lanes  133 GB raw   registry seed -> --force_demux
+#   2F    BC1  12 samples (Zx.0540_P3: 2)   3 lanes  122 GB raw   registry seed -> --force_demux
+#   3B    BC1  12 samples (Zx.0570_P2: 1)   4 lanes  107 GB raw   registry seed -> --force_demux
+#   BZea5 batch-1 plate, 96 samples (Zx.0540_P3: 15, 5 checks)  2 tar lanes  74 GB raw  not registered
+# Wave 1 holds every raw layout (3-lane BC1, 4-lane BC1, batch-1 tar members) so a layout failure shows in the first wave.
+# Expected peak work/ ~3 x raw ~ 1.3 TB (PLAN §5; Gate 2 3A: 332 GB for 131 GB raw); checkpoint kept ~0.83 x raw ~ 0.36 TB.
+#
+# Submit (after commit + push + `git pull` in ZEAL/zealgt; head job on normal QOS, tasks routed by conf/normal.config):
+#   ssh hazel 'sbatch --qos=normal --partition=compute --time=3-00:00:00 --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch cram_gate2_w01 -profile hazel,normal -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_w01.yml'
+# workDir /share/maize/frodrig4/nf_work/cram_gate2_w01/work (from --run_id, set by the head script; conf/hazel.config).
+workflow: cram
+entry: read_demultiplexing
+input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_w01.csv
+libraries: 2A,2F,3B,BZea5
+force_demux: 2A,2F,3B
+# checkpoint root holds no library yet (checked 2026-09-29: the root does not exist), so 4 requested <= 4
+max_libraries: 4
+store: /rsstu/users/r/rrellan/BZea/ZEAL/store
+fastq_checkpoint: /share/maize/frodrig4/fastq_checkpoint
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_w01

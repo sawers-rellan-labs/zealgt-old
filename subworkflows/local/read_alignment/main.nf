@@ -1,8 +1,8 @@
 //
-// READ_ALIGNMENT (PLAN §3 row 2): ALIGN_MARKDUP (minibwa -> RG -> fixmate -> sort -> markdup -d 2500 -> CRAM, storeDir
-// <store>/cram) -> CRAM_QC_PROVENANCE (SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS published into <store>/cram, PROVENANCE).
-// Samples whose CRAM is already stored arrive in ch_stored and are not aligned again; their QC and provenance are produced
-// only if missing.
+// READ_ALIGNMENT (PLAN §3 row 2, stage 2): ALIGN_MARKDUP (minibwa -> RG -> fixmate -> sort -> markdup -d 2500 -> CRAM,
+// published to <store>/cram) -> CRAM_QC_PROVENANCE (SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS + PROVENANCE, published into
+// <store>/cram). Samples whose CRAM is already stored and verified arrive in ch_stored and are not aligned again (the CRAM
+// workflow decides, zgIsStored); their QC and provenance are produced only if missing.
 //
 include { ALIGN_MARKDUP      } from '../../../modules/local/align_markdup/main'
 include { CRAM_QC_PROVENANCE } from '../cram_qc_provenance/main'
@@ -15,7 +15,7 @@ workflow READ_ALIGNMENT {
     ch_stored      // channel: [ val(meta), cram, crai, [ versions.yml ] ]  CRAMs already in <store>/cram
     ch_ref         // channel: value [ val(meta2), fasta, fai, [ minibwa index files ] ]
     ch_records     // channel: [ sample_id, record map ]  one per sample (new and stored)
-    ch_stored_qc   // channel: [ sample_id, [ QC files already in <store>/cram ] ]  one per sample
+    ch_stored_qc   // channel: [ sample_id, [ QC files and provenance.json already in <store>/cram ] ]  one per sample
 
     main:
     def ch_align_in = ch_reads
@@ -24,7 +24,8 @@ workflow READ_ALIGNMENT {
         .map { _id, meta, reads, read_group -> [meta, reads, read_group] }
     ALIGN_MARKDUP(ch_align_in, ch_ref)
 
-    // versions.yml is a path-only output (storeDir); it is matched to its CRAM by the file name <prefix>.align_markdup.versions.yml
+    // versions.yml is a path-only output (kept next to the CRAM in the store, so PROVENANCE of a stored CRAM still has it);
+    // it is matched to its CRAM by the file name <prefix>.align_markdup.versions.yml
     def ch_align_versions = ALIGN_MARKDUP.out.versions.map { f -> [f.name - '.align_markdup.versions.yml', f] }
     def ch_cram = ALIGN_MARKDUP.out.cram
         .map { meta, cram, crai -> [meta.id, meta, cram, crai] }

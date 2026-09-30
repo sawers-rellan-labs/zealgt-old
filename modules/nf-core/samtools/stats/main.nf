@@ -22,14 +22,11 @@ process SAMTOOLS_STATS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def reference = fasta ? "--reference ${fasta}" : ""
-    // zealgt patch (resources only, PLAN §2 rule 4 hash hygiene): threads / memory come from bin/export_slurm_resources.sh at run
-    // time (ZG_CPUS, ZG_JAVA_MEM_MB), not from task.cpus / task.memory, so reallocating resources keeps the task hash.
     """
-    source export_slurm_resources.sh
     samtools \\
         stats \\
         ${args} \\
-        --threads \${ZG_CPUS} \\
+        --threads ${task.cpus} \\
         ${reference} \\
         ${input} \\
         > ${prefix}.stats

@@ -5,7 +5,7 @@
 | output | what |
 |---|---|
 | `meta/registry.csv` | one row per sequenced sample of every experiment, key `sample_id`; raw identity columns from the sources, `*_resolved` columns with `meta/corrections.csv` applied |
-| `meta/samples.csv` | the sample sheet of workflow 1 (read processing): the non-excluded `bc1` / `bc2s3_batch1` / `bc2s3_batch2` rows of the registry, first 20 columns (validated by `assets/schema_input.json`) |
+| `meta/samples.csv` | the sample sheet of workflow 1 (read processing): the non-excluded `bc1` / `bc2s3_batch1` / `bc2s3_batch2` rows of the registry, first 21 columns, up to `rg_pu` (validated by `assets/schema_input.json`) |
 | `meta/accessions.csv` | donor passport data of the 227 accessions (J2Teo `metadata`), `longitude_resolved` with the corrections applied |
 | `meta/corrections.csv` | append-only identity correction log (hand-maintained; never rewritten) |
 
@@ -127,7 +127,8 @@ Two different Twist kits; the read structure is a per-source parameter of DEMUX,
 Evidence:
 - **Kit documents:** Twist 96-Plex demultiplexing guide DOC-001283 Rev 1.0 (Fig. 2 p2; read structures p6; barcode list p15) and FlexPrep
   UHT demux guide DOC-001509 (Fig. 3 p4; structure p7); notes and PDF in `agent/20260927_231439_twist_96plex_guide.md`. Neither gives adapter
-  sequences; the plate/UDI indexes are TruSeq-type, so Trimmomatic uses TruSeq3-PE-2.fa (a parameter) until Nirwan's `adapters.fa` is known.
+  sequences; the plate/UDI indexes are TruSeq-type, so zealgt trims the full TruSeq read-through adapters (`trim_adapter_r1` /
+  `trim_adapter_r2`; *Trimming* below); Nirwan's `adapters.fa` is still unread.
 - **Batch 1 = 96-Plex:** Hannah's Slack messages (library prep sheet `BZea Library Prep Sheet Code.xlsx`, 2023-07-13; sent for sequencing
   2023-05-23); the sample sheet's barcodes are Twist's 96-Plex list (A01 `CGTACGTA`); raw reads (plate 5 lane 1, job 969161) are 151 bp, 92.2 %
   start with an exact plate-5 well barcode, R1 bases 9–20 and R2 bases 1–8 are primer-derived: aligned to B73 chr10 (job 969188, minimap2)
@@ -142,6 +143,30 @@ Evidence:
 - **Provider documents:** Slack `agent/20260927_230549_slack_sequencing_provenance.md`; Gmail `agent/20260927_230917_gmail_sequencing_provenance.md`;
   Novogene release in `BZea/BC1_dna_raw/` (`Readme.html`, `02.Report_…zip`, `MD5.txt`; md5 check 243/243, job 651495) —
   `agent/20260927_233737_novogene_download_doc.md`.
+
+## Trimming: cutadapt instead of Nirwan's Trimmomatic (2026-09-29)
+- **Nirwan (batch 1):** Trimmomatic 0.39 `PE -phred33`, `ILLUMINACLIP:<custom adapters.fa, unreadable>:2:30:10 LEADING:3 TRAILING:3
+  SLIDINGWINDOW:4:15 MINLEN:36`; unpaired reads discarded. zealgt until 2026-09-29: the same, with TruSeq3-PE-2.fa.
+- **Now:** cutadapt 5.2 (nf-core CUTADAPT module), for every source:
+  - the full TruSeq read-through adapter on each read, `-a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT`;
+  - 3′ quality trimming with G bases treated as low quality (`--nextseq-trim=15`): the reads are two-colour (NovaSeq X for BC1 and
+    batch 2, NovaSeq 6000 for batch 1), where no signal reads as a high-quality G, so poly-G tails survive Trimmomatic's quality steps;
+  - pairs dropped when either read is < 36 bp (`-m 36`; the same as keeping only Trimmomatic's paired output);
+  - qualities read as phred+33 (cutadapt's default; no encoding auto-detection, so an empty well needs no option);
+  - output gzip level 4 (`--compression-level 4`, in `trim_args`; cutadapt 5's default is level 1).
+- **Not replicated:** LEADING:3 (5′ quality) and the SLIDINGWINDOW algorithm (cutadapt uses BWA-style 3′ trimming); the palindrome
+  clip is replaced by an adapter search on each read.
+- **Measured (docs/REQUIREMENTS.md §4, measurement log `agent/20260929_182000_trim_comparison_summary.txt`):** on 8 M pairs of each of 5 BC1 1A samples, Trimmomatic's clipping
+  left the full adapter 13-mer in 1.25 % of reads and a 3′ partial adapter in 2.7 %; cutadapt leaves 0.06 % / 0.003 %. cutadapt keeps
+  ~2 % more pairs (99.81 vs 97.87 %), maps the same (99.65 vs 99.66 % mapped, 97.52 vs 97.53 % properly paired), removes the poly-G
+  tails (0 vs 0.004 % of reads ending in ≥ 10 G). LEADING:3 has no effect to replace: the binned NovaSeq X qualities never fall
+  below Q3 at the 5′ end (`-q 3,0` gave identical metrics).
+- **Speed and size (compression retest, 4 cpus, log `agent/20260929_195500_compression_retest_raw.tsv`):** end to end ~6× faster at level 4 (6.3 vs 38.6 s per M
+  pairs; trimming alone ~2.5×, 3.7 vs 9.3 s: compression is ~76 % of Trimmomatic's wall time, its Java Deflater ≈ zlib
+  level 6); output 997 vs 933 MB per 8 M input pairs (+6.8 %, for ~2 % more pairs and ~1.9 % more bases kept; level 1 was
+  +17 %); peak RSS 0.07–0.12 vs 0.41 GB.
+- **Why:** better adapter removal, poly-G handling, one tool family with DEMUX, a maintained nf-core module, multi-core, a
+  MultiQC-native log, and no Java heap tuning.
 
 ## Development import sheet (`meta/dev_import.csv`, 2026-09-24)
 The existing CRAMs zealgt's development entries start from (docs/PLAN_pipeline.md §0), read in place from `ZEAL/results/` (written by
@@ -187,7 +212,13 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
   flowcell/lane/tile from the read names. Per-lane read groups only if lane QC ever shows a lane effect.
 - **Status (2026-09-28):**
   - The CRAM workflow already follows the key and read-group rules.
-  - The provenance snapshot has `donor`, but not yet the line/pedigree and nil_id (to add on branch `simplify`).
+  - On branch `simplify` the provenance record holds the registry snapshot from `meta/registry.csv` (`--registry`): `registry`
+    = file, code_version, `row` (the raw identity and biology columns, text as in the registry) and `resolved` (the
+    `*_resolved` columns and `correction_ids`, recorded separately, never replacing a raw value); the same for the chained run
+    and `read_alignment` via the checkpoint samplesheet's `reg_<column>` cells (docs/output.md).
+  - Batch-1 `PU`: `rg_pu` = `H7HYFDSX7.<lane>` per plate (the flowcell of every read header read on hazel, the lanes of the tar
+    members; `meta/build_samples.py`). BC1 / batch 2 leave `rg_pu` empty and the pipeline reads PU from the Novogene lane file
+    names.
   - The edge translation is a rule for the genotype workflow (branch `genotype`); column note:
     `agent/20260928_182000_samples_csv_change_note.md`.
 
@@ -220,5 +251,18 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
 10. **79 landrace BC1S3/BC1S4 lines:** confirm they belong in the ZEAL genotyping. 50 have no J2Teo row.
 11. **BRB-seq:** 3 wells disagree between the prep sheet genotype and J2Teo (above). Pools BZeaRP2–4 (plates 5–15, 998 wells) were prepped
     but have no reads on Drive. The fall-2023 list (`BZeaBRB-F manifest`) has no sequencing record.
+13. **Batch-C lines (`_Q` segments) collide in the nil_id rule** (checked 2026-09-29, `agent/20260929_133000_test_q_as_p.py`).
+    J2Teo has 9,689 cells with a `_Q<n>` segment (BC1 tab 121, BC2 1,010, BC2S1 2,295, BC2S2 1,451, BC2S3 1,317, `All` 3,495). `_Q`
+    is not a typo for `_P`: every Q row is batch **C** (2023 crosses: seed `23CLD1B73x…`, `CLY24A5C-…`, `PV24-…`; old names used `_X`,
+    e.g. `CIM10003_P2_P1_X1`), and renaming Q→P gives 0 rows that describe the same plant but 1,787 names (in `All`) that already belong
+    to a **different** batch-A/B plant, e.g. `Zd.0010_P2_P1_Q1` (batch C, seed 23CLD1B73x475.1) vs `Zd.0010_P2_P1_P1` (batch A, seed
+    13CL6081×6082-1). `_Q` appears only at the BC1 or BC2 segment, never first, so the donor (`<accession>_P<n>`) is unaffected. The
+    nil_id rule (`NIL_ID_README.md`) reads those segments by number only, so a batch-C line and a batch-A/B line with the same numbers
+    get the **same nil_id**. **Confirmed by Rubén (Slack DM, 2026-09-29):** "Las Q son nuevas BC2s generadas por nosotros y decidimos
+    usar Q en lugar de P para distinguirlas de las BC2s que había generado Jim"; the practical reason: Jim's P numbers are not
+    consecutive within a donor and skip numbers. So `_Q<n>` and `_P<n>` are different plants, and the nil_id must encode the letter
+    (encoding to be decided by the rule's owner). No sequenced sample is batch C today (registry: 0 `_Q` pedigrees), so nothing here is affected; before any
+    batch-C line is sequenced or registered, the rule's owner (zealhmm register, Rubén's naming) must encode the letter. The builder
+    refuses any pedigree it cannot give a donor.
 12. **MolBreeding 45K:** the target-sequencing tubes (`Molbreeding samples` / `Molbreeding_manifest`) are keyed by batch-1 Seq_ID and are
     not joined yet. zealtiger found that the target-seq tube labelled PN4_SID330 is PN4_SID322 (`pn4_sid330_mislabel.qmd`).

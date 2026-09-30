@@ -1,0 +1,24 @@
+# Run card (params): CRAM Gate 2, wave 3 of 3. Approved by the user 2026-09-29; card docs/runs/cram_gate2_w03.md.
+# NOT submitted: start only after wave 2's head job ended with no failed task, after the coordinator's review, and every checkpoint line `removable` (docs/usage.md "Waves of libraries" step 1).
+# Sample sheet: docs/runs/cram_gate2_w03.csv (verbatim rows of meta/samples.csv; validated against assets/schema_input.json).
+#
+# Libraries (meta/registry.csv donor_resolved):
+#   3D    BC1  12 samples (Zx.0570_P2: 1)   4 lanes  100 GB raw   registry seed -> --force_demux
+#   3E    BC1  12 samples (Zx.0570_P2: 1)   4 lanes  109 GB raw   registry seed -> --force_demux
+#   BZea8 batch-1 plate, 96 samples (Zx.0570_P2: 34, 4 checks)  2 tar lanes  91 GB raw  not registered
+#   BZea9 batch-1 plate, 96 samples (Zx.0570_P2: 10, 2 checks)  2 tar lanes  68 GB raw  not registered
+# After wave 3 every Zx.0570_P2 library (2H 3B 3C 3D 3E BZea8 BZea9) is in the store. 216 samples, 192 of them batch-1.
+#
+# Submit (after commit + push + pull):
+#   ssh hazel 'sbatch --qos=normal --partition=compute --time=3-00:00:00 --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch cram_gate2_w03 -profile hazel,normal -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_w03.yml'
+workflow: cram
+entry: read_demultiplexing
+input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_w03.csv
+libraries: 3D,3E,BZea8,BZea9
+force_demux: 3D,3E
+# User decision 2026-09-29 (checkpoints kept through genotype Gate 2, --max_libraries 4k): 8 checkpoint dirs kept from
+# waves 1-2 + 4 requested = 12.
+max_libraries: 12
+store: /rsstu/users/r/rrellan/BZea/ZEAL/store
+fastq_checkpoint: /share/maize/frodrig4/fastq_checkpoint
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_w03

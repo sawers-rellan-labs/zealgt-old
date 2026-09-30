@@ -1,5 +1,5 @@
 {
-    "LX_1 new, LX_2 with stored stats - stub": {
+    "LX_1 new, LX_2 with stored stats and provenance - stub": {
         "content": [
             [
                 "LX_1 LX_1.CollectWgsMetrics.coverage_metrics",
@@ -16,7 +16,7 @@
                 [
                     "LX_2",
                     "LX_2.provenance.json",
-                    "{\"sample\":\"LX_2\"}"
+                    "{\"sample\": \"LX_2\", \"stored\": true}"
                 ]
             ],
             [
@@ -25,7 +25,7 @@
                 "[CRAM_QC_PROVENANCE:SAMTOOLS_STATS, samtools, 1.24]"
             ]
         ],
-        "timestamp": "2026-09-28T01:37:00.616322",
+        "timestamp": "2026-09-28T10:27:11.07838",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
