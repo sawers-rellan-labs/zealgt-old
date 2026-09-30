@@ -29,6 +29,9 @@ process ALIGN_MARKDUP {
     label 'process_high'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/9e/9e2e098dd3916f58f277db74a690926056acb1afa1734a518afdd733ac20805b/data'
+        : 'community.wave.seqera.io/library/minibwa_samtools_htslib:d284993f5ca26fd3'}"
 
     input:
     tuple val(meta), path(reads), val(read_group)

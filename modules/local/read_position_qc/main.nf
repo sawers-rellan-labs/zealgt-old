@@ -15,6 +15,9 @@ process READ_POSITION_QC {
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/09/093fd430fdaab9e508a0d72ff7624b07c86e9936968f86b72a0daefea0351f9d/data'
+        : 'community.wave.seqera.io/library/samtools_htslib_python:6ae7b1586a14347f'}"
 
     input:
     tuple val(meta), path(alignments, stageAs: 'aln/*'), path(indexes, stageAs: 'aln/*'), val(sample_ids)

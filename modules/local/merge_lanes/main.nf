@@ -11,6 +11,9 @@ process MERGE_LANES {
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/d4/d46b7935dab5d838922bcb417dba1dad36e34e4af9c525e3dc6e840e63f099a0/data'
+        : 'community.wave.seqera.io/library/coreutils:9.11--f74a8122926b8a04'}"
 
     input:
     tuple val(meta), path(reads, stageAs: 'lanes/*'), val(barcodes), val(n_lanes)

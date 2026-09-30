@@ -6,6 +6,6 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconda::minibwa=0.7=h118bc1c_0
-  - bioconda::samtools=1.21=h96c455f_1
-  - bioconda::htslib=1.21=h566b1c6_1
+  - bioconda::minibwa=0.7
+  - bioconda::samtools=1.21
+  - bioconda::htslib=1.21

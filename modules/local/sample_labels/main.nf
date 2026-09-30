@@ -17,6 +17,9 @@ process SAMPLE_LABELS {
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/ea/eab5e327131db0b3743e8264de7ea497bf3f9d2d5c4bab89147c89c0bb7cb765/data'
+        : 'community.wave.seqera.io/library/python:3.12.14--e1a45735c4c986d6'}"
 
     input:
     tuple val(meta), path(genotypes, stageAs: 'input/*'), path(matrix, stageAs: 'input/*'), path(segments, stageAs: 'input/*'), path(line_qc, stageAs: 'input/*'), path(exclusions, stageAs: 'input/*'), val(donor), val(sample_ids)

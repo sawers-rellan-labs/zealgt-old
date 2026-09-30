@@ -6,6 +6,6 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconda::samtools=1.21=h96c455f_1
-  - bioconda::htslib=1.21=h566b1c6_1
-  - conda-forge::gawk=5.4.1=h0a3468a_0
+  - bioconda::samtools=1.21
+  - bioconda::htslib=1.21
+  - conda-forge::gawk=5.4.1

@@ -6,8 +6,8 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconda::cutadapt=4.9=py312h0fa9677_3
-  - conda-forge::python=3.12.14=h5f976f7_3_cpython
-  - conda-forge::pigz=2.8=h421ea60_2
-  - conda-forge::coreutils=9.11=h280c20c_0
-  - conda-forge::tar=1.35=h3b78370_0
+  - bioconda::cutadapt=4.9
+  - conda-forge::python=3.12.14
+  - conda-forge::pigz=2.8
+  - conda-forge::coreutils=9.11
+  - conda-forge::tar=1.35
