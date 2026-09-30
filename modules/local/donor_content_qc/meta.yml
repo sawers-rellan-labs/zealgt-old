@@ -50,7 +50,7 @@ output:
   versions:
     - "*.donor_content_qc.versions.yml":
         type: file
-        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a file: a module template: `eval` outputs need a Bash script"
         pattern: "*.donor_content_qc.versions.yml"
         ontologies: []
 authors:

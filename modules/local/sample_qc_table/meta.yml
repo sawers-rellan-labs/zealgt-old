@@ -58,7 +58,7 @@ output:
   versions:
     - "*.sample_qc_table.versions.yml":
         type: file
-        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a file: a module template: `eval` outputs need a Bash script"
         pattern: "*.sample_qc_table.versions.yml"
         ontologies: []
 authors:

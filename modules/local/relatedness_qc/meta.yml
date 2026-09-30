@@ -61,7 +61,7 @@ output:
   versions:
     - "*.relatedness_qc.versions.yml":
         type: file
-        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a file: a module template: `eval` outputs need a Bash script"
         pattern: "*.relatedness_qc.versions.yml"
         ontologies: []
 authors:

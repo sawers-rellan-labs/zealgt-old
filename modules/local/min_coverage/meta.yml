@@ -46,7 +46,7 @@ output:
   versions:
     - "*.min_coverage.versions.yml":
         type: file
-        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a file: a module template: `eval` outputs need a Bash script"
         pattern: "*.min_coverage.versions.yml"
         ontologies: []
 authors:

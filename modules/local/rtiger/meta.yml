@@ -58,7 +58,7 @@ output:
   versions:
     - "*.rtiger.versions.yml":
         type: file
-        description: Tool versions (r-base, nilhmm, r-data.table); a file: a module template: `eval` outputs need a Bash script
+        description: "Tool versions (r-base, nilhmm, r-data.table); a file: a module template: `eval` outputs need a Bash script"
         pattern: "*.rtiger.versions.yml"
         ontologies: []
 authors:

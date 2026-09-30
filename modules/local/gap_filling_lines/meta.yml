@@ -72,7 +72,7 @@ output:
   versions:
     - "*.gap_filling_lines.versions.yml":
         type: file
-        description: Tool versions (python); a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a module template: `eval` outputs need a Bash script"
         pattern: "*.gap_filling_lines.versions.yml"
         ontologies: []
 authors:

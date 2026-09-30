@@ -53,7 +53,7 @@ output:
   versions:
     - "*.rtiger_markers.versions.yml":
         type: file
-        description: Tool versions (python); a file: a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a file: a module template: `eval` outputs need a Bash script"
         pattern: "*.rtiger_markers.versions.yml"
         ontologies: []
 authors:

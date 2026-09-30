@@ -59,7 +59,7 @@ output:
   versions:
     - "*.rasterize.versions.yml":
         type: file
-        description: Tool versions (python); a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a module template: `eval` outputs need a Bash script"
         pattern: "*.rasterize.versions.yml"
         ontologies: []
 authors:

@@ -100,7 +100,7 @@ output:
   versions:
     - "${task.ext.prefix ?: meta.id}.pooled_likelihood_tiers.versions.yml":
         type: file
-        description: Tool versions (python); a module template: `eval` outputs need a Bash script
+        description: "Tool versions (python); a module template: `eval` outputs need a Bash script"
         pattern: "*.pooled_likelihood_tiers.versions.yml"
         ontologies: []
 authors:
