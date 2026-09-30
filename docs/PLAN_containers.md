@@ -110,6 +110,15 @@ Nothing is deleted by any step; every removal is a separate, consented action (`
      248e67e is `DESCRIPTION`, so the code is the one the benchmark ran.
   2. **Pin the tag in zealgt**: `build.sh` downloads the tag's tarball, checks its sha256 and asserts `packageVersion` = the tag
      (today: commit 248e67e and `== "0.3.0"`). New prefix and task hashes for that module (fine after the benchmark record).
+  2b. **CRISP from upstream, pinned by git commit** (user decision 2026-09-29: install from `vibansal/crisp`, no lab fork).
+     Upstream has no release after `v0.2`; the pin 1a9027e is its latest commit (2026-04-21). `modules/local/crisp/build.sh`
+     today downloads GitHub's generated archive of that commit and checks its sha256 — fragile, because GitHub may regenerate
+     archives with different bytes (the January 2023 compression change broke sha256 pins everywhere). Replace it with
+     `git clone https://github.com/vibansal/crisp.git` + `git -c advice.detachedHead=false checkout <full 40-char sha>` +
+     `test "$(git rev-parse HEAD)" = <full sha>`: git verifies the content through the commit hash, and there is no archive to
+     break. `environment.yml` gains a pinned `conda-forge::git` (the build env must not rely on the node's git). The
+     remaining risk — upstream deleting the commit — only affects rebuilds: the published image keeps the compiled binary.
+     Same `build.sh` for the hazel prefix and the Dockerfile (step 3). Can be done in the genotype alignment work or here.
   3. **Dockerfile per module** next to its `environment.yml` (`modules/local/<module>/Dockerfile`): `FROM` a micromamba base pinned
      by digest; install the same `environment.yml` into the image's base env; run the **same `build.sh`** (`CONDA_PREFIX=/opt/conda`,
      `ZG_BUILD_DIR` a temp dir). One recipe feeds both the hazel conda prefix and the image.
