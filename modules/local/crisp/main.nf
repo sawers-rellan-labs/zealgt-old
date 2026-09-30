@@ -17,7 +17,7 @@ process CRISP {
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
-    container "ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e"   // modules/local/crisp/Dockerfile (.github/workflows/build_images.yml)
+    container "ghcr.io/sawers-rellan-labs/zealgt-tools:crisp-1a9027e"   // modules/local/crisp/Dockerfile (.github/workflows/build_images.yml)
 
     input:
     tuple val(meta), path(bams, stageAs: 'bc1/*'), path(bais, stageAs: 'bc1/*'), path(witness_bam, stageAs: 'witness/*'), path(witness_bai, stageAs: 'witness/*')

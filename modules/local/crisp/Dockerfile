@@ -1,5 +1,5 @@
 # CRISP (vibansal/crisp, not on conda) for the CRISP module; built by .github/workflows/build_images.yml into
-# ghcr.io/sawers-rellan-labs/zealgt-crisp (docs/PLAN_containers.md §2, §4). Upstream is pinned by a git clone + checkout of
+# ghcr.io/sawers-rellan-labs/zealgt-tools:crisp-<commit> (docs/PLAN_containers.md §2, §4). Upstream is pinned by a git clone + checkout of
 # one commit + a check that HEAD is that commit (no archive: GitHub may change its bytes). Conda packages as in the module's
 # former environment.yml (versions only). Two stages: compilers and git only in the build stage; the runtime image holds
 # htslib (bgzip, tabix), zlib, procps (Nextflow's task metrics) and the CRISP binary, rpath'd to the same /opt/conda/lib.

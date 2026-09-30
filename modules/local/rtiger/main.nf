@@ -15,7 +15,7 @@ process RTIGER {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    container "ghcr.io/sawers-rellan-labs/zealgt-nilhmm:0.3.1"    // modules/local/rtiger/Dockerfile (.github/workflows/build_images.yml)
+    container "ghcr.io/sawers-rellan-labs/zealgt-tools:nilhmm-0.3.1"    // modules/local/rtiger/Dockerfile (.github/workflows/build_images.yml)
 
     input:
     tuple val(meta), path(counts)
