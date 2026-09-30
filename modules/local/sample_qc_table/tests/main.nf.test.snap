@@ -1,0 +1,69 @@
+{
+    "cohort - panel - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "cohort"
+                    },
+                    "cohort.sample_qc.tsv:md5,016d1b848b7b44060d12ac92c808e85a"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:44:33.798296",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cohort - no panel - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.sample_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "cohort.sample_qc_table.versions.yml:md5,4016236688bd5bd58a3aa2f5f27da90c"
+                ],
+                "tsv": [
+                    [
+                        {
+                            "id": "cohort"
+                        },
+                        "cohort.sample_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "cohort.sample_qc_table.versions.yml:md5,4016236688bd5bd58a3aa2f5f27da90c"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T07:44:27.415043",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cohort - no panel - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "cohort"
+                    },
+                    "cohort.sample_qc.tsv:md5,5a2f8b9b1b359c8420b0604e9d984b67"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:44:31.080038",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

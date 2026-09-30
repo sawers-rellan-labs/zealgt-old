@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+# RTIGER: Rscript with nilHMM 0.3.0 (Julia-free RTIGER port, sawers-rellan-labs/nilhmm @ 248e67e, installed into this env's
+# R library by build.sh) and data.table. R and the nilHMM deps as zealbc1's nilhmm env (envs/legacy_zealbc1/nilhmm.list.txt);
+# compilers/make only for R CMD INSTALL of the Rcpp package. Exact version + build.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - conda-forge::r-base=4.4.3=h502d0c9_11
+  - conda-forge::r-data.table=1.18.6.1=r44hbd9402d_0
+  - conda-forge::r-rcpp=1.1.2=r44h3697838_0
+  - conda-forge::r-rcppparallel=5.1.11_2=r44heb10100_1
+  - conda-forge::gcc_linux-64=15.3.0=h7df7c86_1
+  - conda-forge::gxx_linux-64=15.3.0=h8c4937a_1
+  - conda-forge::make=4.4.1=hb03c661_3

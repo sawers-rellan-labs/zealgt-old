@@ -1,0 +1,1 @@
+fixture seed (make_fixtures.py): step-4 table of Zx.9001_P1 in chr10_1-16000

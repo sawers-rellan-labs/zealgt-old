@@ -1,0 +1,139 @@
+{
+    "Zx.0001_P1.chrA_1-5000 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.genotypes.tsv.gz:md5,dd0a38e4d0a45b4d73a4bcf0948d8e30"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.genotypes.matrix.tsv.gz:md5,b2a9f0b29f92c159d43840f5ffc1ed7c"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.segments.csv:md5,288cdddc92d66653d9090b850821f1cd"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.line_qc.tsv:md5,3c0fd1989c7490cc8e350965f71df3da"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.exclusions.tsv:md5,4b6ed702a79db2560832211cc5b29dca"
+                    ]
+                ],
+                "5": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,34ed522af9013d913ad146b5a448683d"
+                    ]
+                ],
+                "6": [
+                    "Zx.0001_P1.chrA_1-5000.sample_labels.versions.yml:md5,613106562f8617935a96c2acffdaa4fb"
+                ],
+                "exclusions": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.exclusions.tsv:md5,4b6ed702a79db2560832211cc5b29dca"
+                    ]
+                ],
+                "genotypes": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.genotypes.tsv.gz:md5,dd0a38e4d0a45b4d73a4bcf0948d8e30"
+                    ]
+                ],
+                "labels": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.sample_labels.tsv:md5,34ed522af9013d913ad146b5a448683d"
+                    ]
+                ],
+                "line_qc": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.line_qc.tsv:md5,3c0fd1989c7490cc8e350965f71df3da"
+                    ]
+                ],
+                "matrix": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.genotypes.matrix.tsv.gz:md5,b2a9f0b29f92c159d43840f5ffc1ed7c"
+                    ]
+                ],
+                "segments": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.segments.csv:md5,288cdddc92d66653d9090b850821f1cd"
+                    ]
+                ],
+                "versions": [
+                    "Zx.0001_P1.chrA_1-5000.sample_labels.versions.yml:md5,613106562f8617935a96c2acffdaa4fb"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-29T12:59:29.174831",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

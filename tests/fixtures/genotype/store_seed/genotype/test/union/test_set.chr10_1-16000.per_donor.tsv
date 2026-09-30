@@ -1,0 +1,3 @@
+donor	donor_kind	table	table_sha256	tierA	shared	private	union_alleles	n_gaps	multiallelic_own
+Zx.9001_P1	run	Zx.9001_P1.chr10_1-16000.sites.tsv.gz	fixture	12	4	8	19	6	1
+Zx.9002_P1	reference	Zx.9002_P1.sites.tsv.gz	fixture	11	4	7	19	7	1

@@ -1,0 +1,95 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). samtools merge | addreplacerg in one pipe.
+name: witness_pool
+description: Merge the donor's masked BC2S3 line BAMs of one region into one witness pool with exactly one read group (ID = SM = the witness name, PL ILLUMINA), in one pipe, and index it.
+keywords:
+  - merge
+  - pool
+  - read group
+  - variant discovery
+tools:
+  - samtools:
+      description: Tools for manipulating next-generation sequencing data (merge, addreplacerg, index)
+      homepage: http://www.htslib.org/
+      documentation: https://www.htslib.org/doc/samtools.html
+      doi: 10.1093/bioinformatics/btp352
+      licence: ["MIT"]
+      identifier: biotools:samtools
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map of the unit (donor x region)
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - bams:
+        type: file
+        description: Masked line BAMs of the donor (MASK_READ_STARTS)
+        pattern: "*.bam"
+        ontologies: []
+    - bais:
+        type: file
+        description: Their indexes
+        pattern: "*.bam.bai"
+        ontologies: []
+    - witness:
+        type: string
+        description: Witness pool name, [A-Za-z0-9_-]+ (no dots; e.g. Zx0540_P3_BC2S3); the output file name and read group
+  - - meta2:
+        type: map
+        description: |
+          Groovy Map containing reference information
+          e.g. [ id:'B73' ]
+    - fasta:
+        type: file
+        description: Reference FASTA
+        pattern: "*.{fa,fasta,fa.gz,fasta.gz}"
+        ontologies: []
+    - fai:
+        type: file
+        description: FASTA index
+        pattern: "*.fai"
+        ontologies: []
+output:
+  bam:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${witness}.bam":
+          type: file
+          description: The witness pool, one @RG
+          pattern: "*.bam"
+          ontologies: []
+      - "${witness}.bam.bai":
+          type: file
+          description: Its index
+          pattern: "*.bam.bai"
+          ontologies: []
+  versions_samtools:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - samtools:
+          type: string
+          description: Name of the tool
+      - "samtools version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - samtools:
+          type: string
+          description: Name of the tool
+      - "samtools version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

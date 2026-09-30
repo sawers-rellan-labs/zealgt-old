@@ -1,0 +1,62 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
+name: rtiger_markers
+description: Stage 4 RTIGER marker list; the donor's own tier-A biallelic SNV sites from its step-4 table, without hard flags, as a header-less chrom pos ref alt site list for the line counts.
+keywords:
+  - ancestry
+  - rtiger
+  - markers
+  - genotype
+tools:
+  - python:
+      description: Python standard library script (module template, templates/select_rtiger_markers.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map of the donor x region unit
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - sites:
+        type: file
+        description: Step-4 table of the donor (POOLED_LIKELIHOOD_TIERS; header with chrom pos ref alt tier [flags])
+        pattern: "*.sites.tsv.gz"
+        ontologies: []
+output:
+  sites:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the donor x region unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+      - "*.tierA_sites.tsv":
+          type: file
+          description: "Tier-A markers: chrom pos ref alt, tab-separated, no header, sorted by contig and position"
+          pattern: "*.tierA_sites.tsv"
+          ontologies: []
+  summary:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the donor x region unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+      - "*.rtiger_markers.tsv":
+          type: file
+          description: "One row: rows read, tier, tier rows, not SNV, flagged, multiallelic positions, markers written"
+          pattern: "*.rtiger_markers.tsv"
+          ontologies: []
+  versions:
+    - "*.rtiger_markers.versions.yml":
+        type: file
+        description: "Tool versions (python); a file: a module template: `eval` outputs need a Bash script"
+        pattern: "*.rtiger_markers.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

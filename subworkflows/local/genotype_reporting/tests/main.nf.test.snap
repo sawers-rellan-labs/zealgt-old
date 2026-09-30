@@ -1,0 +1,101 @@
+{
+    "Zx.9001_P1 x chr10:1-16000, with read-position QC - stub": {
+        "content": [
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.sample_labels.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.genotype_summary.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.single_locus.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.breakpoint_density.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.painting.png"
+                ]
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.bc1.masked Zx.9001_P1.chr10_1-16000.bc1.masked.read_position_qc.tsv",
+                "Zx.9001_P1.chr10_1-16000.bc1.raw Zx.9001_P1.chr10_1-16000.bc1.raw.read_position_qc.tsv",
+                "Zx.9001_P1.chr10_1-16000.lines.masked Zx.9001_P1.chr10_1-16000.lines.masked.read_position_qc.tsv",
+                "Zx.9001_P1.chr10_1-16000.lines.raw Zx.9001_P1.chr10_1-16000.lines.raw.read_position_qc.tsv"
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.bc1.masked.read_position_qc.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.bc1.raw.read_position_qc.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.chromosome_painting.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.genotype_summary.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.masked.read_position_qc.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.lines.raw.read_position_qc.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.sample_labels.versions.yml",
+                "chr10_1-16000.region_bed.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-29T21:06:04.819829",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "Zx.9001_P1 x chr10:1-16000, no read-position QC - stub": {
+        "content": [
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.sample_labels.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.genotypes.tsv.gz"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.genotype_summary.tsv"
+                ]
+            ],
+            [
+                [
+                    "Zx.9001_P1.chr10_1-16000",
+                    "Zx.9001_P1.chr10_1-16000.painting.png"
+                ]
+            ],
+            [
+                "Zx.9001_P1.chr10_1-16000.chromosome_painting.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.genotype_summary.versions.yml",
+                "Zx.9001_P1.chr10_1-16000.sample_labels.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T14:36:22.928885",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

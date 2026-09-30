@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow of the genotype workflow; see the header comment of main.nf and the genotype design.
+# Versions: the modules publish their versions.yml to the `versions` topic (collated in workflows/genotype.nf);
+# `versions` here re-emits them.
+name: genotype_imputation
+description: "Stage 7 per donor x region: RASTERIZE (ancestry x donor allele) to long and wide genotype tables"
+keywords:
+  - zealgt
+  - genotype workflow
+  - genotype_imputation
+components:
+  - rasterize
+input:
+  - ch_inputs:
+      type: file
+      description: |
+        channel: [ val(unit), donor_alleles tsv.gz, segments.csv, line_qc.tsv ]  (store)
+output:
+  - genotypes:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.genotypes.tsv.gz ]  (stored in genotypes/<set>/)
+  - matrix:
+      type: file
+      description: |
+        channel: [ val(unit), <donor>.<label>.genotypes.matrix.tsv.gz ]
+  - versions:
+      type: file
+      description: |
+        channel: versions.yml files (every module also publishes to the `versions` topic)
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

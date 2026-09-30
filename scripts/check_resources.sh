@@ -7,7 +7,8 @@
 #   bash scripts/check_resources.sh [--expected <tsv>]        (laptop; on hazel only inside a Slurm job)
 #
 # How: per profile pair (hazel,normal and hazel,short) a -stub run of both CRAM entries (read_demultiplexing on the test
-# fixture library LIBX, markdup_import on touch-file CRAMs) with the real profiles (-profile hazel,<p>), plus an override
+# fixture library LIBX, markdup_import on touch-file CRAMs) and of the 7 genotype entries (tests/fixtures/genotype, each on
+# a store seeded with the earlier stages' outputs) with the real profiles (-profile hazel,<p>), plus an override
 # config that only swaps the executor to local with a large pool (64 cpus, 1 TB: nothing is capped by the laptop), turns
 # conda off, and puts work/, TMPDIR (+ its beforeScript), outdir, a store_stub* store and a checkpoint_stub* FASTQ checkpoint under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
 # retry) are compared with the table: every observed process needs a row, every row must be observed, values must match.
@@ -78,6 +79,67 @@ EOF
             { n = split($c["process"], a, ":"); print p "\t" a[n] "\t" $c["cpus"] "\t" $c["memory"] "\t" $c["time"] "\t" $c["queue"] }' \
             "$D/trace_$entry.txt" >> "$SCRATCH/observed.tsv"
     done
+    # Genotype workflow (conf/genotype_hazel.config): every entry as a -stub run on the tests/fixtures/genotype inputs, with the
+    # fixture params of conf/test_genotype.config given here (that profile's local executor and resourceLimits would change
+    # the resolved values). Each entry gets a fresh store_stub seeded with the store kinds of the stages before it from
+    # tests/fixtures/genotype/store_seed (as tests/genotype.nf.test), so every process of the entry runs.
+    cp "$D/override.config" "$D/genotype_override.config"
+    cat >> "$D/genotype_override.config" <<'EOF'
+// genotype fixture params (conf/test_genotype.config), later than the params block above, so they win
+params {
+    workflow               = 'genotype'
+    genotype_input         = "${projectDir}/tests/fixtures/genotype/genotype_samples_test.csv"
+    cram_store             = "${projectDir}/tests/fixtures/genotype/cram_store"
+    fasta                  = "${projectDir}/tests/fixtures/genotype/ref/tiny10.fa"
+    lowcopy_bed            = "${projectDir}/tests/fixtures/genotype/lowcopy.bed"
+    qc_panel               = "${projectDir}/tests/fixtures/genotype/panel.tsv"
+    mappability_priors     = "${projectDir}/tests/fixtures/genotype/priors"
+    reference_donor_tables = "Zx.9002_P1=${projectDir}/tests/fixtures/genotype/reference/Zx.9002_P1.sites.tsv.gz"
+    regions                = 'chr10:1-16000'
+    donors                 = 'Zx.9001_P1'
+    donor_set              = 'test_set'
+    genotype_store_key     = 'test'
+    b73_controls           = 'B73_CTL'
+    rigidity               = 3
+    rigidity_ref_markers   = 0
+    panel_min_markers      = 4
+}
+EOF
+    seed="$REPO/tests/fixtures/genotype/store_seed/genotype/test"
+    kinds=""
+    for entry in sample_quality_control variant_discovery ancestry_inference marker_union donor_allele_calling genotype_imputation reporting; do
+        G="$D/genotype_$entry"
+        mkdir -p "$G/store_stub/genotype/test"
+        for k in $kinds; do cp -R "$seed/$k" "$G/store_stub/genotype/test/"; done
+        echo "== hazel,$prof  --workflow genotype --entry $entry"
+        ( cd "$G" && nextflow run "$REPO" -profile "hazel,$prof" -stub -c "$D/genotype_override.config" -w "$G/work" \
+            --run_id "check_resources_genotype_$prof" --entry "$entry" --outdir "$G/results" --store "$G/store_stub" \
+            -with-trace "$G/trace.txt" > "$G/nextflow.log" 2>&1 ) \
+            || { echo "check_resources: stub run failed (hazel,$prof genotype $entry), see $G/nextflow.log" >&2; tail -20 "$G/nextflow.log" >&2; exit 1; }
+        awk -F'\t' -v p="$prof" 'NR == 1 { for (i = 1; i <= NF; i++) c[$i] = i; next }
+            { n = split($c["process"], a, ":"); print p "\t" a[n] "\t" $c["cpus"] "\t" $c["memory"] "\t" $c["time"] "\t" $c["queue"] }' \
+            "$G/trace.txt" >> "$SCRATCH/observed.tsv"
+        case "$entry" in
+            sample_quality_control) kinds="sample_qc" ;;
+            variant_discovery) kinds="$kinds step4" ;;
+            ancestry_inference) kinds="$kinds ancestry" ;;
+            marker_union) kinds="$kinds union" ;;
+            donor_allele_calling) kinds="$kinds donor_alleles" ;;
+            genotype_imputation) kinds="$kinds genotypes" ;;
+        esac
+    done
+    # BC1_SITE_COUNTS runs only with --tier_counts_source mpileup: variant_discovery once more in that mode
+    G="$D/genotype_variant_discovery_mpileup"
+    mkdir -p "$G/store_stub/genotype/test"
+    cp -R "$seed/sample_qc" "$G/store_stub/genotype/test/"
+    echo "== hazel,$prof  --workflow genotype --entry variant_discovery --tier_counts_source mpileup"
+    ( cd "$G" && nextflow run "$REPO" -profile "hazel,$prof" -stub -c "$D/genotype_override.config" -w "$G/work" \
+        --run_id "check_resources_genotype_$prof" --entry variant_discovery --tier_counts_source mpileup --outdir "$G/results" \
+        --store "$G/store_stub" -with-trace "$G/trace.txt" > "$G/nextflow.log" 2>&1 ) \
+        || { echo "check_resources: stub run failed (hazel,$prof genotype variant_discovery mpileup), see $G/nextflow.log" >&2; tail -20 "$G/nextflow.log" >&2; exit 1; }
+    awk -F'\t' -v p="$prof" 'NR == 1 { for (i = 1; i <= NF; i++) c[$i] = i; next }
+        { n = split($c["process"], a, ":"); print p "\t" a[n] "\t" $c["cpus"] "\t" $c["memory"] "\t" $c["time"] "\t" $c["queue"] }' \
+        "$G/trace.txt" >> "$SCRATCH/observed.tsv"
 done
 
 # Size probe: the fixture and stub inputs are tiny, so the stub runs above only see hazel.config's 15 min time floor (and

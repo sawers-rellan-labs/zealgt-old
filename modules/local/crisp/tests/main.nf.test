@@ -1,0 +1,84 @@
+nextflow_process {
+
+    name "Test Process CRISP"
+    script "../main.nf"
+    process "CRISP"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "crisp"
+
+    test("Zx.0540_P3.chrA - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0540_P3.chrA', donor:'Zx.0540_P3', region:'chrA' ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam.bai", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam.bai", checkIfExists: true) ],
+                    file("${projectDir}/modules/local/crisp/tests/data/Zx0540_P3_BC2S3.bam", checkIfExists: true),
+                    file("${projectDir}/modules/local/crisp/tests/data/Zx0540_P3_BC2S3.bam.bai", checkIfExists: true)
+                ])
+                input[1] = [ [ id:'chrA' ], file("${projectDir}/modules/local/crisp/tests/data/region.bed", checkIfExists: true) ]
+                input[2] = [ [ id:'tiny' ], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ]
+                input[3] = 'chrA'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.vcf[0][1]).name == "Zx.0540_P3.chrA.crisp.vcf.gz" },
+                { assert file(process.out.vcf[0][2]).name == "Zx.0540_P3.chrA.crisp.vcf.gz.tbi" },
+                { assert file(process.out.log[0][1]).name == "Zx.0540_P3.chrA.crisp.log" }
+            )
+        }
+    }
+
+    // Real CRISP: needs the CRISP binary on PATH (hazel env, or a laptop build; tag crisp_real, not part of --tag stub).
+    // Checks the two behaviours of design §10.9: exit status 1 on success is accepted, and --sm 0 names the pools by file name.
+    test("Zx.0540_P3.chrA - pools named by file, status 0/1 accepted") {
+
+        tag "crisp_real"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0540_P3.chrA', donor:'Zx.0540_P3', region:'chrA' ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/allele_counts/tests/data/p1.bam.bai", checkIfExists: true),
+                      file("${projectDir}/modules/local/allele_counts/tests/data/p2.bam.bai", checkIfExists: true) ],
+                    file("${projectDir}/modules/local/crisp/tests/data/Zx0540_P3_BC2S3.bam", checkIfExists: true),
+                    file("${projectDir}/modules/local/crisp/tests/data/Zx0540_P3_BC2S3.bam.bai", checkIfExists: true)
+                ])
+                input[1] = [ [ id:'chrA' ], file("${projectDir}/modules/local/crisp/tests/data/region.bed", checkIfExists: true) ]
+                input[2] = [ [ id:'tiny' ], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ]
+                input[3] = 'chrA:1-5000'
+                """
+            }
+        }
+
+        then {
+            def vcf = path(process.out.vcf[0][1]).linesGzip
+            def chrom = vcf.find { l -> l.startsWith('#CHROM') }
+            def log = path(process.out.log[0][1]).readLines()
+            assertAll(
+                { assert process.success },
+                { assert chrom.split('\t')[9..-1] == [ 'p1', 'p2', 'Zx0540_P3_BC2S3' ] },
+                { assert log[-1] ==~ /CRISP exit status [01]/ },
+                { assert file(process.out.vcf[0][2]).exists() }
+            )
+        }
+    }
+}

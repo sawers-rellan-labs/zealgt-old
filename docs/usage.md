@@ -8,7 +8,8 @@
 zealgt has two workflows, chosen by `--workflow`, that meet only at the **store** (docs/PLAN_pipeline.md §3):
 
 - `--workflow cram` (default): raw sequencing libraries -> analysis-ready CRAMs + QC + provenance + the demux registry.
-- `--workflow genotype`: CRAM store -> ancestry and imputed genotypes (skeleton; not implemented yet).
+- `--workflow genotype`: CRAM store -> sample QC, variant discovery, ancestry, marker union, donor alleles, genotypes,
+  reports (seven entries, one stage each; section "Genotype workflow" below).
 
 The CRAM workflow runs in two stages with a **FASTQ checkpoint** between them, and has three entries (`--entry`):
 
@@ -161,7 +162,94 @@ stored), but `read_alignment` can no longer rerun it and demultiplexing it again
 The cleanup file lists the task dirs whose outputs the wave used (cached ones included); failed or retried attempts are not
 listed (`nextflow log <run name> -f name,status,workdir` in the launch dir shows them; `nextflow clean` removes them too).
 
+## Genotype workflow
+
+`--workflow genotype --entry <stage>` runs **one stage**. Its inputs are the CRAM store (read-only) and the outputs of the
+earlier stages, which it reads from the keyed genotype store. A missing input stops the run at initialisation, and the
+message names the entry to run first. `--workflow genotype` without `--entry` is refused, and so is a CRAM entry under it.
+
+| # | entry | runs per | writes (`<store>/genotype/<genotype_store_key>/`) |
+|---|---|---|---|
+| 2b | `sample_quality_control` | cohort (the `--donors` rows + `--b73_controls`) | `sample_qc/sample_qc.tsv` (pass / fail per sample; every later stage drops failed samples) |
+| 3 | `variant_discovery` | donor × region | `step4/<donor>.<region>.sites.tsv.gz` (+ summary, pool QC, run info) |
+| 4 | `ancestry_inference` | donor × region | `ancestry/<donor>.<region>.segments.csv`, `.line_qc.tsv` |
+| 5 | `marker_union` | donor set × region | `union/<set>.<region>.tsv.gz` (+ `.union_sites.tsv`, `.per_donor.tsv`) |
+| 6 | `donor_allele_calling` | donor / set × region | `joint_step4/`, `gap_bc1/`, `gap_lines/`, `donor_alleles/<set>/<donor>.<region>.tsv.gz` |
+| 7 | `genotype_imputation` | donor × region | `genotypes/<set>/<donor>.<region>.tsv.gz` (+ `.matrix.tsv.gz`) |
+| 8 | `reporting` | donor × region | nothing in the store; tables and paintings in `--outdir` |
+
+`<region>` is the region label: `chr10`, or `chr10_1-20000000` for `--regions chr10:1-20000000`.
+
+### Inputs
+
+- **Run card:** `-params-file docs/runs/<run>.yml`, with the narrative in `docs/runs/<run>.md`. It holds every parameter of the
+  run. Required: `genotype_store_key`, `donors`, `regions`. From marker_union on, `donor_set` is required too, and
+  donor_allele_calling also needs `mappability_priors`. Examples: `docs/runs/genotype_gate1_zx0540.yml` (Gate 1, every
+  parameter explicit, with each open decision commented) and `docs/runs/gate0/genotype_gate0_<entry>.yml` (Gate 0 stubs).
+- **`--genotype_input`:** the genotype sheet, `meta/genotype_dev.csv` (`assets/schema_genotype.json`, built by
+  `meta/build_genotype_sheet.py`). Its columns are `sample_id` (no dots), `role` (`bc1_sample | line | b73_control`), `donor`
+  (required unless `b73_control`), `taxon`, `source`, `store_dir` (`cram | cram_import`), `mask_r1`, `mask_r2` (5′ cycles set
+  to Q0 by MASK_READ_STARTS, 0-30), `include` and `mask_source`. The sheet holds no paths. The workflow reads
+  `<cram_store>/<store_dir>/<sample_id>.{cram, cram.crai, CollectWgsMetrics.coverage_metrics, provenance.json}` and checks at
+  initialisation that they exist.
+- **Reference inputs:**
+  - `--fasta` (+ `.fai`) and `--lowcopy_bed` (currently chr10 only);
+  - optionally `--qc_panel` (the blind panel does not exist yet) and `--annotation_panels name=path,...`;
+  - `--reference_donor_tables donor=path,...`: read-only step-4 tables of donors not called in the run. They supply gaps
+    and the prior's k / m in a single-donor run;
+  - `--reference_donor_taxa donor=taxon,...`: the taxon of each reference donor (they are not in the sample sheet). With
+    `--gap_prior_scope same_taxon` a reference donor stays in the step-1 prior only when its taxon equals the called
+    donor's, so the run is refused when a reference donor has no taxon;
+  - `--mappability_priors`: a directory of `<taxon>.prior.tsv` (columns `c weight`).
+
+### Store rules (genotype)
+
+- **Two stores:** `--cram_store` is where CRAMs, QC and provenance are read, and the genotype workflow never writes there.
+  Genotype outputs are published (copied, never overwritten) to `<store>/genotype/<genotype_store_key>/`.
+- **Skip-if-stored:** an entry does not run again a unit (donor x region; donor set x region for `marker_union` and
+  `donor_allele_calling`; the cohort for `sample_quality_control`) whose final outputs are already in that store, and
+  logs it; `reporting` always runs. To redo a unit, use a new key.
+- **Keyed settings (review #7):** on first use, each stage writes `settings/<stage>.json` with:
+  - its parameters;
+  - the sha256 of its code: each module's `main.nf` + templates, the stage's subworkflow `main.nf`,
+    `workflows/genotype.nf` and `conf/genotype_modules.config` (ext.args, ext.prefix, publishDir). The resource-only
+    `conf/genotype_hazel.config` is not hashed;
+  - the sample rows of every unit.
+
+  A later run with the same key and different parameters, code or sample rows is refused, and the message lists each
+  differing field. Use a new key, or `--input_store_key <old key>` to read upstream outputs from an older key. A module,
+  wiring or module-config edit under an existing key is refused too, so develop under a fresh key.
+- **Provenance:** each CRAM's `provenance.json` must record `markdup = samtools markdup ${markdup_args}`
+  (`--provenance_check strict`, the default); `warn` only logs a mismatch.
+- **Controls:** `--b73_controls` must name at least one `b73_control` row in a real run, because the controls are the zero
+  class of step 4. An empty set is allowed only in a stub run.
+- **Read-start masks:** `--mask_read_starts false` sets every mask to 0. The same code path runs.
+
+### Running (hazel)
+
+Submit one head job per entry, in stage order, each after the previous one has finished:
+
+```bash
+ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype \
+    /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch <run_id> -profile hazel,short \
+    -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/<run>.yml --entry <entry>'
+```
+
+`ZG_REPO` points the head job at the checkout to run. The default is the CRAM checkout `ZEAL/zealgt`.
+
 ## Testing
+
+`-profile test_genotype` runs the genotype workflow on `tests/fixtures/genotype`, which is written by
+`tests/fixtures/genotype/make_fixtures.py` and is deterministic, with sha256s in its `MANIFEST.tsv`. The fixtures are:
+
+- 8 synthetic CRAMs in a `cram_import` store (2 BC1 pools, 4 lines plus 1 below the coverage floor, 1 B73 control) on the
+  reference slice `ref/tiny10.fa`;
+- the lowcopy BED slice, panel, prior and a reference-donor step-4 table;
+- `store_seed/`: every stage's store outputs under key `test`.
+
+The run covers one donor (Zx.9001_P1) and one region (`chr10:1-16000`). `tests/genotype.nf.test` runs a stub of each entry,
+seeding the store with the kinds of the stages before it, and checks four refusals: CRAM entry, missing upstream, changed
+settings under the same key, and provenance mismatch.
 
 `-profile test` runs `read_demultiplexing` on the fixture library LIBX (tests/fixtures: 3 samples, 940 read pairs, a tiny
 reference with its minibwa index), with the store and the checkpoint under the outdir; `--entry read_alignment` with the same
@@ -194,13 +282,18 @@ Deliberate deviations from the nf-core specifications. The same list, word for w
   provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
   stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
   CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
-  lint). Only reports go to `--outdir`.
-- **`versions.yml` files for five local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and MARKDUP_IMPORT
+  lint). The genotype workflow's keyed store `<store>/genotype/<genotype_store_key>/` works the same way: stage outputs are
+  copied there (never overwritten), a later `--entry` reads them, the workflow skips a unit whose stored outputs exist, and
+  a settings guard refuses a changed setting or code under the same key. Only reports go to `--outdir`.
+- **`versions.yml` files for 25 local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and MARKDUP_IMPORT
   publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored CRAM (skipped, not
-  made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY are python module templates,
-  and Nextflow allows `eval` outputs only with Bash scripts. DEMUX and the nf-core modules report `eval` topic tuples;
-  coreutils (DEMUX's `head`, MERGE_LANES's `cat`) is pinned in `environment.yml` but not reported (the BSD tools of the
-  laptop's local runs have no `--version`).
+  made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY and the genotype modules
+  COVERAGE_QC, DONOR_CONTENT_QC, DONOR_FOUNDER, GAP_FILLING_BC1, GAP_FILLING_LINES, GENOTYPE_SUMMARY, LINE_MARKER_QC,
+  MARKER_UNION, MIN_COVERAGE, POOLED_LIKELIHOOD_TIERS, RASTERIZE, READ_POSITION_QC, REGION_BED, RELATEDNESS_QC,
+  RTIGER_MARKERS, SAMPLE_LABELS, SAMPLE_QC_TABLE and WITNESS_VETO are python module templates, CHROMOSOME_PAINTING and
+  RTIGER R module templates, and Nextflow allows `eval` outputs only with Bash scripts. DEMUX and the nf-core modules report
+  `eval` topic tuples; coreutils (DEMUX's `head`, MERGE_LANES's `cat`) is pinned in `environment.yml` but not reported (the
+  BSD tools of the laptop's local runs have no `--version`).
 - **Stage-2 samplesheet written by the pipeline** (spec: inputs through `--input`).
   `<fastq_checkpoint>/<lib>/samplesheet.csv` is an output of stage 1 and the only input of `--entry read_alignment`,
   validated by nf-schema against `assets/schema_checkpoint.json`.
@@ -209,3 +302,16 @@ Deliberate deviations from the nf-core specifications. The same list, word for w
 - **Per-source read structures as two parameters** (`read_structure_*`, chosen by `barcode_layout`), not one per sample;
   both values are recorded in every provenance record.
 - **CRAM output only, no `--bam`**: the genotype workflow reads CRAM.
+- **nf-core `bcftools/mpileup` not used** (spec: use the nf-core module where one exists). The nf-core module always pipes
+  into `bcftools call` and reheaders to one sample (`meta.id`); every count of the genotype workflow needs the raw `AD` of
+  all its samples at fixed sites, with no calling, so the local `allele_counts` module runs `bcftools mpileup -I -a AD -T
+  <sites> | bcftools query` (`-I` because indel records would overwrite the SNP counts, PLAN §4 #3). Patching the nf-core
+  module would replace its whole script; `bcftools/view` is used (BED_CLIP).
+- **nf-core `samtools/merge` not used for the witness pool** (spec: use the nf-core module where one exists). The merge of
+  the donor's line BAMs, the read-group rewrite and the index run as one pipe in `witness_pool`, so the ~2 GB intermediate
+  never reaches `work/` (PLAN §2 principle 5).
+- **Stage subworkflow `MARKER_UNION_STAGE` in `subworkflows/local/marker_union`** (spec: a subworkflow is named after its
+  directory and combines at least two modules). A workflow cannot share its module's process name MARKER_UNION in one script
+  scope, so stage 5's subworkflow takes a `_STAGE` suffix; its directory keeps the stage (entry) name. It and
+  `genotype_imputation` (RASTERIZE) wrap one module each, because every `--entry` runs one stage subworkflow, so nf-core
+  lint warns that they include fewer than 2 modules.

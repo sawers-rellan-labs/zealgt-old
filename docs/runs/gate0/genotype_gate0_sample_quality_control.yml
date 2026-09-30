@@ -1,0 +1,42 @@
+# Gate 0 (hazel, -profile hazel,stub -stub) of the genotype workflow: entry sample_quality_control (1 of 7).
+# Genotype design §7.3; docs/PLAN_pipeline.md §6. Wiring only: every process runs its stub block; the CRAMs are staged from
+# --cram_store as read-only symlinks and checked by PIPELINE_INITIALISATION, so the store must hold them (see cram_store).
+#
+# Run the seven cards IN ORDER on the same store (each entry reads the outputs of the ones before it from
+# <store>/genotype/<genotype_store_key>/ and refuses to start when they are missing). One head job per entry, after the
+# previous one has finished:
+#   bash agent/20260929_020100_submit_genotype_gate0.sh \
+#     /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/gate0/genotype_gate0_{entry}.yml sample_quality_control
+# (the launcher adds --workflow genotype --run_id genotype_gate0_sample_quality_control --outdir .../genotype_gate0/sample_quality_control/outdir; there
+# is no `full` mode any more: --workflow genotype without --entry is refused at initialisation).
+# Checks: exit 0; 0 "Creating env" lines in .nextflow.log; outputs under store/genotype/<key>/ (design §1.3 layout);
+# settings/sample_quality_control.json written. Store-key guard (review #7) after variant_discovery: rerun it with
+# --veto_min_alt_reads 2 -> refused naming params.veto_min_alt_reads; with --genotype_store_key <new key> -> runs.
+workflow: genotype
+entry: sample_quality_control
+run_id: genotype_gate0_sample_quality_control
+
+# selection: the Gate 1 donor and region, so Gate 0 goes through the Gate 1 code path (one donor x one region)
+donors: Zx.0540_P3
+donor_set: gate0_zx0540
+regions: "chr10:1-20000000"
+
+# inputs. store_genotype_dev = the genotype-only markdup_import of meta/dev_import.csv (job 972246, 2026-09-28); the
+# genotype sheet resolves <cram_store>/cram_import/<id>.{cram,cram.crai,CollectWgsMetrics.coverage_metrics,provenance.json}.
+# B73_ERR3288215 is not in that store (its CollectWgsMetrics does not fit the short QOS), so only B73_skim10 is named.
+genotype_input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/meta/genotype_dev.csv
+cram_store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
+b73_controls: B73_skim10
+fasta: /rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa
+lowcopy_bed: /rsstu/users/r/rrellan/BZea/ZEAL/results/pilot_1B_chr10/union/union_chr10.bed
+# stub only: fixture files from the clone, so the panel-QC and prior paths are wired (no stub reads them)
+qc_panel: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/tests/fixtures/genotype/panel.tsv
+mappability_priors: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/tests/fixtures/genotype/priors
+reference_donor_tables: "Zx.0570_P2=/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0570_chr10/step4/Zx.0570_P2.sites.tsv.gz"
+reference_donor_taxa: "Zx.0570_P2=mexicana"
+
+# store: ONE stub store for all seven entries (not the per-entry <outdir>/store_stub of conf/stub.config), so they chain.
+# The run guard accepts a stub run only inside a directory named store_stub*. Fresh key: the settings guard hashes the
+# module code, so a Gate 0 attempt after any module edit needs a new key (gate0_wp9b, ...), never a reused one.
+store: /share/maize/frodrig4/nf_work/genotype_gate0/store_stub
+genotype_store_key: gate0_wp9a

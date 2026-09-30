@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
+name: donor_founder
+description: Final donor allele D (ALT / REF / NA) of one donor at every union site of a region, with the step that decided it (own, step1_ref, step1_alt, step2_alt, missing, multiallelic), the evidence log-odds and p_alt = E[D]; the summary reports the step-1 and step-2 shares of the gaps separately. published to <store>/genotype/<key>/donor_alleles/<set>.
+keywords:
+  - genotyping
+  - donor allele
+  - gap filling
+tools:
+  - python:
+      description: Python standard library script (module template, templates/call_donor_founder.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map with the donor x region
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - gap_bc1:
+        type: file
+        description: GAP_FILLING_BC1 table of the set (the donor's rows are used)
+        pattern: "*.tsv{,.gz}"
+        ontologies: []
+    - gap_lines:
+        type: file
+        description: GAP_FILLING_LINES table of the donor ([] = no step 2)
+        pattern: "*.tsv{,.gz}"
+        ontologies: []
+    - union:
+        type: file
+        description: MARKER_UNION union table
+        pattern: "*.tsv{,.gz}"
+        ontologies: []
+  - donor:
+      type: string
+      description: The donor whose rows are read from the gap_bc1 table
+output:
+  alleles:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.tsv.gz":
+          type: file
+          description: "chrom pos ref alt D call_step logodds p_alt, one row per union allele"
+          pattern: "*.tsv.gz"
+          ontologies: []
+  summary:
+    - - meta:
+          type: map
+          description: Groovy Map with the donor x region
+      - "*.summary.tsv":
+          type: file
+          description: "One row: counts per call_step, step-1 / step-2 / missing shares of the gaps, missing share of the union"
+          pattern: "*.summary.tsv"
+          ontologies: []
+  versions:
+    - "*.donor_founder.versions.yml":
+        type: file
+        description: "Tool versions (python); a module template: `eval` outputs need a Bash script"
+        pattern: "*.donor_founder.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

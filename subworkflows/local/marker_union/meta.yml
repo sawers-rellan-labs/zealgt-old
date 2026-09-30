@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+# zealgt local subworkflow of the genotype workflow; see the header comment of main.nf and the genotype design.
+# Versions: the modules publish their versions.yml to the `versions` topic (collated in workflows/genotype.nf);
+# `versions` here re-emits them.
+name: marker_union_stage
+description: "Stage 5: tier-A union of a donor set per region (MARKER_UNION), with read-only reference-donor tables"
+keywords:
+  - zealgt
+  - genotype workflow
+  - marker_union
+components:
+  - marker/union
+input:
+  - ch_tables:
+      type: file
+      description: |
+        channel: [ val(setmeta), [ step-4 tables ], [ reference donor tables ] ]
+  - donors:
+      type: list
+      description: |
+        list: run donors
+  - reference_donors:
+      type: list
+      description: |
+        list: reference donor names, table order
+output:
+  - union:
+      type: file
+      description: |
+        channel: [ val(setmeta), <set>.<label>.tsv.gz ]  (stored in union/)
+  - sites:
+      type: file
+      description: |
+        channel: [ val(setmeta), <set>.<label>.union_sites.tsv ]
+  - per_donor:
+      type: file
+      description: |
+        channel: [ val(setmeta), <set>.<label>.per_donor.tsv ]
+  - versions:
+      type: file
+      description: |
+        channel: versions.yml files (every module also publishes to the `versions` topic)
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

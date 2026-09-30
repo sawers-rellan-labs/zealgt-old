@@ -1,0 +1,94 @@
+nextflow_process {
+
+    name "Test Process REGION_BED"
+    script "../main.nf"
+    process "REGION_BED"
+
+    tag "modules"
+    tag "modules_local"
+    tag "region_bed"
+
+    test("chrA_101-1000 - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'chrA_101-1000' ], file("${projectDir}/modules/local/region_bed/tests/data/lowcopy.bed", checkIfExists: true) ]
+                input[1] = 'chrA:101-1000'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert file(process.out.bed[0][1]).name == "chrA_101-1000.bed" },
+                { assert file(process.out.regions[0][1]).name == "chrA_101-1000.regions.txt" }
+            )
+        }
+    }
+
+    test("chrA_101-1000 - clip and merge") {
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'chrA_101-1000' ], file("${projectDir}/modules/local/region_bed/tests/data/lowcopy.bed", checkIfExists: true) ]
+                input[1] = 'chrA:101-1000'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.bed[0][1]).readLines() == [ "chrA\t100\t400", "chrA\t900\t1000" ] },
+                { assert path(process.out.regions[0][1]).readLines() == [ "chrA:101-400", "chrA:901-1000" ] },
+                { assert snapshot(process.out.bed, process.out.regions).match() }
+            )
+        }
+    }
+
+    test("chrB - whole chromosome") {
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'chrB' ], file("${projectDir}/modules/local/region_bed/tests/data/lowcopy.bed", checkIfExists: true) ]
+                input[1] = 'chrB'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.bed[0][1]).readLines() == [ "chrB\t0\t500" ] },
+                { assert path(process.out.regions[0][1]).readLines() == [ "chrB:1-500" ] }
+            )
+        }
+    }
+
+    test("chrB_1001-2000 - no range in the region fails") {
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'chrB_1001-2000' ], file("${projectDir}/modules/local/region_bed/tests/data/lowcopy.bed", checkIfExists: true) ]
+                input[1] = 'chrB:1001-2000'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.failed },
+                { assert process.exitStatus != 0 }
+            )
+        }
+    }
+}

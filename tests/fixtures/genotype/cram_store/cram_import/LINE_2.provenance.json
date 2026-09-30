@@ -1,0 +1,31 @@
+{
+  "code_version": "fixture",
+  "cram_bytes": 4925,
+  "cram_file": "LINE_2.cram",
+  "donor": "Zx.9001_P1",
+  "entry": "markdup_import",
+  "library": "FIXTURE",
+  "mapq_filter": "none (applied by the genotype workflow at read time)",
+  "markdup": "samtools markdup -d 2500",
+  "origin": {
+    "input_filters": "none (synthetic, MAPQ 60, no duplicates)",
+    "kind": "import",
+    "made_by": "tests/fixtures/genotype/make_fixtures.py",
+    "note": "synthetic test reads",
+    "path": "synthetic:LINE_2"
+  },
+  "pipeline": "make_fixtures.py",
+  "profile": "fixture",
+  "read_group": "@RG\\tID:LINE_2\\tSM:LINE_2\\tLB:FIXTURE\\tPL:ILLUMINA",
+  "record_written_utc": "2026-09-29T00:00:00Z",
+  "reference": "tests/fixtures/genotype/ref/tiny10.fa",
+  "role": "line",
+  "run_id": "fixture",
+  "run_name": "fixture",
+  "sample": "LINE_2",
+  "schema": "zealgt.provenance/1",
+  "session_id": "fixture",
+  "source": "bc2s3_batch1",
+  "store_dir": "tests/fixtures/genotype/cram_store/cram_import",
+  "tool_versions_yml": {}
+}

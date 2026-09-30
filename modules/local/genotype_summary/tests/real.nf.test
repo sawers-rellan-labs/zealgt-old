@@ -1,0 +1,125 @@
+nextflow_process {
+
+    name "Test Process GENOTYPE_SUMMARY (real)"
+    script "../main.nf"
+    process "GENOTYPE_SUMMARY"
+
+    tag "modules"
+    tag "modules_local"
+    tag "genotype_summary"
+    tag "rasterize"
+    tag "real"
+    tag "line_marker_qc"
+
+    // RASTERIZE runs first on its fixture (see rasterize/tests/real.nf.test). Hand-computed:
+    //   L1 segments 1-350 x = 2 (350 bp) and 380-5000 x = 0 (4,621 bp); L3 excluded.
+    //   Breakpoint density: own markers = {100}; L1's breakpoint (350 + 380) / 2 = 365 lies at marker index 1, as do the gap
+    //   sites 300 (step 2), 400, 500 -> all near; L2 has no breakpoint -> its 3 gap sites are far.
+    setup {
+        run("RASTERIZE") {
+            script "../../rasterize/main.nf"
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true)
+                ])
+                """
+            }
+        }
+    }
+
+    test("Zx.0001_P1.chrA_1-5000") {
+
+        when {
+            process {
+                """
+                input[0] = RASTERIZE.out.genotypes.map { meta, g -> [
+                    meta,
+                    g,
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true)
+                ] }
+                """
+            }
+        }
+
+        then {
+            def tab = { f -> def l = path(f).readLines().collect { it.split('\t') }; l.drop(1).collect { r -> [l[0], r].transpose().collectEntries() } }
+            def lines = tab(process.out.summary[0][1])
+            def loci = tab(process.out.single_locus[0][1])
+            def bp = tab(process.out.breakpoint_density[0][1])
+            def l1 = lines.find { it.line == 'L1' }
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out.summary, process.out.single_locus, process.out.breakpoint_density).match() },
+                { assert l1.mb_x2 == '0.00035' && l1.mb_x0 == '0.004621' },
+                { assert l1.sites_gt2 == '2' && l1.sites_gt0 == '2' && l1.no_call_share == '0' },
+                { assert lines.find { it.line == 'L3' }.excluded == 'true' },
+                { assert lines.find { it.line == 'ALL' }.sites == '8' },
+                { assert loci.size() == 4 },
+                { assert loci.find { it.pos == '100' }.n_x2 == '1' && loci.find { it.pos == '100' }.n_x0 == '1' },
+                { assert bp.find { it.line == 'L1' }.subMap(['n_breakpoints', 'gap_sites_near', 'step2_near', 'gap_sites_far']) ==
+                         [ n_breakpoints: '1', gap_sites_near: '3', step2_near: '1', gap_sites_far: '0' ] },
+                { assert bp.find { it.line == 'L2' }.gap_sites_far == '3' }
+            )
+        }
+    }
+
+    // line_qc contract (review fix a): the table written by the real LINE_MARKER_QC (columns sample ... line_pass reason,
+    // one row per contig; its fixture gives L1-L3 true, L4 false) is read as is, with no column renaming.
+    test("line_qc from the real LINE_MARKER_QC") {
+
+        setup {
+            run("LINE_MARKER_QC") {
+                script "../../line_marker_qc/main.nf"
+                process {
+                    """
+                    input[0] = channel.of([
+                        [ id:'D1.chr10_1-5000', donor:'D1', region:'chr10_1-5000' ],
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.lines.ad.tsv.gz", checkIfExists: true),
+                        file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/D1.tierA_sites.tsv", checkIfExists: true)
+                    ])
+                    input[1] = 10
+                    input[2] = 2
+                    input[3] = 0
+                    input[4] = file("${projectDir}/modules/local/line_marker_qc/tests/fixtures/ref.fa.fai", checkIfExists: true)
+                    input[5] = 'chr10:1-5000'
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                genotype_store_key = 'test'
+            }
+            process {
+                """
+                input[0] = RASTERIZE.out.genotypes.combine(LINE_MARKER_QC.out.line_qc.map { _m, qc -> qc }).map { meta, g, qc -> [
+                    meta,
+                    g,
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/rasterize/tests/data/Zx.0001_P1.chrA_1-5000.donor_alleles.tsv", checkIfExists: true),
+                    qc
+                ] }
+                """
+            }
+        }
+
+        then {
+            def tab = { f -> def l = path(f).readLines().collect { it.split('\t') }; l.drop(1).collect { r -> [l[0], r].transpose().collectEntries() } }
+            def lines = tab(process.out.summary[0][1])
+            assertAll(
+                { assert process.success },
+                { assert lines.find { it.line == 'L1' }.excluded == 'false' },
+                { assert lines.find { it.line == 'L3' }.excluded == 'false' },
+                { assert lines.find { it.line == 'L4' }?.excluded in [ null, 'true' ] }
+            )
+        }
+    }
+}

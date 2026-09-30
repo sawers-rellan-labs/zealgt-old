@@ -1,0 +1,49 @@
+{
+    "Zx.0540_P3.chrA - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx0540_P3_BC2S3.bam:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "Zx0540_P3_BC2S3.bam.bai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        "WITNESS_POOL",
+                        "samtools",
+                        "1.24"
+                    ]
+                ],
+                "bam": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx0540_P3_BC2S3.bam:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "Zx0540_P3_BC2S3.bam.bai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_samtools": [
+                    [
+                        "WITNESS_POOL",
+                        "samtools",
+                        "1.24"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-09-29T21:00:46.737346",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

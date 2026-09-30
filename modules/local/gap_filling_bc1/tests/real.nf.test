@@ -1,0 +1,156 @@
+nextflow_process {
+
+    name "Test Process GAP_FILLING_BC1 (real)"
+    script "../main.nf"
+    process "GAP_FILLING_BC1"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "gap_filling_bc1"
+    tag "real"
+
+    // Fixture (tests/data): union of run donors Zx.0001_P1 (D1), Zx.0002_P1 (D2) and reference donor Zx.0570_P2 (R),
+    // with the joint recount tables of D1 and D2. Hand-computed (w = 2, cut-off logit(0.999) = 6.9068):
+    //   D1: mu = (0 + 0.5) / (0 + 1 + 1) = 0.25. 300: k = 1 (D2), m = 1 -> pi = 0.5, LLR 6.5 -> NA below_cutoff;
+    //       400: LLR -6, n 20 -> REF; 500: k = 1 (R), m = 1 -> pi = 0.5, LLR 3 -> NA below_cutoff; 100 own.
+    //   D2: mu = 0.5. 100: k = 2, m = 2 -> pi = 0.75, logodds 2 + log 3 = 3.10 -> NA; 500: hidepth -> NA blocked_flag.
+    test("gt_set.chrA_1-5000 - other_donors prior") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'gt_set.chrA_1-5000', donor_set:'gt_set', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    [
+                        file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true),
+                        file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0002_P1.chrA_1-5000.sites.tsv", checkIfExists: true)
+                    ]
+                ])
+                input[1] = [ 'Zx.0001_P1', 'Zx.0002_P1' ]
+                input[2] = [ 'Zx.0001_P1': 'mexicana', 'Zx.0002_P1': 'mexicana', 'Zx.0570_P2': 'mexicana' ]
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.calls[0][1]).linesGzip.drop(1).collect { it.split('\t') }
+            def call = { donor, pos -> rows.find { it[4] == donor && it[1] == pos } }
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out.calls, process.out.summary).match() },
+                { assert rows.size() == 8 },   // 2 donors x 4 non-multiallelic union alleles
+                { assert call('Zx.0001_P1', '100')[20..21] == [ 'ALT', 'own' ] },
+                { assert call('Zx.0001_P1', '300')[15..17] == [ '1', '1', '0.5' ] },
+                { assert call('Zx.0001_P1', '300')[20..21] == [ 'NA', 'below_cutoff' ] },
+                { assert call('Zx.0001_P1', '400')[20..21] == [ 'REF', 'ref_rule' ] },
+                { assert call('Zx.0001_P1', '500')[20..21] == [ 'NA', 'below_cutoff' ] },
+                { assert call('Zx.0002_P1', '100')[17] == '0.75' },
+                { assert call('Zx.0002_P1', '100')[20..21] == [ 'NA', 'below_cutoff' ] },
+                { assert call('Zx.0002_P1', '500')[20..21] == [ 'NA', 'blocked_flag' ] },
+                { assert call('Zx.0002_P1', '300')[20..21] == [ 'ALT', 'own' ] }
+            )
+        }
+    }
+
+    test("single run donor + a reference donor in the union - no crash") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'solo.chrA_1-5000', donor_set:'solo', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    [ file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true) ]
+                ])
+                input[1] = [ 'Zx.0001_P1' ]
+                input[2] = [:]
+                """
+            }
+        }
+
+        then {
+            def summary = path(process.out.summary[0][1]).readLines().collect { it.split('\t') }
+            def col = { name -> summary[1][summary[0].findIndexOf { it == name }] }
+            assertAll(
+                { assert process.success },
+                { assert col('prior_source_used') == 'other_donors' },
+                { assert col('prior_donors') == 'Zx.0570_P2' },     // the reference donor of the union
+                { assert col('gaps') == '3' },
+                { assert col('REF') == '1' }
+            )
+        }
+    }
+
+    // gap_prior_scope same_taxon (review fix b): the reference donor Zx.0570_P2 stays in the prior when its taxon (from
+    // --reference_donor_taxa, merged into donor_taxa by the workflow) equals the run donor's, and leaves it without one.
+
+    test("same_taxon - reference donor with the run donor's taxon is a prior donor") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                gap_prior_scope = 'same_taxon'
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'solo.chrA_1-5000', donor_set:'solo', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    [ file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true) ]
+                ])
+                input[1] = [ 'Zx.0001_P1' ]
+                input[2] = [ 'Zx.0001_P1': 'mexicana', 'Zx.0570_P2': 'mexicana' ]
+                """
+            }
+        }
+
+        then {
+            def summary = path(process.out.summary[0][1]).readLines().collect { it.split('\t') }
+            def col = { name -> summary[1][summary[0].findIndexOf { it == name }] }
+            assertAll(
+                { assert process.success },
+                { assert col('prior_donors') == 'Zx.0570_P2' },
+                { assert col('prior_donors_other_taxon') == '.' }
+            )
+        }
+    }
+
+    test("same_taxon - reference donor without a taxon leaves the prior") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+                gap_prior_scope = 'same_taxon'
+            }
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'solo.chrA_1-5000', donor_set:'solo', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    [ file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true) ]
+                ])
+                input[1] = [ 'Zx.0001_P1' ]
+                input[2] = [ 'Zx.0001_P1': 'mexicana' ]
+                """
+            }
+        }
+
+        then {
+            def summary = path(process.out.summary[0][1]).readLines().collect { it.split('\t') }
+            def col = { name -> summary[1][summary[0].findIndexOf { it == name }] }
+            assertAll(
+                { assert process.success },
+                { assert col('prior_donors') == '.' },
+                { assert col('prior_donors_other_taxon') == 'Zx.0570_P2' }
+            )
+        }
+    }
+}

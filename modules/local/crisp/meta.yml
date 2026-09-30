@@ -1,0 +1,151 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). CRISP is built from a pinned commit by build.sh.
+name: crisp
+description: Pooled variant discovery with CRISP on the donor's masked BC1 pools plus its witness pool, restricted to the region's lowcopy BED; accepts CRISP's exit status 1 on success only with a complete VCF and an error-free log; bgzip + tabix.
+keywords:
+  - variant calling
+  - pooled sequencing
+  - crisp
+tools:
+  - crisp:
+      description: Comprehensive Read analysis for Identification of SNVs (and short indels) from Pooled sequencing data
+      homepage: https://github.com/vibansal/crisp
+      documentation: https://github.com/vibansal/crisp/blob/master/README.md
+      doi: 10.1101/gr.109116.110
+      licence: ["BSD-2-Clause"]
+      identifier: ""
+      args_id: "$args"
+  - htslib:
+      description: bgzip and tabix of the VCF
+      homepage: http://www.htslib.org/
+      documentation: https://www.htslib.org/doc/tabix.html
+      doi: 10.1093/gigascience/giab007
+      licence: ["MIT"]
+      identifier: biotools:htslib
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map of the unit (donor x region)
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000', donor:'Zx.0540_P3', region:'chr10_1-20000000' ]
+    - bams:
+        type: file
+        description: Masked BC1 BAMs of the donor, <sample>.bam (the pool name is the file name up to the first dot)
+        pattern: "*.bam"
+        ontologies: []
+    - bais:
+        type: file
+        description: Their indexes
+        pattern: "*.bam.bai"
+        ontologies: []
+    - witness_bam:
+        type: file
+        description: The donor's witness pool (WITNESS_POOL)
+        pattern: "*.bam"
+        ontologies: []
+    - witness_bai:
+        type: file
+        description: Its index
+        pattern: "*.bam.bai"
+        ontologies: []
+  - - meta2:
+        type: map
+        description: |
+          Groovy Map containing region information
+          e.g. [ id:'chr10_1-20000000' ]
+    - bed:
+        type: file
+        description: The region's lowcopy BED (REGION_BED)
+        pattern: "*.bed"
+        ontologies: []
+  - - meta3:
+        type: map
+        description: |
+          Groovy Map containing reference information
+          e.g. [ id:'B73' ]
+    - fasta:
+        type: file
+        description: Reference FASTA
+        pattern: "*.{fa,fasta}"
+        ontologies: []
+    - fai:
+        type: file
+        description: FASTA index
+        pattern: "*.fai"
+        ontologies: []
+  - region:
+      type: string
+      description: Region 'chr' or 'chr:start-end' (only the chromosome goes to CRISP --regions; the BED holds the range)
+output:
+  vcf:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.crisp.vcf.gz":
+          type: file
+          description: CRISP VCF (all records, before BED_CLIP), BGZF
+          pattern: "*.crisp.vcf.gz"
+          ontologies: []
+      - "${task.ext.prefix ?: meta.id}.crisp.vcf.gz.tbi":
+          type: file
+          description: Tabix index
+          pattern: "*.crisp.vcf.gz.tbi"
+          ontologies: []
+  log:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map of the unit
+            e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+      - "${task.ext.prefix ?: meta.id}.crisp.log":
+          type: file
+          description: CRISP stdout + stderr; the last line records the exit status
+          pattern: "*.crisp.log"
+          ontologies: []
+  versions_crisp:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - crisp:
+          type: string
+          description: Name of the tool
+      - "1a9027e":
+          type: string
+          description: The pinned commit of the tool (modules/local/crisp/build.sh; CRISP prints no version)
+  versions_htslib:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - htslib:
+          type: string
+          description: Name of the tool
+      - "tabix --version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - crisp:
+          type: string
+          description: Name of the tool
+      - "1a9027e":
+          type: string
+          description: The pinned commit of the tool (modules/local/crisp/build.sh; CRISP prints no version)
+    - - ${task.process}:
+          type: string
+          description: Name of the process
+      - htslib:
+          type: string
+          description: Name of the tool
+      - "tabix --version | sed '1!d; s/.* //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

@@ -1,0 +1,89 @@
+nextflow_process {
+
+    name "Test Process DONOR_FOUNDER (real)"
+    script "../main.nf"
+    process "DONOR_FOUNDER"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "donor_founder"
+    tag "gap_filling_bc1"
+    tag "gap_filling_lines"
+    tag "real"
+
+    // Steps 1 and 2 run first on their fixtures (see gap_filling_lines/tests/real.nf.test). Expected for Zx.0001_P1:
+    // 100 own ALT; 200 C>G / C>T multiallelic NA; 300 step2_alt; 400 step1_ref; 500 missing (step 2 blocked_b73_lines).
+    setup {
+        run("GAP_FILLING_BC1") {
+            script "../../gap_filling_bc1/main.nf"
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'gt_set.chrA_1-5000', donor_set:'gt_set', region:'chrA_1-5000' ],
+                    file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true),
+                    [
+                        file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0001_P1.chrA_1-5000.sites.tsv", checkIfExists: true),
+                        file("${projectDir}/modules/local/gap_filling_bc1/tests/data/joint/Zx.0002_P1.chrA_1-5000.sites.tsv", checkIfExists: true)
+                    ]
+                ])
+                input[1] = [ 'Zx.0001_P1', 'Zx.0002_P1' ]
+                input[2] = [:]
+                """
+            }
+        }
+        run("GAP_FILLING_LINES") {
+            script "../../gap_filling_lines/main.nf"
+            process {
+                """
+                input[0] = GAP_FILLING_BC1.out.calls.map { _meta, calls -> [
+                    [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    calls,
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.lines.ad.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.segments.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/Zx.0001_P1.chrA_1-5000.line_qc.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/gap_filling_lines/tests/data/mexicana.prior.tsv", checkIfExists: true)
+                ] }
+                input[1] = 'Zx.0001_P1'
+                """
+            }
+        }
+    }
+
+    test("Zx.0001_P1.chrA_1-5000") {
+
+        when {
+            params {
+                store = "${outputDir}/store_test"
+            }
+            process {
+                """
+                input[0] = GAP_FILLING_BC1.out.calls
+                    .combine(GAP_FILLING_LINES.out.calls)
+                    .map { _m1, step1, _m2, step2 -> [
+                        [ id:'Zx.0001_P1.chrA_1-5000', donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                        step1,
+                        step2,
+                        file("${projectDir}/modules/local/gap_filling_bc1/tests/data/gt_set.chrA_1-5000.union.tsv", checkIfExists: true)
+                    ] }
+                input[1] = 'Zx.0001_P1'
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.alleles[0][1]).linesGzip.drop(1).collect { it.split('\t') }
+            def summary = path(process.out.summary[0][1]).readLines().collect { it.split('\t') }
+            def s = { name -> summary[1][summary[0].findIndexOf { it == name }] }
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out.alleles, process.out.summary).match() },
+                { assert rows.collect { [ it[1], it[3], it[4], it[5] ] } == [
+                    [ '100', 'G', 'ALT', 'own' ], [ '200', 'G', 'NA', 'multiallelic' ], [ '200', 'T', 'NA', 'multiallelic' ],
+                    [ '300', 'A', 'ALT', 'step2_alt' ], [ '400', 'C', 'REF', 'step1_ref' ], [ '500', 'C', 'NA', 'missing' ] ] },
+                { assert s('gaps') == '3' && s('step2_alt') == '1' && s('missing') == '1' },
+                { assert s('step2_share_of_gaps').startsWith('0.333') }
+            )
+        }
+    }
+}

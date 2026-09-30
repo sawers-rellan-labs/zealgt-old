@@ -1,0 +1,32 @@
+{
+    "test_set x chr10:1-16000, one run donor + one reference donor - stub": {
+        "content": [
+            [
+                [
+                    "test_set.chr10_1-16000",
+                    "test_set.chr10_1-16000.tsv.gz"
+                ]
+            ],
+            [
+                [
+                    "test_set.chr10_1-16000",
+                    "test_set.chr10_1-16000.union_sites.tsv"
+                ]
+            ],
+            [
+                [
+                    "test_set.chr10_1-16000",
+                    "test_set.chr10_1-16000.per_donor.tsv"
+                ]
+            ],
+            [
+                "test_set.chr10_1-16000.marker_union.versions.yml"
+            ]
+        ],
+        "timestamp": "2026-09-28T08:16:46.012102",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

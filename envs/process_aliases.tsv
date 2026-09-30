@@ -1,0 +1,10 @@
+# alias<TAB>env_id — processes included under another name (include { X as Y }) that need their own withName entry
+QC_PANEL_COUNTS	allele_counts
+B73_CONTROL_COUNTS	allele_counts
+BC1_SITE_COUNTS	allele_counts
+LINE_ALLELE_COUNTS	allele_counts
+UNION_SITE_COUNTS	allele_counts
+B73_UNION_COUNTS	allele_counts
+LINE_UNION_COUNTS	allele_counts
+JOINT_POOLED_LIKELIHOOD	pooled_likelihood_tiers
+BED_CLIP	bcftools_view

@@ -1,0 +1,96 @@
+nextflow_process {
+
+    name "Test Process MASK_READ_STARTS"
+    script "../main.nf"
+    process "MASK_READ_STARTS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "mask_read_starts"
+
+    test("Zx.0540_P3.chrA - stub") {
+
+        tag "stub"
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0540_P3.chrA', donor:'Zx.0540_P3', region:'chrA' ],
+                    [ file("${projectDir}/modules/local/mask_read_starts/tests/data/s1.bam", checkIfExists: true),
+                      file("${projectDir}/modules/local/mask_read_starts/tests/data/s2.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/mask_read_starts/tests/data/s1.bam.bai", checkIfExists: true),
+                      file("${projectDir}/modules/local/mask_read_starts/tests/data/s2.bam.bai", checkIfExists: true) ],
+                    [ 'S1', 'S2' ],
+                    [ [3, 2], [0, 0] ]
+                ])
+                input[1] = [ [ id:'chrA' ], file("${projectDir}/modules/local/mask_read_starts/tests/data/region.bed", checkIfExists: true) ]
+                input[2] = [ [ id:'tiny' ], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ]
+                input[3] = 'chrA'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert process.out.bam[0][1].collect { f -> file(f).name } == [ 'S1.bam', 'S2.bam' ] },
+                { assert process.out.bam[0][2].collect { f -> file(f).name } == [ 'S1.bam.bai', 'S2.bam.bai' ] }
+            )
+        }
+    }
+
+    test("Zx.0540_P3.chrA - masks by mate and strand") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0540_P3.chrA', donor:'Zx.0540_P3', region:'chrA' ],
+                    [ file("${projectDir}/modules/local/mask_read_starts/tests/data/s1.bam", checkIfExists: true),
+                      file("${projectDir}/modules/local/mask_read_starts/tests/data/s2.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/mask_read_starts/tests/data/s1.bam.bai", checkIfExists: true),
+                      file("${projectDir}/modules/local/mask_read_starts/tests/data/s2.bam.bai", checkIfExists: true) ],
+                    [ 'S1', 'S2' ],
+                    [ [3, 2], [0, 0] ]
+                ])
+                input[1] = [ [ id:'chrA' ], file("${projectDir}/modules/local/mask_read_starts/tests/data/region.bed", checkIfExists: true) ]
+                input[2] = [ [ id:'tiny' ], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true) ]
+                input[3] = 'chrA'
+                """
+            }
+        }
+
+        then {
+            def bams = process.out.bam[0][1].collectEntries { f -> [ (file(f).name): f.toString() ] }
+            def records = { String bam -> ['samtools', 'view', bam].execute().text.readLines().collectEntries { line ->
+                def x = line.split('\t'); [ (x[0]): [ qual: x[10], rg: x.find { t -> t.startsWith('RG:Z:') } ] ] } }
+            def header = { String bam -> ['samtools', 'view', '-H', bam].execute().text.readLines().findAll { l -> l.startsWith('@RG') } }
+            def s1 = records(bams['S1.bam'])
+            def s2 = records(bams['S2.bam'])
+            def I = { int k -> 'I' * k }
+            def B = { int k -> '!' * k }
+            assertAll(
+                { assert process.success },
+                { assert s1.keySet() == [ 'r1_fwd', 'r1_rev', 'r2_fwd', 'r2_rev', 'secondary', 'unpaired', 'softclip', 'noqual' ] as Set },
+                { assert s1.r1_fwd.qual == B(3) + I(27) },
+                { assert s1.r1_rev.qual == I(27) + B(3) },
+                { assert s1.r2_fwd.qual == B(2) + I(28) },
+                { assert s1.r2_rev.qual == I(28) + B(2) },
+                { assert s1.secondary.qual == I(30) },
+                { assert s1.unpaired.qual == B(3) + I(27) },
+                { assert s1.softclip.qual == B(3) + I(27) },
+                { assert s1.noqual.qual == '*' },
+                { assert s1.values().every { r -> r.rg == 'RG:Z:S1' } },
+                { assert header(bams['S1.bam']) == [ "@RG\tID:S1\tSM:S1" ] },
+                { assert s2.values().every { r -> r.qual == I(30) && r.rg == 'RG:Z:S2' } },
+                { assert header(bams['S2.bam']) == [ "@RG\tID:S2\tSM:S2" ] },
+                { assert path(process.out.masks[0][1]).readLines() == [
+                    "sample\tinput\tmask_r1\tmask_r2\trecords", "S1\ts1.bam\t3\t2\t8", "S2\ts2.bam\t0\t0\t2" ] },
+                { assert snapshot(process.out.masks).match() }
+            )
+        }
+    }
+}

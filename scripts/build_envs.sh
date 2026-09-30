@@ -12,7 +12,8 @@
 #
 # Env id: path under envs/, modules/nf-core/ or modules/local/ with "/" -> "_" (samtools/stats -> samtools_stats);
 # process name = upper-case id (SAMTOOLS_STATS). Aliased includes (`include { X as Y }`) can be mapped in an optional
-# envs/process_aliases.tsv (alias<TAB>env_id); none exist now.
+# envs/process_aliases.tsv (alias<TAB>env_id): the genotype workflow's ALLELE_COUNTS, POOLED_LIKELIHOOD_TIERS and
+# BCFTOOLS_VIEW aliases.
 #
 # Prefix = CONTENT only: ${ZG_ENV_ROOT}/<first dependency>-<sha8>, sha8 = first 8 hex of sha256( the environment.yml without
 # comment lines, blank lines, trailing comments and the `name:` line ++ build.sh bytes if present ), <first dependency> =

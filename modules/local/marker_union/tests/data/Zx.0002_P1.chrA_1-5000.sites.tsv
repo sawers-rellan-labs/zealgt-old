@@ -1,0 +1,5 @@
+chrom	pos	ref	alt	n	a	n_pools	n_pools_alt	eps	LLR	posterior	tier	flags
+chrA	200	C	G	30	8	2	2	0.005	10.0	1.0	A	.
+chrA	300	G	A	30	8	2	2	0.005	10.0	1.0	A	.
+chrA	400	T	C	30	8	2	2	0.005	10.0	1.0	A	.
+chrA	450	T	TA	30	8	2	2	0.005	10.0	1.0	A	.

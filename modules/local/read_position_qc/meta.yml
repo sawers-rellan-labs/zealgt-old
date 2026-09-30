@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# zealgt local module (step-named; the name keys the hazel conda prefix). Wraps a python module template that runs samtools.
+name: read_position_qc
+description: REF / ALT / other base fractions at known sites by read-cycle bin (5' end, sequencing orientation, clipped bases counted), per sample and for the role group, R1 and R2; a raw and a masked run show the effect of MASK_READ_STARTS and the residual 5' reference bias.
+keywords:
+  - qc
+  - read position
+  - reference bias
+  - alignment
+tools:
+  - samtools:
+      description: Tools for SAM/BAM/CRAM (samtools view -M -L at the sites)
+      homepage: http://www.htslib.org/
+      documentation: http://www.htslib.org/doc/samtools.html
+      tool_dev_url: https://github.com/samtools/samtools
+      doi: 10.1093/bioinformatics/btp352
+      licence: ["MIT"]
+      identifier: biotools:samtools
+      args_id: "$args"
+  - python:
+      description: Python standard library counter (module template, templates/count_alt_by_cycle.py)
+      homepage: https://www.python.org/
+      documentation: https://docs.python.org/3/
+      licence: ["PSF-2.0"]
+      identifier: ""
+      args_id: "$args2"
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map with the role group
+          e.g. [ id:'Zx.0540_P3.chr10_1-20000000.lines', donor:'Zx.0540_P3', region:'chr10_1-20000000', role:'line' ]
+    - alignments:
+        type: file
+        description: One BAM or CRAM per sample, named <sample>.bam or <sample>.cram
+        pattern: "*.{bam,cram}"
+        ontologies: []
+    - indexes:
+        type: file
+        description: Their indexes
+        pattern: "*.{bai,crai,csi}"
+        ontologies: []
+    - sample_ids:
+        type: list
+        description: Sample ids of the group (file base names)
+  - - meta2:
+        type: map
+        description: Groovy Map of the site list, e.g. [ id:'Zx.0540_P3.chr10_1-20000000' ]
+    - sites:
+        type: file
+        description: Sites chrom pos ref alt (e.g. the donor's own tier-A sites); a header line is skipped
+        pattern: "*.tsv"
+        ontologies: []
+  - - meta3:
+        type: map
+        description: Groovy Map of the reference, e.g. [ id:'B73' ]
+    - fasta:
+        type: file
+        description: Reference FASTA (CRAM decoding)
+        pattern: "*.{fa,fasta,fa.gz}"
+        ontologies: []
+    - fai:
+        type: file
+        description: FASTA index
+        pattern: "*.fai"
+        ontologies: []
+  - region:
+      type: string
+      description: Region string chr or chr:start-end; sites outside it are ignored
+  - label:
+      type: string
+      description: What was counted (e.g. raw or masked); first column of the table
+output:
+  tsv:
+    - - meta:
+          type: map
+          description: Groovy Map with the role group
+      - "*.read_position_qc.tsv":
+          type: file
+          description: "label sample mate cycle_bin n ref alt other alt_frac other_frac alt_ref_alt (per sample and ALL)"
+          pattern: "*.read_position_qc.tsv"
+          ontologies: []
+  versions:
+    - "*.read_position_qc.versions.yml":
+        type: file
+        description: Tool versions (samtools, python); `eval` outputs are not allowed with a python template script
+        pattern: "*.read_position_qc.versions.yml"
+        ontologies: []
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

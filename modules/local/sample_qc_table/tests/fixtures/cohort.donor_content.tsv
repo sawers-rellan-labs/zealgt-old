@@ -1,0 +1,6 @@
+sample	role	donor	covered_sites	sites_with_alt	share_sites_alt	reads	alt_reads	alt_read_fraction	expected	ratio_to_expected	statistic	rel_to_group	flag	reason
+L1	line	D1	45	11	0.244444	85	17	0.200000	0.125	1.6000	alt_read_fraction	1.1467	false	.
+L2	line	D1	2	0	0.000000	2	0	0.000000	0.125	0.0000	alt_read_fraction	NA	false	insufficient_sites
+L4	line	D1	42	8	0.190476	90	12	0.133333	0.125	1.0667	alt_read_fraction	0.7644	false	.
+L5	line	D1	46	0	0.000000	99	0	0.000000	0.125	0.0000	alt_read_fraction	0.0000	true	low_donor_content
+K1	b73_control	.	60	0	0.000000	263	0	0.000000	0	NA	alt_read_fraction	NA	false	.

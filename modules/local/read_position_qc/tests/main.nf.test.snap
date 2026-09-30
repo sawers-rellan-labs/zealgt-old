@@ -1,0 +1,41 @@
+{
+    "S1 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000.lines",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000",
+                            "role": "line"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.lines.read_position_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "Zx.0001_P1.chrA_1-5000.lines.read_position_qc.versions.yml:md5,7f1ff70f3bc07a33f47d8fa1297961c1"
+                ],
+                "tsv": [
+                    [
+                        {
+                            "id": "Zx.0001_P1.chrA_1-5000.lines",
+                            "donor": "Zx.0001_P1",
+                            "region": "chrA_1-5000",
+                            "role": "line"
+                        },
+                        "Zx.0001_P1.chrA_1-5000.lines.read_position_qc.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "Zx.0001_P1.chrA_1-5000.lines.read_position_qc.versions.yml:md5,7f1ff70f3bc07a33f47d8fa1297961c1"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-28T08:01:08.878179",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

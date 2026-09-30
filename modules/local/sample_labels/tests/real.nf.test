@@ -1,0 +1,100 @@
+nextflow_process {
+
+    name "Test Process SAMPLE_LABELS (real)"
+    script "../main.nf"
+    process "SAMPLE_LABELS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "sample_labels"
+    tag "real"
+
+    // Fixture registry (tests/data/registry.csv, resolved columns): PN1_SID1 nil_id Zx00011111; PN1_SID2 / PN1_SID3 replicate wells sharing
+    // Zx00012222 (collision -> suffixed with the sample_id); PN1_SID4 no nil_id -> pedigree Zx.0001_P1-bulk; S_1A_1 (BC1) ->
+    // pedigree Zx.0001_P1_P1; PN1_SID5 raw Zx.0009 corrected (C0001) to Zx00013333; B73_X has no row -> keeps its sample_id;
+    // PN9_SID9 belongs to donor Zx.0009_P1.
+    test("Zx.0001_P1.chrA_1-5000") {
+
+        when {
+            process {
+                """
+                def d = "${projectDir}/modules/local/sample_labels/tests/data/"
+                def u = 'Zx.0001_P1.chrA_1-5000'
+                input[0] = channel.of([
+                    [ id: u, donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file(d + u + '.genotypes.tsv.gz', checkIfExists: true),
+                    file(d + u + '.genotypes.matrix.tsv.gz', checkIfExists: true),
+                    file(d + u + '.segments.csv', checkIfExists: true),
+                    file(d + u + '.line_qc.tsv', checkIfExists: true),
+                    file(d + u + '.exclusions.tsv', checkIfExists: true),
+                    'Zx.0001_P1',
+                    ['B73_X', 'PN1_SID1', 'PN1_SID2', 'PN1_SID3', 'PN1_SID4', 'PN1_SID5', 'S_1A_1']
+                ])
+                input[1] = file(d + 'registry.csv', checkIfExists: true)
+                input[2] = 'tests/data/registry.csv'
+                input[3] = 'abc123'
+                """
+            }
+        }
+
+        then {
+            def tab = { f -> def l = path(f).readLines().collect { it.split('\t', -1) }; l.drop(1).collect { r -> [l[0], r].transpose().collectEntries() } }
+            def labels = tab(process.out.labels[0][1])
+            def lab = { s -> labels.find { it.sample_id == s } }
+            def matrix_head = path(process.out.matrix[0][1]).linesGzip[0].split('\t').toList()
+            def long_first = path(process.out.genotypes[0][1]).linesGzip.take(2)
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out.genotypes, process.out.matrix, process.out.segments, process.out.line_qc,
+                                  process.out.exclusions, process.out.labels).match() },
+                { assert labels.size() == 7 },
+                { assert lab('PN1_SID1').subMap(['label', 'label_source', 'collision']) == [label: 'Zx00011111', label_source: 'nil_id', collision: '.'] },
+                { assert lab('PN1_SID2').label == 'Zx00012222_PN1_SID2' && lab('PN1_SID2').collision == 'PN1_SID3' },
+                { assert lab('PN1_SID3').label == 'Zx00012222_PN1_SID3' && lab('PN1_SID3').collision == 'PN1_SID2' },
+                { assert lab('PN1_SID4').subMap(['label', 'label_source']) == [label: 'Zx.0001_P1-bulk', label_source: 'pedigree'] },
+                { assert lab('S_1A_1').label == 'Zx.0001_P1_P1' },
+                { assert lab('PN1_SID5').subMap(['label', 'donor', 'correction_ids']) == [label: 'Zx00013333', donor: 'Zx.0001_P1', correction_ids: 'C0001'] },
+                { assert lab('B73_X').subMap(['label', 'label_source', 'nil_id']) == [label: 'B73_X', label_source: 'sample_id_not_in_registry', nil_id: '.'] },
+                { assert labels.every { it.registry == 'tests/data/registry.csv' && it.code_version == 'abc123' && it.registry_sha256 ==~ /[0-9a-f]{64}/ } },
+                { assert matrix_head.drop(4) == ['Zx00011111', 'Zx00012222_PN1_SID2', 'Zx00012222_PN1_SID3', 'Zx.0001_P1-bulk'] },
+                { assert long_first[0].startsWith('line\tsample_id\tchrom') && long_first[1].startsWith('Zx00011111\tPN1_SID1\t') },
+                { assert path(process.out.exclusions[0][1]).readLines()[1] == 'Zx.0001_P1_P1\tS_1A_1\tbc1_sample\tsample_quality_control\tmin_coverage' },
+                { assert path(process.out.segments[0][1]).readLines()[1] == 'RTIGER_poolseq,Zx.0001_P1,Zx00011111,chrA,1,5000,0' },
+                { assert path(process.out.line_qc[0][1]).readLines()[4].startsWith('Zx.0001_P1-bulk\tchrA') }
+            )
+        }
+    }
+
+    // a sample whose registry donor differs from the unit donor is refused
+    test("registry donor differs from the unit donor") {
+
+        when {
+            process {
+                """
+                def d = "${projectDir}/modules/local/sample_labels/tests/data/"
+                def u = 'Zx.0001_P1.chrA_1-5000'
+                input[0] = channel.of([
+                    [ id: u, donor:'Zx.0001_P1', region:'chrA_1-5000' ],
+                    file(d + u + '.genotypes.tsv.gz', checkIfExists: true),
+                    file(d + u + '.genotypes.matrix.tsv.gz', checkIfExists: true),
+                    file(d + u + '.segments.csv', checkIfExists: true),
+                    file(d + u + '.line_qc.tsv', checkIfExists: true),
+                    file(d + u + '.exclusions.tsv', checkIfExists: true),
+                    'Zx.0001_P1',
+                    ['PN9_SID9']
+                ])
+                input[1] = file(d + 'registry.csv', checkIfExists: true)
+                input[2] = 'tests/data/registry.csv'
+                input[3] = 'abc123'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.failed },
+                { assert path("${outputDir}/../meta/nextflow.log").text.contains('PN9_SID9: registry donor Zx.0009_P1 differs from the unit donor Zx.0001_P1') }
+            )
+        }
+    }
+}

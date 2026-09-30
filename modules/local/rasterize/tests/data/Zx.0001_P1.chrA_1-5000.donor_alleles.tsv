@@ -1,0 +1,7 @@
+chrom	pos	ref	alt	D	call_step	logodds	p_alt
+chrA	100	A	G	ALT	own	.	1.0
+chrA	200	C	G	NA	multiallelic	.	.
+chrA	200	C	T	NA	multiallelic	.	.
+chrA	300	G	A	ALT	step2_alt	11.9	0.9999932
+chrA	400	T	C	REF	step1_ref	-6.0	0.0024726
+chrA	500	A	C	NA	missing	3.0	0.9525741

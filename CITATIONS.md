@@ -34,6 +34,26 @@
 
 > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
+### Genotype workflow
+
+- [CRISP](https://pubmed.ncbi.nlm.nih.gov/20529923/) (CRISP: pooled variant discovery, vibansal/crisp @ 1a9027e)
+
+> Bansal V. A statistical method for the detection of variants from next-generation resequencing of DNA pools. Bioinformatics. 2010 Jun 15;26(12):i318-24. doi: 10.1093/bioinformatics/btq214. PubMed PMID: 20529923.
+
+- [BCFtools](https://pubmed.ncbi.nlm.nih.gov/33590861/) (ALLELE_COUNTS: `bcftools mpileup -a AD` at fixed sites; BED_CLIP: nf-core `bcftools/view`); see SAMtools above for the reference (Danecek et al. 2021)
+
+- [HTSlib](https://pubmed.ncbi.nlm.nih.gov/33594436/) (bgzip, tabix; CRISP links libhts)
+
+> Bonfield JK, Marshall J, Danecek P, Li H, Ohan V, Whitwham A, Keane T, Davies RM. HTSlib: C library for reading/writing high-throughput sequencing data. GigaScience. 2021 Feb 16;10(2):giab007. doi: 10.1093/gigascience/giab007. PubMed PMID: 33594436.
+
+- [RTIGER](https://pubmed.ncbi.nlm.nih.gov/36946207/) (RTIGER: ancestry segments of the lines, the model behind nilHMM's `caller = "rtiger"`)
+
+> Campos-Martin R, Schmickler S, Goel M, Schneeberger K, Tresch A. Reliable genotyping of recombinant genomes using a robust hidden Markov model. Plant Physiol. 2023 May 31;192(2):821-836. doi: 10.1093/plphys/kiad191. PubMed PMID: 36946207.
+
+- [nilHMM](https://github.com/sawers-rellan-labs/nilhmm) (RTIGER: the Julia-free R/Rcpp port of RTIGER used here, v0.3.0 @ 248e67e)
+
+> Sawers-Rellán Lab. nilHMM (v0.3.0). Software, https://github.com/sawers-rellan-labs/nilhmm.
+
 ## Software packaging/containerisation tools
 
 - [Anaconda](https://anaconda.com)

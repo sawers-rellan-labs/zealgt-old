@@ -1,0 +1,56 @@
+nextflow_process {
+
+    name "Test Process READ_POSITION_QC (real)"
+    script "../main.nf"
+    process "READ_POSITION_QC"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "read_position_qc"
+    tag "real"
+
+    // tests/data/S1.bam (from S1.sam, samtools view -b; tiny.fa chrA 101-110 = CTGTGTCCAC), sites 103 G>A, 110 C>T:
+    //   r1 R1 forward: ALT at 103 = cycle 3, REF at 110 = cycle 10; r1 R2 reverse: REF at 103 = cycle 8, ALT at 110 = cycle 1
+    //   r2 R1 forward: 103 below BQ 20 (not counted), REF at 110 = cycle 10; r2 R2 reverse: REF 103 cycle 8, REF 110 cycle 1
+    //   r3: MAPQ 5, removed by samtools view -q 20. The site chrA:9000 is outside the region.
+    test("S1 - raw") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id:'Zx.0001_P1.chrA_1-5000.lines', donor:'Zx.0001_P1', region:'chrA_1-5000', role:'line' ],
+                    [ file("${projectDir}/modules/local/read_position_qc/tests/data/S1.bam", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/read_position_qc/tests/data/S1.bam.bai", checkIfExists: true) ],
+                    [ 'S1' ]
+                ])
+                input[1] = [ [ id:'Zx.0001_P1.chrA_1-5000' ], file("${projectDir}/modules/local/read_position_qc/tests/data/sites.tsv", checkIfExists: true) ]
+                input[2] = [
+                    [ id:'tiny' ],
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)
+                ]
+                input[3] = 'chrA:1-5000'
+                input[4] = 'raw'
+                """
+            }
+        }
+
+        then {
+            def rows = path(process.out.tsv[0][1]).readLines().drop(1).collect { it.split('\t') }
+            def cell = { sample, mate, bin -> rows.find { it[1] == sample && it[2] == mate && it[3] == bin }[4..7] }
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out.tsv).match() },
+                { assert rows.size() == 2 * 2 * 8 },                           // (S1, ALL) x mates x bins
+                { assert rows.every { it[0] == 'raw' } },
+                { assert cell('S1', '1', '3-4') == [ '1', '0', '1', '0' ] },   // n ref alt other
+                { assert cell('S1', '1', '9-12') == [ '2', '2', '0', '0' ] },
+                { assert cell('S1', '2', '1-2') == [ '2', '1', '1', '0' ] },
+                { assert cell('S1', '2', '5-8') == [ '2', '2', '0', '0' ] },
+                { assert cell('ALL', '2', '1-2') == [ '2', '1', '1', '0' ] }
+            )
+        }
+    }
+}

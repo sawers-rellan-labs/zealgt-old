@@ -1,0 +1,114 @@
+{
+    "Zx.0540_P3.chrA - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        [
+                            "S1.bam:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "S2.bam:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ],
+                        [
+                            "S1.bam.bai:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "S2.bam.bai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.masks.tsv:md5,cc535abc743a3b4ca18f7c70c6eaa732"
+                    ]
+                ],
+                "2": [
+                    [
+                        "MASK_READ_STARTS",
+                        "samtools",
+                        "1.24"
+                    ]
+                ],
+                "3": [
+                    [
+                        "MASK_READ_STARTS",
+                        "gawk",
+                        "5.4.0"
+                    ]
+                ],
+                "bam": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        [
+                            "S1.bam:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "S2.bam:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ],
+                        [
+                            "S1.bam.bai:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "S2.bam.bai:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "masks": [
+                    [
+                        {
+                            "id": "Zx.0540_P3.chrA",
+                            "donor": "Zx.0540_P3",
+                            "region": "chrA"
+                        },
+                        "Zx.0540_P3.chrA.masks.tsv:md5,cc535abc743a3b4ca18f7c70c6eaa732"
+                    ]
+                ],
+                "versions_gawk": [
+                    [
+                        "MASK_READ_STARTS",
+                        "gawk",
+                        "5.4.0"
+                    ]
+                ],
+                "versions_samtools": [
+                    [
+                        "MASK_READ_STARTS",
+                        "samtools",
+                        "1.24"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-09-29T21:00:43.92048",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "Zx.0540_P3.chrA - masks by mate and strand": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "Zx.0540_P3.chrA",
+                        "donor": "Zx.0540_P3",
+                        "region": "chrA"
+                    },
+                    "Zx.0540_P3.chrA.masks.tsv:md5,9af02d0f0eac897613e2e01ed73d5851"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-28T07:48:00.228179",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
