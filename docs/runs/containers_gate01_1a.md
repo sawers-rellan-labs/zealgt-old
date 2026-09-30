@@ -32,7 +32,11 @@ The two differ only in the container work (profile, container lines, environment
 3. Same outputs: per CRAM the alignment records (`samtools view`, no header) identical in md5; demux QC, samtools stats and
    Picard WGS metrics tables identical except run dates and paths; the reported tool versions equal (both use the same
    versions; builds may differ).
-4. Measured: task time and memory per process (trace) for both, noted in docs/PLAN_containers.md.
+4. Measured: task time and memory per process (trace `peak_rss`, `sacct MaxRSS`) for both, noted in docs/PLAN_containers.md;
+   a process whose container peak is meaningfully higher gets a memory margin before Gate 2 (hazel kills at 95 % of `--mem`).
+5. Image mount mode on a compute node (kernel squashfs via loop device, or a squashfuse helper process inside the job,
+   whose memory counts toward the task's cgroup): read from inside a container (`/proc/mounts`) and the host side
+   (`apptainer buildcfg`, `ps` during an exec); added 2026-09-30 (user).
 
 Any difference in 3 is investigated before the switch (step 5).
 
