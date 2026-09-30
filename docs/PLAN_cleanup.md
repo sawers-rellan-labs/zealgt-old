@@ -109,9 +109,12 @@ Categories:
   `agent/nftest_shard_<i>.log`, `[shard i/n]` prefixes in the main log) and a `summary:` line at the end of every log.
   **Known inefficiency, kept (user, 2026-09-30):** measured nf-test stage (71 stub tests, idle laptop): 1 shard ≈ 275 s,
   2 shards 220 s, 3 shards 221 s, **4 shards 194 s** (≈ 1.4 ×; `agent/20260930_190000_time_nftest_shards.sh`): each test
-  is a fresh Nextflow run whose ≈ 4 s are mostly JVM start-up, and more than 2 at once saturate the laptop. Untested next
-  step: JVM class data sharing for Nextflow (`-XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=…` via `NXF_OPTS`),
-  timed on this stage. `ZG_RES_JOBS` (the resource check's pool, 4) is not measured the same way.
+  is a fresh Nextflow run whose ≈ 4 s are mostly JVM start-up, and more than 2 at once saturate the laptop. JVM class data
+  sharing **tested and not adopted** (2026-09-30, `agent/20260930_191500_time_jvm_cds.sh`, Java 17): a 51 MB dynamic
+  archive (`-XX:ArchiveClassesAtExit` once, then `-XX:SharedArchiveFile` via `NXF_OPTS`; mapping confirmed with
+  `-Xshare:on -Xlog:cds`) cut a pipeline stub run from 6.2 to 5.7 s (≈ 8 %), ≈ 10-15 s of the suite; it must be rebuilt
+  for every Nextflow / Java / classpath change. Most start-up is script compilation and parameter validation, which it
+  cannot cache. `ZG_RES_JOBS` (the resource check's pool, 4) is not measured the same way.
 - Each hazel test run's run card names its run dirs, and the write-up of the run ends with the cleanup listing for them.
 - **Fast gates: a `gate` profile + one head job per chain** (user, 2026-09-30). After the polling fix a Gate 0/1 chain is
   still mostly overhead (genotype Gate 1: critical path ≈ 3-4 min of work, longest task CRISP 76 s): every task is its own
