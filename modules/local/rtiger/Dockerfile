@@ -1,5 +1,5 @@
 # nilHMM (sawers-rellan-labs/nilhmm, not on CRAN / conda yet) for the RTIGER module; built by .github/workflows/build_images.yml
-# into ghcr.io/sawers-rellan-labs/zealgt-tools:nilhmm-<version> (docs/PLAN_containers.md §2, §4). R, every R dependency and the compilers come
+# into ghcr.io/sawers-rellan-labs/zealgt-nilhmm (docs/PLAN_containers.md §2, §4). R, every R dependency and the compilers come
 # from conda-forge (the packages of the module's former environment.yml, versions only; conda-forge's r-base depends on its
 # compilers anyway, so a compiler-free stage would save nothing); nilHMM alone is installed on top, from the tagged release
 # archive (tag v0.3.1 -> commit 6e9b408, the code of the benchmark's 248e67e), checked by sha256. procps: Nextflow's task metrics.
