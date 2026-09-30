@@ -38,7 +38,8 @@ NXF_PREFIX="$(bash "$REPO/scripts/build_envs.sh" --list | awk -F'\t' '$1 == "nex
 
 export NXF_OFFLINE=true NXF_ANSI_LOG=false
 export NXF_PLUGINS_DIR="$NXF_PREFIX/share/nextflow/plugins"
-export PATH="$NXF_PREFIX/bin:/usr/local/apps/conda/miniconda3/26.3.2/bin:$PATH"
+# apptainer for -profile apptainer_hazel (the binary itself: the site module fails when TMPDIR is unset); unused under conda
+export PATH="$NXF_PREFIX/bin:/usr/local/apps/conda/miniconda3/26.3.2/bin:/usr/local/apps/apptainer/1.4.2-1/bin:$PATH"
 
 LAUNCH=/share/maize/frodrig4/nf_work/$RUN_ID/launch
 mkdir -p "$LAUNCH"
