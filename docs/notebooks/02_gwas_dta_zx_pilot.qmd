@@ -1,0 +1,146 @@
+---
+title: "DTA GWAS pilot on two mexicana donors"
+subtitle: "RTIGER ancestry × donor allele (two-step gap filling), MLM with family fixed + kinship, chr10 (2026-09-27)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    code-fold: true
+    code-summary: "code"
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+**What this is.** A first end-to-end run of the zealgt genotype table in a GWAS: the lines of the two mexicana donors of the zealbc1
+notebook 06 pilot (Zx.0540_P3, Zx.0570_P2), chr10 union sites, days to anthesis (DTA). It tests the pipeline, not the biology: 83 lines,
+two families and one chromosome have little power.
+
+- **Genotype** = RTIGER ancestry × donor allele at every union site. Donor alleles after the two-step gap filling
+  (`docs/PLAN_pipeline.md`, stage 6): step 1 BC1 (`dhd_bayes`), step 2 per-line ALT rescue (job 963891). A cell is missing when the line
+  carries the donor segment and the donor allele is missing (or RTIGER has no ancestry).
+- **Phenotype**: zealhmm `data/zeal/pheno_dta_blue.csv`, `DTA_mean` (SpATS BLUE, CLY23 + CLY25); lines matched by skim id → pedigree
+  (`samplesheet_3way.csv`).
+- **Model**, as zealhmm `scripts/zeal_mlm_taxon.R`: fixed = family (donor accession), random = VanRaden kinship, R-EMMAX
+  (`scripts/emmax_qk.R`), joint 2-df additive + dominance F; missing cells mean-imputed per marker; 5 % genome-wide threshold from 1,000
+  permutations (`scripts/zeal_gwas_perm.R`).
+- Produced by `agent/20260927_103000_gwas_dta_zx.R`; inputs and results in `agent/gwas_dta_20260927/` (not tracked). Genotypes are from
+  before duplicate marking.
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+IN <- "../../agent/gwas_dta_20260927"
+donors <- c("Zx.0540_P3", "Zx.0570_P2")
+scan <- fread(file.path(IN, "dta_gwas_mlm_family_K_rtiger_x_donor_chr10.csv"))
+S <- readRDS(file.path(IN, "dta_gwas_summary.rds"))
+theme_set(theme_bw(base_size = 11))
+ZMCCT10 <- 96175873
+```
+
+## 1. Missing data in the genotype table
+
+```{r missing}
+u <- fread(file.path(IN, "dhd_bayes_chr10.tsv.gz"))
+u <- u[!(pos %in% u[duplicated(pos), pos])]
+u[, marker := sprintf("chr10_%d_%s_%s", pos, ref, alt)]
+anc <- function(d) {
+  seg <- fread(file.path(IN, sprintf("rtiger_%s_r500_chr10.csv", d)))
+  sapply(unique(seg$name), function(ln) {
+    s <- seg[name == ln][order(start_bp)]
+    i <- findInterval(u$pos, s$start_bp)
+    ifelse(i > 0 & u$pos <= s$end_bp[pmax(i, 1)], s$state[pmax(i, 1)], NA)
+  })
+}
+X <- lapply(setNames(donors, donors), anc)
+miss <- rbindlist(lapply(donors, function(d) {
+  src <- u[[paste0(d, "_src")]]; sb <- u[[paste0(d, "_state_bayes")]]
+  D1 <- ifelse(src == "own", 1, ifelse(sb == "1", 1, ifelse(sb == "0", 0, NA)))
+  s2 <- fread(file.path(IN, sprintf("step2_%s.tsv", d)))[call == "ALT"]
+  D2 <- D1; D2[u$marker %in% s2[, sprintf("chr10_%d_%s_%s", pos, ref, alt)]] <- 1
+  x <- X[[d]]
+  g <- function(D) ifelse(is.na(x), NA, ifelse(x == 0, 0, ifelse(is.na(D), NA, x * D)))
+  G1 <- g(D1); G2 <- g(D2); intro <- which(x > 0)
+  data.table(donor = d, lines = ncol(x),
+             `ancestry missing %` = 100 * mean(is.na(x)),
+             `cells in introgressions %` = 100 * mean(x > 0, na.rm = TRUE),
+             `donor allele missing %, step 1` = 100 * mean(is.na(D1)),
+             `donor allele missing %, step 2` = 100 * mean(is.na(D2)),
+             `all cells missing %, step 1` = 100 * mean(is.na(G1)),
+             `all cells missing %, step 2` = 100 * mean(is.na(G2)),
+             `introgressed cells missing %, step 1` = 100 * mean(is.na(G1[intro])),
+             `introgressed cells missing %, step 2` = 100 * mean(is.na(G2[intro])))
+}))
+knitr::kable(t(miss[, -1]), digits = 2, col.names = miss$donor)
+```
+
+## 2. Manhattan plot
+
+```{r manhattan, fig.width = 10, fig.height = 4}
+ggplot(scan, aes(BP / 1e6, logp)) +
+  geom_point(size = 0.5, colour = "grey30") +
+  geom_hline(yintercept = S$threshold_05, linetype = "dashed", colour = "firebrick") +
+  geom_vline(xintercept = ZMCCT10 / 1e6, colour = "steelblue", alpha = 0.5) +
+  annotate("text", x = ZMCCT10 / 1e6, y = S$threshold_05, label = "ZmCCT10", hjust = -0.1, vjust = -0.4, size = 3.2, colour = "steelblue") +
+  annotate("text", x = 0, y = S$threshold_05, label = "5 % FWER", hjust = 0, vjust = -0.4, size = 3.2, colour = "firebrick") +
+  scale_y_continuous(limits = c(0, max(S$threshold_05, max(scan$logp, na.rm = TRUE)) * 1.1)) +
+  labs(x = "chr10 (Mb, B73 v5)", y = expression(-log[10] ~ P),
+       title = sprintf("DTA — MLM (family fixed + K), %d lines, %d markers", S$n_lines, S$n_markers))
+```
+
+```{r stats}
+knitr::kable(data.table(
+  quantity = c("lines (per family)", "markers (segregating)", "distinct marker tests (genotype patterns)", "REML delta (sigma_e^2 / sigma_g^2)",
+               "max -log10 P", "position of the max", "5 % FWER threshold (-log10 P)", "markers above the threshold",
+               "ZmCCT10 +/- 500 kb, max -log10 P", "lambda_GC"),
+  value = c(paste(names(S$families), S$families, sep = ": ", collapse = ", "), S$n_markers, uniqueN(signif(scan$P, 6)),
+            round(S$delta, 2), round(max(scan$logp, na.rm = TRUE), 2), format(scan[which.max(logp), BP], big.mark = ","),
+            round(S$threshold_05, 2), sum(scan$logp > S$threshold_05, na.rm = TRUE),
+            round(max(scan[abs(BP - ZMCCT10) <= 5e5, logp], na.rm = TRUE), 2), round(S$lambda_gc, 2))))
+```
+
+The markers are not independent: with 83 lines the 82,690 markers collapse into a few hundred genotype patterns (long shared
+introgression blocks), which is why the Manhattan plot is flat bands. λ_GC is not meaningful here; the permutation threshold is.
+
+## 3. Permutation null and QQ plot
+
+```{r null, fig.width = 10, fig.height = 3.5}
+p1 <- ggplot(data.table(m = S$perm_max), aes(m)) +
+  geom_histogram(bins = 40, fill = "grey60") +
+  geom_vline(xintercept = S$threshold_05, linetype = "dashed", colour = "firebrick") +
+  geom_vline(xintercept = max(scan$logp, na.rm = TRUE), colour = "black") +
+  labs(x = "max -log10 P per permutation", y = "permutations", title = "genome-wide max under permutation (black = observed)")
+q <- scan[is.finite(P) & P > 0][order(P)]
+q[, expected := -log10(ppoints(.N))]
+p2 <- ggplot(q, aes(expected, logp)) + geom_point(size = 0.4) + geom_abline(colour = "firebrick") +
+  labs(x = "expected -log10 P", y = "observed -log10 P", title = "QQ (markers are strongly correlated)")
+cowplot::plot_grid(p1, p2, nrow = 1)
+```
+
+## 4. How many lines carry the donor segment along chr10
+
+Power at a locus depends on how many lines carry an introgression there. Counts per 1 Mb, both donors.
+
+```{r carriers, fig.width = 10, fig.height = 3.5}
+cr <- rbindlist(lapply(donors, function(d) {
+  x <- X[[d]]
+  data.table(donor = d, pos = u$pos, HET = rowSums(x == 1, na.rm = TRUE), `donor/donor` = rowSums(x == 2, na.rm = TRUE))
+}))
+cr <- melt(cr[, .(HET = mean(HET), `donor/donor` = mean(`donor/donor`)), by = .(donor, mb = floor(pos / 1e6))],
+           id.vars = c("donor", "mb"), variable.name = "state", value.name = "lines")
+ggplot(cr, aes(mb, lines, fill = state)) + geom_col(width = 1) + facet_wrap(~donor, ncol = 1) +
+  geom_vline(xintercept = ZMCCT10 / 1e6, colour = "steelblue", alpha = 0.6) +
+  labs(x = "chr10 (Mb)", y = "lines carrying the donor segment", fill = NULL)
+```
+
+## 5. Reading
+
+- No marker reaches the 5 % genome-wide threshold, and ZmCCT10 shows nothing; at ZmCCT10 only 6 lines per family carry the donor
+  segment (4 HET, 2 donor/donor).
+- After family, kinship explains little of the DTA variance (REML δ ≈ 25).
+- The run checks the pipeline (genotype table → phenotype match → MLM → permutation threshold); DTA QTL need all donors and all
+  chromosomes.
