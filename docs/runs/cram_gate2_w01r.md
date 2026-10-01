@@ -1,6 +1,6 @@
 # cram_gate2_w01r — CRAM Gate 2, wave 1 restart: the 13 missing BC1 CRAMs from the FASTQ checkpoint
 
-**Status:** draft 2026-10-01, awaiting the user's approval.
+**Status:** approved by the user 2026-10-01; submit after the PR is merged and `ZEAL/zealgt` is pulled.
 
 ## Purpose
 w01 (head 992883, `docs/runs/cram_gate2_w01.md`) was stopped by the user on 2026-09-29 at 19:43 for the container switch,
