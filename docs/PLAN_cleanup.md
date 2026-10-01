@@ -164,6 +164,16 @@ Categories:
 - 2026-10-01, listed (job 1016009): `nf_work` 88,767 entries, 1.1 TB (≈ 1.09 TB the Gate 2 runs, kept). Approved (option
   A): `work/` + `tmp/` of the finished non-Gate-2 runs (209 dirs, 75,765 entries, ≈ 25 GB) and the 4 empty
   Apptainer temp dirs (H4); their stores, results, stub stores and Gate 0 baselines kept. Group before: 429,446 files.
+  Removed (job 1016123): 213/213, 0 missing or failed; `nf_work` 88,767 -> 13,002 entries; **group 429,446 -> 353,859
+  files** (1.459 -> 1.433 TB); the 4 Gate 2 dirs untouched.
+- 2026-10-01, H6 (job 1016141, after PR #4 repointed the run cards): `ZEAL/zealgt-genotype` and `ZEAL/zealgt-containers`
+  removed, each re-checked clean with nothing unpushed right before.
+- 2026-10-01, laptop: `exp_publish` (4.4 GB) and `nf_cds` after copying their small records to the archive; this worktree's
+  `.nf-test/` (741 MB) and five 2026-09-28 `check_resources` dirs; `zealgt-containers/agent` 95 MB. Outside zealgt (user):
+  Ollama models 12 GB, pip cache, `zealhmm` `minibwa_index` (9.4 GB, built locally 2026-07-30, used by nothing) and its
+  `git gc` (841 -> 501 MB). Disk 95 % -> 83 % full. The FASTQs / CRAMs under `agent/check_resources/*/probe/in/` and
+  `closure_test/` are sparse placeholders (nominal 4-20 GB, 0 MB on disk): not cleanup candidates.
+- Not done: the test-run stores of option B (kept), L3 (docker: empty already), this worktree (last, after the archive).
 
 **Cleanup 2** (after the Gate 2 restart, with the zealgt-fe session's handover):
 1. H7: the wave-1 checkpoints `2A/2F/3B` (after their 13 CRAMs are stored and verified) and the gate2 runs' logs once their

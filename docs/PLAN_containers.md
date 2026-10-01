@@ -196,3 +196,25 @@ stored conda run `gate1_mex2_port_r1`, code = `main` apart from 14 meta.yml file
 
 **Step 5 done: on the plain hazel profiles both workflows pass Gate 0 and Gate 1, outputs unchanged by the logging.**
 Next: PR to `main`, then cleanup 1 (docs/PLAN_cleanup.md) and the CRAM Gate 2 restart on containers.
+
+**Step 6, whole chr10 on containers** (2026-10-01; `main` 79f877a, card `docs/runs/genotype_chr10_mex2.yml` unchanged, key
+`chr10_mex2_containers_r1`, jobs 1016495-1016501; baseline the conda run `chr10_mex2_port_r1`, code 9377898; comparison job
+1017114, `agent/20261001_134500_compare_chr10.sbatch`):
+- All 7 entries COMPLETED, 34 min end to end (conda: 58 min, all of the difference the 1 min -> 10 s polling; task realtimes
+  equal, e.g. CRISP 448 / 444 s).
+- Store 70 = 70 files: 55 byte-identical, 3 identical after decompression (gzip write time); the expected differences
+  (settings key / session / code hashes, `rtiger.versions.yml` nilhmm 0.3.1 vs 0.3.0, `per_donor.tsv` sha256 of the step-4
+  files). Task counts identical for all 27 processes; peak RSS within noise.
+- **One real difference, one read:** Zx.0540_P3 chr10:126,660,388, pool S_2B_8: CRISP counted one overlapping-mate REF read
+  fewer (DP 7 vs 8, ADb 2,0 vs 3,0), carried into that donor's step-4 site line and `pool_qc` (REF reads 224,422 vs
+  224,423). No call changed (same AC, filter, tier); union, donor alleles, gap filling, ancestry, genotypes and raster
+  identical; the zealbc1 accuracy reports of both donors identical except that depth sum. Zx.0570_P2: all 82,765 CRISP
+  records identical.
+- **Cause: CRISP is occasionally non-deterministic there, not the migration.** The pipeline task's exact CRISP command rerun
+  twice on the same inputs and image (job 1017349) gave DP 8 / ADb 3,0 both times, as both conda runs (`chr10_mex2_r1`,
+  `_port_r1`): 4 of 5 runs agree, one container run differs. Known issue for reruns of the same key; stored outputs are
+  fixed by the store and its settings guard. Not investigated further (dev scope).
+- Logging: every template writes timestamped, tagged lines; no progress/ETA lines, none expected: no template task ran
+  >= 1 min even on the whole chromosome (longest POOLED_LIKELIHOOD_TIERS and GAP_FILLING_LINES, 22 s).
+
+**Container migration checked end to end on a whole chromosome: outputs unchanged.**
