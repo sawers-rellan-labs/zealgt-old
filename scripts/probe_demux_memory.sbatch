@@ -55,8 +55,13 @@ export PATH=/usr/local/apps/apptainer/1.4.2-1/bin:$PATH
 export TMPDIR="$OUT/tmp"; mkdir -p "$TMPDIR"
 cd "$OUT"
 start=$(date +%s)
-apptainer exec --no-home -B /share/maize/frodrig4,/rsstu/users/r/rrellan/BZea "$SIF" bash -ue .command.sh \
-    > .command.out 2> .command.err &
+# The task's own binds (Nextflow adds the inputs' directories, e.g. the raw data outside /rsstu/.../BZea, to the
+# conf/hazel.config ones) and --pid, as its .command.run calls apptainer; the task dir itself is replaced by the probe dir
+# (under /share/maize/frodrig4, bound).
+BINDS="$(grep -m1 'apptainer exec' "$TASK/.command.run" | grep -oE -- '-B [^ "$]+' | awk '{ print $2 }' | grep -vxF "$TASK" | paste -sd, -)" || true
+[ -n "$BINDS" ] || { log "ERROR: no -B binds found in $TASK/.command.run"; exit 1; }
+log "binds: $BINDS"
+apptainer exec --no-home --pid -B "$BINDS" "$SIF" bash -ue .command.sh > .command.out 2> .command.err &
 app=$!
 
 printf 'elapsed_s\tmem_current_mb\tanon_mb\tfile_mb\tcutadapt_rss_mb\tpigz_rss_mb\tother_rss_mb\tdemux_out_mb\n' > memory.tsv
@@ -67,7 +72,7 @@ while kill -0 "$app" 2>/dev/null; do
     read -r anon file < <(awk '$1 == "anon" { a = $2 } $1 == "file" { f = $2 } END { printf "%d %d\n", a / 1048576, f / 1048576 }' "$CG/memory.stat" 2>/dev/null || echo "0 0")
     read -r ca pz ot < <(ps -o rss=,comm= -p "$(job_pids)" 2>/dev/null | awk '{ if ($2 ~ /^cutadapt|^python/) c += $1; else if ($2 == "pigz") p += $1; else o += $1 }
                                                          END { printf "%d %d %d\n", c / 1024, p / 1024, o / 1024 }')
-    dm=$(du -sm demux 2>/dev/null | cut -f1); dm=${dm:-0}
+    dm=$(du -sm demux 2>/dev/null | cut -f1) || true; dm=${dm:-0}     # demux/ appears only once the script made it
     printf '%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n' "$now" "$cur" "$anon" "$file" "$ca" "$pz" "$ot" "$dm" >> memory.tsv
     [ "$anon" -le "$peak_anon" ] || peak_anon=$anon
     if [ $(( now - last_log )) -ge 60 ]; then
