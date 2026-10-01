@@ -598,6 +598,14 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
     3. confirm CUTADAPT's time closure at full size on the remaining libraries (w01 BC1: ≤ 11 min 39, under the 15 min floor);
     4. re-derive every resource request under containers (image pull / start-up, memory accounting) before re-planning w02 / w03;
     5. MARKDUP_IMPORT: ERR3288215 (15.5×) peaked at 93 % of the 12 GB kill line — check the reserve before deeper imports.
+    6. **Reference by its full name** (user, 2026-10-01; in the same batch as the production changes, before the next wave, so
+       one Gate 0 + one CodeRabbit cover both): `params.fasta` = `ZEAL/reference/Zm-B73-REFERENCE-NAM-5.0.fa` (new links in
+       `ZEAL/reference/` to `ref/Zm-B73-REFERENCE-NAM-5.0.fa` and to the existing minibwa index / `.dict`; `B73.fa` stays),
+       provenance records the assembly name and the FASTA checksum. Today the CRAM headers (`UR:`, `@PG`) and the provenance say only
+       the alias `B73.fa` (→ `../../ref/Zm-B73-REFERENCE-NAM-5.0.fa`); the `@SQ M5:` checksums pin the sequences. The 38 CRAMs
+       stored before the change (w01/w01r BC1 + the 2 B73 controls) stay as they are; note it in `meta/PROVENANCE.md`. Changes
+       the hash of every reference-reading task (no stored CRAM reruns: the store check skips them; the genotype session's
+       cached dev runs recompute their reference steps — tell it beforehand).
 - **Genotype workflow Gate 1 / Gate 2** on those CRAMs (genotype session's gates; Gate 2 = the development donors in full).
 - **Gate 3 · full dataset in waves, on the user's go**, once the Gate 2 numbers justify the allocation. CRAM workflow: **waves** of ≤ `--max_libraries` libraries,
   one `read_demultiplexing` run (own `--run_id`) per wave (§5 rule 3). Between two waves: the wave's head job has ended, its log
