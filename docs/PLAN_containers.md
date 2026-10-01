@@ -1,9 +1,8 @@
 # PLAN: containers on hazel (Apptainer)
 
 Branch `containers`. Simplified 2026-09-29 (user): the minimal nf-core route, nothing more. Starts after the genotype branch is
-aligned with `main` and merged (merged 2026-09-30, PR #1). **Status 2026-09-30:** steps 1-3 done; step 4 done for the CRAM
-workflow (§7), genotype workflow next (run card `docs/runs/containers_genotype_gate01.md`); step 5 not started. Cleanup
-after the switch: docs/PLAN_cleanup.md.
+aligned with `main` and merged (merged 2026-09-30, PR #1). **Status 2026-09-30:** steps 1-5 done (results §7); the switch goes to
+`main` by PR. Cleanup after the switch: docs/PLAN_cleanup.md.
 
 ## 1. Why
 
@@ -162,3 +161,38 @@ stored conda run `gate1_mex2_port_r1`, code = `main` apart from 14 meta.yml file
   tasks (POOLED_LIKELIHOOD_TIERS 2,458 MB in both; CRISP 178 / 178 MB, 60 / 76 s; RTIGER 128 / 129 MB).
 
 **Step 4 done: both workflows pass Gate 0 and Gate 1 on containers with results identical to conda.**
+
+**Step 5, the switch** (code 7813ea3 part A, 2966508 part B, d94158f part C, b0e83b1; hazel checkout at f5d4e83; run card
+`docs/runs/containers_switch_gates.md`):
+- `-profile hazel` = Apptainer; the `apptainer_hazel` profile, `conf/env_prefixes.config`, `envs/process_aliases.tsv` and
+  the module conda builds removed; CRISP and RTIGER container-only (conda profile refused). The four deviation texts
+  rewritten.
+- Logging in all 23 templates (Python `logging`, R `logger`; stderr, timestamped, tagged; time-throttled progress with an
+  ETA). New images: CHROMOSOME_PAINTING (Seqera, + r-logger) and `ghcr.io/sawers-rellan-labs/zealgt-nilhmm:0.3.1-1`
+  (GitHub Actions run 36795073288), downloaded and checked inside the SIF on hazel (job 1004829: bash, touch, cat, ps,
+  Rscript; logger 0.4.3, nilHMM 0.3.1, data.table, ggplot2).
+- `--input` no longer validated at start-up (`samplesheetToList` validates it where it is read; ≈ 3.5 s per genotype head
+  job; docs/PLAN_cleanup.md §5).
+- Found on the way: `scripts/check_resources.sh` was broken since part A (its laptop stubs used hazel's Apptainer cache
+  dir); Apptainer off in its override.
+- Laptop: lints, nf-test 71/71 stub, the resource check, real module nf-tests 34/34 on the production images (Docker,
+  linux/amd64). CodeRabbit on de627cf..d94158f (executing code): 0 findings; a grep for removed names found one stale
+  `meta.yml` line (fixed, b0e83b1).
+- **Gate 0** on the plain profiles (jobs 1004869-1004877): all 9 runs SUCCESS, every task via `apptainer exec`, 0 "Creating
+  env", 0 pulls; task counts as step 4 (CRAM demux 79, genotype 51). The markdup_import stub ran on the full dev sheet
+  (379 tasks, 30 min); its Gate 0 now uses a 3-row sheet (`docs/runs/gate0/cram_gate0_import.csv`).
+- **Gate 1** vs the step-4 container runs (jobs 1005050-1005057, comparison 1005078): CRAM `switch_cram_g1` 17:49 (step 4
+  25:51), genotype chain ≈ 20 min.
+
+| check | result |
+|---|---|
+| CRAM task counts | identical, 79 tasks in 11 processes |
+| CRAM alignment records, 12 samples (`samtools view -T`, md5) | identical; file bytes differ by 8 bytes per CRAM: the header records the run's own paths (`switch_cram_g1` is 1 character longer than `containers_g1`), so byte identity is not expected (the card's wording was wrong) |
+| CRAM store, 80 other files | 42 byte-identical; Picard WGS metrics, markdup stats, registry identical after dropping dates/paths; `provenance.json` only run fields (code version, run/session id, paths, profile, write time); demux cutadapt log only its timing lines |
+| tool versions | identical |
+| genotype files | 70 = 70; 58 byte-identical, 4 identical after decompression (step-4 `sites.tsv.gz`, gzip write time); `union/*.per_donor.tsv` only the sha256 of those gz files (counts equal); the 7 `settings/*.json` only key, session and module code hashes (the templates changed) |
+| genotype task counts | identical for all 27 processes; peak RSS and time within noise |
+| logging (`.command.err`) | every genotype template process writes timestamped, tagged lines; DEMUX_QC, PROVENANCE and REGISTRY set up a logger but have nothing to log yet (only their `sys.exit` errors); no progress/ETA lines: no template task ran ≥ 1 min at Gate 1 (longest POOLED_LIKELIHOOD_TIERS 18 s), so the throttled progress is first seen at genome scale |
+
+**Step 5 done: on the plain hazel profiles both workflows pass Gate 0 and Gate 1, outputs unchanged by the logging.**
+Next: PR to `main`, then cleanup 1 (docs/PLAN_cleanup.md) and the CRAM Gate 2 restart on containers.
