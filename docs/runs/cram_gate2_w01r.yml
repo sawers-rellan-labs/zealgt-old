@@ -1,0 +1,15 @@
+# Run card (params): CRAM Gate 2, wave 1 restart — the 13 BC1 CRAMs w01 did not store (2A 7, 2F 5, 3B 1), aligned from the
+# kept FASTQ checkpoint (docs/PLAN_pipeline.md §6 "CRAM Gate 2", TODO 1; card docs/runs/cram_gate2_w01r.md).
+# Stage 2 alone: no DEMUX / MERGE_LANES / CUTADAPT, no sample sheet (the checkpoint samplesheets are the input); the 23 CRAMs
+# already stored are skipped (zgIsStored). This file reaches hazel only by git (commit, push, pull).
+# Code: main at the commit that adds this card (containers; CodeRabbit on the executing changes since d94158f).
+#
+# Submit (head job on normal QOS, tasks routed by conf/normal.config: every ALIGN_MARKDUP request is ~3-4 h -> compute/normal):
+#   ssh hazel 'sbatch --qos=normal --partition=compute --time=3-00:00:00 --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch cram_gate2_w01r -profile hazel,normal -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_w01r.yml'
+# workDir /share/maize/frodrig4/nf_work/cram_gate2_w01r/work (from --run_id, set by the head script; conf/hazel.config).
+workflow: cram
+entry: read_alignment
+libraries: 2A,2F,3B
+store: /rsstu/users/r/rrellan/BZea/ZEAL/store
+fastq_checkpoint: /share/maize/frodrig4/fastq_checkpoint
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_w01r
