@@ -33,8 +33,11 @@ case "$RUN_ID" in *[!A-Za-z0-9_.-]*) echo "run_id '$RUN_ID': letters, digits, _ 
 REPO="${ZG_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}"
 echo "$(date '+%F %T') zealgt_head repo=$REPO"
 echo "$(date '+%F %T') zealgt_head commit=$(git -C "$REPO" rev-parse HEAD)"
+# Every image the modules name in the Apptainer cache, and the launcher, before nextflow starts: /share deletes files not
+# read for 30 days, and a missing image would otherwise fail only the first task that needs it. Stat only (no file read, so
+# the check never resets the access clock); on a miss it prints the restore command and the head job stops.
+ZG_REPO="$REPO" bash "$REPO/scripts/restore_images.sbatch" --check || exit 1
 NXF_PREFIX="$(bash "$REPO/scripts/build_envs.sh" --list | awk -F'\t' '$1 == "nextflow" { print $5 }')"
-[ -x "$NXF_PREFIX/bin/nextflow" ] || { echo "nextflow env not built: $NXF_PREFIX (run scripts/build_envs.sbatch nextflow)" >&2; exit 1; }
 
 export NXF_OFFLINE=true NXF_ANSI_LOG=false
 export NXF_PLUGINS_DIR="$NXF_PREFIX/share/nextflow/plugins"

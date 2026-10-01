@@ -12,15 +12,16 @@
 # Why: /share is not backed up and deletes files not accessed for 30 days (https://hpc.ncsu.edu/Storage/Storage.php). The
 # images in apptainer.cacheDir and the launcher env are on /share (docs/PLAN_containers.md; usrapps was rejected), so a month
 # without a task reading an image (e.g. the CRAM images during genotype-only work) can remove it. Files are never touched to
-# reset the clock; this job restores what is missing instead. Run it first after a pause of > 30 days, or when a task fails
-# with an image not found / the head job says "nextflow env not built".
+# reset the clock; this job restores what is missing instead. The head job (scripts/submit_head_job.sbatch) runs the
+# --check mode below before nextflow starts and stops with the command to run this job when anything is missing.
 #
 # What it does (xfer partition: the only nodes with internet), idempotent: with everything present it fetches nothing.
 #   1. Images: from the checkout's own `container` lines (modules/*/main.nf, modules/*/*/main.nf): the https SIF URL of the
 #      singularity/apptainer branch (Seqera Containers, Galaxy depot), or a plain image (GHCR, built from a module Dockerfile).
 #      Each one missing from the cache is fetched under Nextflow's name (URL / image without scheme, ':' and '/' -> '-', + .img):
 #      https -> curl; anything else -> `apptainer pull --disable-cache docker://<image>`. Written as <name>.part, checked to
-#      be a SIF (its `run-singularity` header), then renamed. Every cached file is checked for that header too.
+#      be a SIF (its `run-singularity` header), then renamed. Images already present are only stat'ed (size > 0), never
+#      read: a read would reset /share's access clock of every image (--check-all reads them all, by request).
 #   2. Commands inside each fetched SIF (--check-all: every SIF): the commands each module using the image runs (parsed from
 #      its main.nf, below; shell builtins and the CMD_IGNORE words left out), its templates' interpreter (python3 / Rscript)
 #      and Nextflow's wrapper needs (bash cat ps touch). A missing one would fail the task: reported as MISSING (Seqera
@@ -32,14 +33,16 @@
 #
 # Submit on hazel from the checkout (after `git pull`), or name it with ZG_REPO:
 #   cd /rsstu/users/r/rrellan/BZea/ZEAL/zealgt && sbatch scripts/restore_images.sbatch [--check-all]
+# Check only (no job, no fetch, no file read: stat of each image and of the launcher; run by scripts/submit_head_job.sbatch
+# before nextflow starts): ZG_REPO=<checkout> bash scripts/restore_images.sbatch --check   (exit 1 = run the restore job)
 # Log: /share/maize/frodrig4/nf_work/restore_images_<jobid>.log. Exit 0 = all present and checked; 1 = something to fix.
 # (no `set -u`: see the hazel-debug-loop skill)
 set -eo pipefail
 
 REPO="${ZG_REPO:-${SLURM_SUBMIT_DIR:?submit with sbatch from the zealgt checkout or set ZG_REPO}}"
 [ -f "$REPO/scripts/build_envs.sh" ] || { echo "not a zealgt checkout: $REPO (cd into ZEAL/zealgt before sbatch)" >&2; exit 1; }
-CHECK_ALL=false
-case "$1" in --check-all) CHECK_ALL=true ;; "") ;; *) echo "usage: sbatch scripts/restore_images.sbatch [--check-all]" >&2; exit 2 ;; esac
+CHECK_ALL=false; CHECK_ONLY=false
+case "$1" in --check-all) CHECK_ALL=true ;; --check) CHECK_ONLY=true ;; "") ;; *) echo "usage: sbatch scripts/restore_images.sbatch [--check-all] | bash scripts/restore_images.sbatch --check" >&2; exit 2 ;; esac
 
 CACHE="${ZG_IMAGE_CACHE:-/share/maize/frodrig4/apptainer/cache}"   # apptainer.cacheDir of conf/hazel.config (override: tests only)
 export PATH=/usr/local/apps/apptainer/1.4.2-1/bin:$PATH
@@ -47,8 +50,8 @@ JOB="${SLURM_JOB_ID:-$$}"
 export APPTAINER_TMPDIR="$(dirname "$CACHE")/tmp_restore_$JOB" APPTAINER_CACHEDIR="$(dirname "$CACHE")/cachedir_restore_$JOB"
 log() { echo "$(date '+%F %T') restore_images: $*"; }
 
-log "job $JOB on $(hostname), repo $REPO at $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo unknown), cache $CACHE"
-mkdir -p "$CACHE"
+$CHECK_ONLY || log "job $JOB on $(hostname), repo $REPO at $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo unknown), cache $CACHE"
+$CHECK_ONLY || mkdir -p "$CACHE"
 
 # An image set by config instead of a module line would be missed: no config file of the hazel profiles may set one (the
 # template's conf/containers_*.config are not included by any profile).
@@ -78,6 +81,21 @@ ROWS="$(mod_images)"
 bad_rows="$(printf '%s\n' "$ROWS" | awk -F'\t' '$2 == "" { print $1 }')"
 [ -z "$bad_rows" ] || { log "ERROR: container line without an image this script can read: $bad_rows"; exit 1; }
 IMAGES="$(printf '%s\n' "$ROWS" | cut -f2 | sort -u)"
+
+# ---- --check: stat only, for the head job ----
+if $CHECK_ONLY; then
+    miss=""
+    while read -r img; do [ -s "$CACHE/$(sif_name "$img")" ] || miss="$miss $(sif_name "$img")"; done <<< "$IMAGES"
+    NXF_PREFIX="$(bash "$REPO/scripts/build_envs.sh" --list | awk -F'\t' '$1 == "nextflow" { print $5 }')"
+    [ -x "$NXF_PREFIX/bin/nextflow" ] && [ -f "$NXF_PREFIX/.zg_env_info.tsv" ] || miss="$miss launcher:${NXF_PREFIX:-no-row}"
+    if [ -z "$miss" ]; then
+        log "check: all $(printf '%s\n' "$IMAGES" | wc -l | tr -d ' ') images in $CACHE and the launcher present"
+        exit 0
+    fi
+    log "check: MISSING (/share deletes files not read for 30 days):$miss"
+    log "check: restore them first: cd $REPO && sbatch scripts/restore_images.sbatch"
+    exit 1
+fi
 log "$(printf '%s\n' "$ROWS" | wc -l | tr -d ' ') modules, $(printf '%s\n' "$IMAGES" | wc -l | tr -d ' ') distinct images; cache files before: $(find "$CACHE" -maxdepth 1 -type f | wc -l)"
 
 # ---- 1. images ----
@@ -85,7 +103,7 @@ fetched=""; failed=""; badcache=""; n=0; total="$(printf '%s\n' "$IMAGES" | wc -
 while read -r img; do
     n=$((n + 1)); name="$(sif_name "$img")"; dst="$CACHE/$name"
     if [ -s "$dst" ]; then
-        if is_sif "$dst"; then log "[$n/$total] present  $name"; else log "[$n/$total] NOT A SIF (left in place) $dst"; badcache="$badcache $name"; fi
+        if ! $CHECK_ALL || is_sif "$dst"; then log "[$n/$total] present  $name"; else log "[$n/$total] NOT A SIF (left in place) $dst"; badcache="$badcache $name"; fi
         continue
     fi
     [ ! -e "$dst.part" ] || { log "[$n/$total] a leftover $dst.part is in the way (left in place; remove it, then rerun)"; failed="$failed $name"; continue; }
