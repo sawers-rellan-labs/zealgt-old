@@ -603,6 +603,28 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
   wave, whose guard counts the checkpoint dirs still present. Not a semaphore inside one big run: it would bound concurrency,
   not the FASTQs held on `/share`, because nothing is removed automatically (§5 rule 3). Operator steps: docs/usage.md
   "Waves of libraries".
+  - **Production plan — DRAFT 2026-10-01, UNCONFIRMED: replace every estimate below with the Gate 2 measurements** (user: the
+    production runs must match the Gate 2 estimates; **budget a week of computing** until the partial-run data say otherwise).
+    - *Raw data* (hazel job 1020154, stat + plate-tar headers; `agent/20261002_013000_raw_sizes_result.txt`): **80 libraries,
+      2,283 samples, 6,935 GB** — BC1 32 libraries / 384 samples / 4,972 GB (80–362 GB each; 1A–1F and 4E deepest), batch-1 16
+      plates / 1,515 / 1,457 GB (41–154 GB), batch-2 32 rows / 384 / 506 GB (9–22 GB). Gate 2's 12 libraries: 1,268 GB.
+    - *Compute model* (from the Gate 2 traces so far: w01 BC1 2A / 2F / 3B and gate2_3A, allocated CPU-h): ALIGN_MARKDUP ≈ 0.85
+      CPU-h per raw GB (0.7–1.0), DEMUX + CUTADAPT + FASTQC ≈ 0.13 per raw GB, per sample ≈ 1 CPU-h fixed (PICARD's ~20–30 min
+      heap-bound walk, SAMTOOLS_STATS, alignment start-up; the start-up guessed, Gate 1 batch-1 traces to replace it); batch-1
+      DEMUX ≈ 3.6 CPU-h per lane (probe, 224 M pairs in 54 min at 4 cpu). **Total ≈ 9,100 CPU-h (7,500–11,000)**; the same model
+      gives ≈ 1,900 CPU-h for the Gate 2 set, as its run cards planned (2,000–2,300).
+    - *Limits* (live, 2026-10-01): QOS `short` 768 cpu per user, 2 h; `normal` 1,024 cpu per user, 4 days per job; no group cap
+      on account `maize_cpu`; `p_maize` priority 100, 4 days, but 32 cpu for the whole group (head jobs, the longest tasks);
+      `/share` group quota 20 TB (1.5 TB used) and 1 M files (371 K used). Disk is not the binding limit: every checkpoint kept
+      ≈ 5.6 TB; a wave's `work/` peaks at ≈ 3 × its raw.
+    - *Wall time*: at ~400 cores at once ≈ 23 h of pure compute; with waves (slowest sample per wave, queue waits) ≈ 4 waves ×
+      8–10 h ≈ 2 days, 3–4 days at half the capacity, plus the human steps between waves. Longest single task: a 4E sample
+      (~30 GiB trimmed) asks ~10 h of ALIGN_MARKDUP (24 h limit). **No job may exceed 4 days** (QOS maximum): every wave has its own
+      head job (`--time=4-00:00:00`; consider `--qos=p_maize`), and the slowest expected wave must fit well inside it.
+    - *To confirm before the waves are cut* (Gate 2 w01r, w02, w03, all under containers): ALIGN_MARKDUP CPU-h and wall per GiB,
+      incl. the deepest samples (2B / 2H); batch-1 DEMUX and stage 2 at full size (BZea5/6/8/9); per-sample fixed costs; queue
+      wait and the concurrency actually obtained (trace submit → start); `/share` peak per wave (`du` during the wave). Then fit the
+      model to them, apply it to the 80 measured sizes, and write the waves (libraries, raw GB, expected wall, disk peak) here.
 
 Lessons turned into checks (2026-09-28):
 - **Check the resolved resources, not the config text.** At Gate 2, TRIMMOMATIC's own `withName: 'TRIMMOMATIC' { time = 12.h }` in
