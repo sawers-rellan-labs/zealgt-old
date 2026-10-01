@@ -237,3 +237,12 @@ download scripts. Tests on hazel (submitted from the laptop file via stdin, haze
   `bc1_sample`, `csi`, `tbi`) is checked inside the image; the parser reads only the shell text of the script blocks and
   the string literals of Groovy assignments. Job 1018131 `--check-all` (7261f94): all 18 SIFs 0 missing, now including
   samtools, minibwa, bcftools, CRISP, tabix, picard, cutadapt, fastqc, multiqc; launcher ok, exit 0, 15 s.
+- Head-job check (PR #7, 90f025c): `submit_head_job.sbatch` runs `restore_images.sbatch --check` (stat only) and stops with
+  the restore command on a miss; smoke test head 1018242 (`--help`): check passed, nextflow started, exit 0.
+- CodeRabbit on d94158f..90f025c (executing changes since the containers review; before the CRAM Gate 2 restart): 3
+  findings. Fixed: the launcher check now stats the pinned nf-schema plugin's load files (MANIFEST.MF, extensions.idx,
+  lib/*.jar; not every file: 9 of its 105 were not read even on a day with runs, so they may age out harmlessly);
+  one restore job at a time (flock on `<cache>/.restore_images.lock`) with partial downloads named per job. Skipped: a
+  wording point in `docs/runs/containers_switch_gates.md` (a record). Tests on hazel: `--check` exit 0; jobs 1018287
+  (`--check-all`) and 1018288 exit 0, "plugin files present"; job 1018290 held the lock: the restore refused (exit 1), after
+  release it passed (exit 0).
