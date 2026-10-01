@@ -606,6 +606,19 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
        stored before the change (w01/w01r BC1 + the 2 B73 controls) stay as they are; note it in `meta/PROVENANCE.md`. Changes
        the hash of every reference-reading task (no stored CRAM reruns: the store check skips them; the genotype session's
        cached dev runs recompute their reference steps — tell it beforehand).
+    7. **One `--outdir` for all runs = the single permanent CRAM home** (user, 2026-10-01; closes zealgt-fe's open store question
+       of 2026-09-29): every production and Gate 2 run gets `--outdir /rsstu/users/r/rrellan/BZea/ZEAL/store`; CRAMs (+ .crai, QC,
+       provenance) publish to `<outdir>/cram/` — where the 38 stored CRAMs already are, one copy — and per-run outputs to
+       `<outdir>/pipeline_info/<run_id>/` and `<outdir>/multiqc/<run_id>/`. `params.store` and the hazel defaults in
+       `nextflow.config` (store, checkpoint) go; `--outdir` has no default (nf-core), set per run card; gates keep their own
+       `--outdir` under `nf_work/`. Skip-if-stored reads `<outdir>/cram/`; the genotype workflow finds CRAMs there (or a
+       `--cram_dir` input) — tell the genotype session. PLAN §2's store deviation is dropped. With `cleanup = true` (item 8) the
+       `work/` copy goes when a run succeeds, so only the published copy remains.
+    8. **Production path, tested on the remaining Gate 2 waves** (user, 2026-10-01; §6 "Production plan"): `cleanup = true` in the
+       production profile (first a small test on Nextflow 26.04.6: success deletes `work/`, failure keeps it); no FASTQ checkpoint
+       kept once a library's CRAMs are verified (the CRAMs hold every read; the Gate 2 libraries' checkpoints stay until genotype
+       Gate 2, user 2026-09-29); a wave driver that submits the waves in sequence and stops at the first failure. Items 6–8 are
+       one batch: one Gate 0 (stub) + one CodeRabbit, then the run cards of the remaining Gate 2 libraries.
 - **Genotype workflow Gate 1 / Gate 2** on those CRAMs (genotype session's gates; Gate 2 = the development donors in full).
 - **Gate 3 · full dataset in waves, on the user's go**, once the Gate 2 numbers justify the allocation. CRAM workflow: **waves** of ≤ `--max_libraries` libraries,
   one `read_demultiplexing` run (own `--run_id`) per wave (§5 rule 3). Between two waves: the wave's head job has ended, its log
