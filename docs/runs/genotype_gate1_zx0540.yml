@@ -61,9 +61,9 @@ mappability_priors: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev/referenc
 mappability_prior_mode: taxon
 
 # ------------------------------------------------------------------------------------------------ store and outputs
-# genotype outputs go to <store>/genotype/<genotype_store_key>/ (settings/<stage>.json guards the key); next to the imported
+# genotype outputs go to <outdir>/genotype/<genotype_store_key>/ (settings/<stage>.json guards the key); next to the imported
 # CRAMs (cram_import/) in the genotype-only store, never in ZEAL/store
-store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
 # _r2: the first pass-A key gate1_zx0540_nomask holds sample_quality_control and a failed variant_discovery (job 974146,
 # ALLELE_COUNTS exit 141) under the code before the ALLELE_COUNTS SIGPIPE fix; allele_counts is in every stage's code hash,
 # so that key refuses the fixed code by design (review #7) and pass A restarts from entry 1 under this key
@@ -72,7 +72,6 @@ store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
 # ancestry_inference code hash, which _r2 already recorded, so pass A restarts from entry 1 under _r3
 genotype_store_key: gate1_zx0540_nomask_r3
 input_store_key: null            # = genotype_store_key
-outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/genotype_gate1_zx0540/nomask
 # [decided, PLAN:113] a CRAM whose provenance markdup differs from `samtools markdup ${markdup_args}` stops the run
 provenance_check: strict
 # pass A false (every mask 0, same code path; comparable with zealbc1, which did not mask); pass B true (design Decision 6:

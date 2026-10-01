@@ -1,7 +1,7 @@
 //
 // READ_ALIGNMENT (PLAN §3 row 2, stage 2): ALIGN_MARKDUP (minibwa -> RG -> fixmate -> sort -> markdup -d 2500 -> CRAM,
-// published to <store>/cram) -> CRAM_QC_PROVENANCE (SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS + PROVENANCE, published into
-// <store>/cram). Samples whose CRAM is already stored and verified arrive in ch_stored and are not aligned again (the CRAM
+// published to <outdir>/cram) -> CRAM_QC_PROVENANCE (SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS + PROVENANCE, published into
+// <outdir>/cram). Samples whose CRAM is already stored and verified arrive in ch_stored and are not aligned again (the CRAM
 // workflow decides, zgIsStored); their QC and provenance are produced only if missing.
 //
 include { ALIGN_MARKDUP      } from '../../../modules/local/align_markdup/main'
@@ -12,10 +12,10 @@ workflow READ_ALIGNMENT {
     take:
     ch_reads       // channel: [ val(meta), [ R1, R2 ] ]  trimmed reads of the samples still to align
     ch_read_groups // channel: [ sample_id, read_group ]  escaped @RG line per sample
-    ch_stored      // channel: [ val(meta), cram, crai, [ versions.yml ] ]  CRAMs already in <store>/cram
+    ch_stored      // channel: [ val(meta), cram, crai, [ versions.yml ] ]  CRAMs already in <outdir>/cram
     ch_ref         // channel: value [ val(meta2), fasta, fai, [ minibwa index files ] ]
     ch_records     // channel: [ sample_id, record map ]  one per sample (new and stored)
-    ch_stored_qc   // channel: [ sample_id, [ QC files and provenance.json already in <store>/cram ] ]  one per sample
+    ch_stored_qc   // channel: [ sample_id, [ QC files and provenance.json already in <outdir>/cram ] ]  one per sample
 
     main:
     def ch_align_in = ch_reads

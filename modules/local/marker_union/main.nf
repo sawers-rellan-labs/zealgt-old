@@ -10,7 +10,7 @@
 // One run donor and no reference tables: the union is that donor's tier A, n_gaps = 0 in per_donor.tsv, and a
 // `WARN ... 0 gap sites` line is logged (no crash, no special case).
 // Also writes the non-multiallelic site list of the stage-6 counts (union_sites.tsv), which replaces a separate UNION_SITES
-// task. published to <store>/genotype/<key>/union (conf/genotype_modules.config), the versions go into a versions.yml
+// task. published to <outdir>/genotype/<key>/union (conf/genotype_modules.config), the versions go into a versions.yml
 // (a module template: `eval` outputs need a Bash script). Own environment.yml (python only).
 // ext.args: none.
 process MARKER_UNION {

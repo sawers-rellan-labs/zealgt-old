@@ -151,14 +151,14 @@ def zgRegions() {
     return zgGtList(params.regions).unique().collect { r -> [[id: zgRegionLabel(r)], r] }
 }
 
-// <store>/genotype/<genotype_store_key>: where this run's stage writes (store publishDir root of every genotype process)
+// <outdir>/genotype/<genotype_store_key>: where this run's stage writes (store publishDir root of every genotype process)
 def zgGenotypeStore() {
-    return "${params.store}/genotype/${params.genotype_store_key}".toString()
+    return "${params.outdir}/genotype/${params.genotype_store_key}".toString()
 }
 
-// <store>/genotype/<input_store_key or genotype_store_key>: where upstream stage outputs are read
+// <outdir>/genotype/<input_store_key or genotype_store_key>: where upstream stage outputs are read
 def zgInputStore() {
-    return "${params.store}/genotype/${params.input_store_key ?: params.genotype_store_key}".toString()
+    return "${params.outdir}/genotype/${params.input_store_key ?: params.genotype_store_key}".toString()
 }
 
 // Path of one upstream output relative to a genotype store (design §1.3 layout; conf/genotype_modules.config must match)
@@ -188,7 +188,7 @@ def zgStorePath(String kind, String donor, String label) {
 
 // Skip-if-stored (replaces storeDir, main's zgIsStored pattern; storeDir is being deprecated, nextflow-cache skill): the
 // final store outputs of each entry, per unit. The stage outputs are published (copied, never overwritten) into
-// <store>/genotype/<genotype_store_key>/ (conf/genotype_modules.config); a unit whose final outputs are all there is not run
+// <outdir>/genotype/<genotype_store_key>/ (conf/genotype_modules.config); a unit whose final outputs are all there is not run
 // again. Scope of the unit: cohort (sample_quality_control), donor x region (variant_discovery, ancestry_inference,
 // genotype_imputation) or set x region (marker_union; donor_allele_calling, whose final output is one table per donor of the
 // set). reporting publishes to --outdir only and always runs. The settings guard (below) refuses a changed setting or code
@@ -540,7 +540,7 @@ def zgCheckUpstream(String entry, List donors) {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Keyed genotype store: settings guard (review #7, design Decision 3)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    <store>/genotype/<key>/settings/<stage>.json holds the stage's parameters, the sha256 of its modules' code and, per unit
+    <outdir>/genotype/<key>/settings/<stage>.json holds the stage's parameters, the sha256 of its modules' code and, per unit
     (donor x region, set x region, or the cohort), the sample rows it was run on. A later run with the same key must agree on
     parameters and code, and on the rows of every unit it shares with the stored settings; new units are added. Otherwise the
     run is refused and the message names the differing fields (skip-if-stored would silently keep the old outputs).

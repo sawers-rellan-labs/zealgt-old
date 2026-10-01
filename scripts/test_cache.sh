@@ -130,11 +130,11 @@ session_of() {
     grep -oE "Session UUID: [0-9a-f-]{36}" "$S/logs/$1.nextflow.log" | head -n 1 | awk '{ print $3 }'
 }
 
-COMMON=(-profile "$PROFILE" "${CONFIGS[@]}" "${RUN_ARGS[@]}" -w "$S/work" --fastq_checkpoint "$CKPT" --store "$STORE")
+COMMON=(-profile "$PROFILE" "${CONFIGS[@]}" "${RUN_ARGS[@]}" -w "$S/work" --fastq_checkpoint "$CKPT" --outdir "$STORE")
 
 # R1: chained read_demultiplexing, every task runs
 use_store r1
-run_nf r1 "$S/launch" "${COMMON[@]}" "${DEMUX_ARGS[@]}" --outdir "$S/results" \
+run_nf r1 "$S/launch" "${COMMON[@]}" "${DEMUX_ARGS[@]}" \
     -with-trace "$S/traces/r1.txt" -dump-hashes json
 SID="$(session_of r1)"
 [ -n "$SID" ] || { echo "test_cache: no session id in $S/logs/r1.nextflow.log" >&2; exit 1; }
@@ -149,13 +149,13 @@ fi
 # PF: the resources R2 would request (stub run, own launch dir/work/store_stub/checkpoint_stub; not part of the session)
 mkdir -p "$S/preflight/store_stub/$LEAF" "$S/preflight/checkpoint_stub"
 run_nf preflight "$S/preflight/launch" -profile "$PROFILE" "${CONFIGS[@]}" "${RAISE[@]}" -c "$C/tests/cache/preflight.config" \
-    "${RUN_ARGS[@]}" -stub -w "$S/preflight/work" "${DEMUX_ARGS[@]}" --outdir "$S/preflight/results" \
-    --store "$S/preflight/store_stub/$LEAF" --fastq_checkpoint "$S/preflight/checkpoint_stub/$CKPT_LEAF" \
+    "${RUN_ARGS[@]}" -stub -w "$S/preflight/work" "${DEMUX_ARGS[@]}" \
+    --outdir "$S/preflight/store_stub/$LEAF" --fastq_checkpoint "$S/preflight/checkpoint_stub/$CKPT_LEAF" \
     -with-trace "$S/traces/preflight.txt"
 
 # R2: resources raised for every process -> every task cached
 use_store r2
-run_nf r2 "$S/launch" "${COMMON[@]}" "${RAISE[@]}" "${DEMUX_ARGS[@]}" --outdir "$S/results" \
+run_nf r2 "$S/launch" "${COMMON[@]}" "${RAISE[@]}" "${DEMUX_ARGS[@]}" \
     -with-trace "$S/traces/r2.txt" -dump-hashes json -resume "$SID"
 
 # R3: ALIGN_MARKDUP's script edited (committed in the clone, as a fix would be) -> stage 1 cached, ALIGN_MARKDUP re-executed
@@ -163,12 +163,12 @@ python3 "$C/tests/cache/edit_align_markdup.py" "$C/modules/local/align_markdup/m
 git -C "$C" -c user.name=test_cache -c user.email=test_cache@localhost commit -q -m "test_cache: harmless edit of ALIGN_MARKDUP's script" modules/local/align_markdup/main.nf
 echo "test_cache: clone now at $(git -C "$C" rev-parse HEAD) ($(git -C "$C" diff --stat HEAD~1 HEAD | tail -n 1))"
 use_store r3
-run_nf r3 "$S/launch" "${COMMON[@]}" "${DEMUX_ARGS[@]}" --outdir "$S/results" \
+run_nf r3 "$S/launch" "${COMMON[@]}" "${DEMUX_ARGS[@]}" \
     -with-trace "$S/traces/r3.txt" -dump-hashes json -resume "$SID"
 
 # R4: stage 2 alone from R1's checkpoint, new session -> only stage-2 tasks
 use_store r4
-run_nf r4 "$S/launch" "${COMMON[@]}" --entry read_alignment --outdir "$S/results_r4" \
+run_nf r4 "$S/launch" "${COMMON[@]}" --entry read_alignment \
     -with-trace "$S/traces/r4.txt" -dump-hashes json
 
 rc=0

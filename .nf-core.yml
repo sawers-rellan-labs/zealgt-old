@@ -19,13 +19,16 @@ nf_core_version: 4.1.0
 #   - **Cache test as an operator script, not an nf-test** (spec: tests are nf-test). `scripts/test_cache.sh` resumes one
 #     Nextflow session across several runs (raised resources, an edited module, stage 2 alone) and compares the task hashes;
 #     nf-test starts a new session for every run and cannot share one.
-#   - **Permanent store and FASTQ checkpoint outside `--outdir`** (spec: outputs published to `--outdir`). CRAMs, QC,
-#     provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
-#     stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
-#     CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
-#     lint). The genotype workflow's keyed store `<store>/genotype/<genotype_store_key>/` works the same way: stage outputs
-#     are copied there (never overwritten), a later `--entry` reads them, the workflow skips a unit whose stored outputs
-#     exist, and a settings guard refuses a changed setting or code under the same key. Only reports go to `--outdir`.
+#   - **FASTQ checkpoint outside `--outdir`, and skip-if-stored** (spec: outputs published to `--outdir`). Every stored output
+#     is published to `--outdir` (nf-core), and every run uses the same `--outdir`, the one permanent home (hazel: `ZEAL/store`;
+#     user 2026-10-01, PLAN §6 Gate 2 TODO 7; the former separate `--store` is gone): CRAMs, QC, provenance, demux QC and the
+#     registry are copied in (never overwritten) and the workflow skips work whose stored output exists; per-run reports go to
+#     `pipeline_info/<run_id>/` and `multiqc/<run_id>/`. The deviations left: the trimmed pairs are hardlinked into
+#     `--fastq_checkpoint` (the filesystem of `work/`), with CUTADAPT's log (one `publishDir` map: a second one whose path uses
+#     `meta` breaks `nextflow config -o json`, so nf-core lint), and the skip-if-stored logic itself. The genotype workflow's keyed
+#     store `<outdir>/genotype/<genotype_store_key>/` works the same way: stage outputs are copied there (never overwritten), a
+#     later `--entry` reads them, the workflow skips a unit whose stored outputs exist, and a settings guard refuses a changed
+#     setting or code under the same key.
 #   - **`versions.yml` files for 25 local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and
 #     MARKDUP_IMPORT publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored
 #     CRAM (skipped, not made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY and the

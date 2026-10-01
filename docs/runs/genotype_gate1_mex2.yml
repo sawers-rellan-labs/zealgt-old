@@ -55,13 +55,12 @@ mappability_priors: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev/referenc
 mappability_prior_mode: taxon
 
 # ------------------------------------------------------------------------------------------------ store and outputs
-# genotype outputs go to <store>/genotype/<genotype_store_key>/ (settings/<stage>.json guards the key); next to the imported
+# genotype outputs go to <outdir>/genotype/<genotype_store_key>/ (settings/<stage>.json guards the key); next to the imported
 # CRAMs (cram_import/) in the genotype-only store, never in ZEAL/store
-store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
 # a code fix during the run means a new key (_r2, ...), restarting from the first entry whose code hash changed
 genotype_store_key: gate1_mex2_r1
 input_store_key: null            # = genotype_store_key
-outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/genotype_gate1_mex2
 # [decided, PLAN:113] a CRAM whose provenance markdup differs from `samtools markdup ${markdup_args}` stops the run
 provenance_check: strict
 # pass A false (every mask 0, same code path; comparable with zealbc1, which did not mask); pass B true (design Decision 6:

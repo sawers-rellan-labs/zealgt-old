@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: donor_founder
-description: Final donor allele D (ALT / REF / NA) of one donor at every union site of a region, with the step that decided it (own, step1_ref, step1_alt, step2_alt, missing, multiallelic), the evidence log-odds and p_alt = E[D]; the summary reports the step-1 and step-2 shares of the gaps separately. published to <store>/genotype/<key>/donor_alleles/<set>.
+description: Final donor allele D (ALT / REF / NA) of one donor at every union site of a region, with the step that decided it (own, step1_ref, step1_alt, step2_alt, missing, multiallelic), the evidence log-odds and p_alt = E[D]; the summary reports the step-1 and step-2 shares of the gaps separately. published to <outdir>/genotype/<key>/donor_alleles/<set>.
 keywords:
   - genotyping
   - donor allele

@@ -116,9 +116,9 @@ workflow PIPELINE_COMPLETION {
     def cleanup = params.workflow == 'cram' && params.entry in ['read_demultiplexing', 'read_alignment'] ? [
         libraries    : zgList(params.libraries).unique(),
         checkpoint   : zgList(params.libraries).collectEntries { lib -> [lib, zgCheckpointDir(lib).toString()] },
-        cram_dir     : "${params.store}/cram".toString(),
+        cram_dir     : "${params.outdir}/cram".toString(),
         schema       : "${projectDir}/assets/schema_checkpoint.json".toString(),
-        script       : file("${params.outdir}/pipeline_info/cleanup_${params.run_id ?: workflow.sessionId}.sh").toAbsolutePath().normalize().toString(),
+        script       : file("${params.outdir}/pipeline_info/${params.run_id ?: 'run'}/cleanup_${params.run_id ?: workflow.sessionId}.sh").toAbsolutePath().normalize().toString(),
         entry        : params.entry,
         run_id       : params.run_id ?: '',
         session_id   : workflow.sessionId.toString(),
@@ -258,13 +258,14 @@ def zgRunGuards() {
     if ((params.workflow == 'genotype') != (params.entry in zgGenotypeEntries())) {
         error("--entry ${params.entry} is not an entry of --workflow ${params.workflow} (cram: read_demultiplexing | read_alignment | markdup_import; genotype: ${zgGenotypeEntries().join(' | ')})")
     }
-    // a subset never lands where the real CRAMs go (a stored subsample CRAM would make the skip-if-stored logic skip the
-    // real alignment), and stub outputs never land in the real store
-    zgCheckOutputRoot('--store', params.store, 'store_stub', '/rsstu/users/r/rrellan/BZea/ZEAL/store', '<outdir>/store_stub')
+    // --outdir is the permanent home of every stored output (PLAN §6 Gate 2 TODO 7: one --outdir for all runs). A subset
+    // never lands where the real CRAMs go (a stored subsample CRAM would make the skip-if-stored logic skip the real
+    // alignment), and stub outputs never land in the real store (any path outside it is fine for a stub)
+    zgCheckOutputRoot('--outdir', params.outdir, null, '/rsstu/users/r/rrellan/BZea/ZEAL/store', 'an --outdir outside it')
     def stage2 = params.workflow == 'cram' && params.entry in ['read_demultiplexing', 'read_alignment']
     if (stage2) {
         // the same two rules for the FASTQ checkpoint (a subsample checkpoint must never feed a full-library stage 2)
-        zgCheckOutputRoot('--fastq_checkpoint', params.fastq_checkpoint, 'checkpoint_stub', '/share/maize/frodrig4/fastq_checkpoint', '<outdir>/checkpoint_stub')
+        zgCheckOutputRoot('--fastq_checkpoint', params.fastq_checkpoint, 'checkpoint_stub', '/share/maize/frodrig4/fastq_checkpoint', 'conf/stub.config sets <outdir>/checkpoint_stub')
     }
     if (stage2 && !params.libraries) {
         error("--entry ${params.entry} needs --libraries <library>[,<library>...] (meta/samples.csv 'library' column)")
@@ -272,9 +273,9 @@ def zgRunGuards() {
 }
 
 //
-// Rules for an output root (--store, --fastq_checkpoint): with --subsample N it must be a directory named subsample_<N>, a
-// subsample_* directory needs --subsample, and a stub run needs a path component starting with <stub_prefix>, outside the
-// production root.
+// Rules for an output root (--outdir, --fastq_checkpoint): with --subsample N it must be a directory named subsample_<N>, a
+// subsample_* directory needs --subsample, and a stub run must lie outside the production root and, when stub_prefix is
+// given, inside a path component starting with it.
 //
 def zgCheckOutputRoot(String option, String path, String stub_prefix, String production_path, String stub_default) {
     def root = zgRealPath(path)
@@ -287,8 +288,10 @@ def zgCheckOutputRoot(String option, String path, String stub_prefix, String pro
     }
     if (workflow.stubRun) {
         def production = zgRealPath(production_path)
-        if (!root.iterator().any { p -> p.toString().startsWith(stub_prefix) } || root.startsWith(production)) {
-            error("stub runs must not write into the real ${option - '--'}: ${option} must be (inside) a directory named ${stub_prefix}* outside ${production} (conf/stub.config sets ${stub_default}), got ${root}")
+        def named_ok = stub_prefix == null || root.iterator().any { p -> p.toString().startsWith(stub_prefix) }
+        if (!named_ok || root.startsWith(production)) {
+            def where = stub_prefix == null ? "outside ${production}" : "(inside) a directory named ${stub_prefix}* outside ${production}"
+            error("stub runs must not write into the real ${option - '--'}: ${option} must be ${where} (${stub_default}), got ${root}")
         }
     }
 }
@@ -387,7 +390,7 @@ def zgCheckpointSessions(sheet) {
 
 //
 // Libraries registered as demultiplexed: assets/registry_seed.csv (PLAN §0: the libraries demuxed before zealgt) plus
-// every <store>/registry/<library>.registry.tsv.
+// every <outdir>/registry/<library>.registry.tsv.
 //
 def zgRegisteredLibraries() {
     def seed = file(params.registry_seed, checkIfExists: true)
@@ -395,7 +398,7 @@ def zgRegisteredLibraries() {
     seed.readLines().drop(1).findAll { line -> line.trim() && !line.startsWith('#') }.each { line ->
         libs[line.tokenize(',')[0].trim()] = "seed (${params.registry_seed})"
     }
-    def reg = file("${params.store}/registry")
+    def reg = file("${params.outdir}/registry")
     if (reg.isDirectory()) {
         reg.listFiles().findAll { f -> f.name.endsWith('.registry.tsv') }.each { f ->
             libs[f.name.replace('.registry.tsv', '')] = "store (${f})"
@@ -464,7 +467,7 @@ def zgDemuxInputs() {
             out.records << [meta.id, zgCheckpointRecord(settings, row)]
         }
     }
-    zgCheckStoredCrams("${params.store}/cram", out.checkpoint.collect { c -> c[0].id })
+    zgCheckStoredCrams("${params.outdir}/cram", out.checkpoint.collect { c -> c[0].id })
     return out
 }
 
@@ -472,7 +475,7 @@ def zgDemuxInputs() {
 // --entry read_alignment (stage 2 alone): the checkpoint samplesheets <fastq_checkpoint>/<library>/samplesheet.csv of the
 // --libraries (assets/schema_checkpoint.json: the FASTQs must exist) -> per sample meta, row and provenance record, built as
 // read_demultiplexing builds them. No registry / demux guard (nothing is demultiplexed); REGISTRY needs the library's
-// <store>/demux_qc/<library>.tsv and is skipped, with a warning, without it.
+// <outdir>/demux_qc/<library>.tsv and is skipped, with a warning, without it.
 //
 def zgAlignmentInputs() {
     def libs = zgList(params.libraries).unique()
@@ -488,8 +491,8 @@ def zgAlignmentInputs() {
         rows.findAll { row -> row.subsample != zgSubsample() }.each { row ->
             error("${sheet}: sample ${row.sample} was demultiplexed with --subsample ${row.subsample}, this run has --subsample ${zgSubsample()}")
         }
-        if (!file("${params.store}/demux_qc/${lib}.tsv").exists()) {
-            log.warn("zealgt: ${params.store}/demux_qc/${lib}.tsv is missing (stage 1 ran with another --store?): library ${lib} is aligned but not registered")
+        if (!file("${params.outdir}/demux_qc/${lib}.tsv").exists()) {
+            log.warn("zealgt: ${params.outdir}/demux_qc/${lib}.tsv is missing (stage 1 ran with another --store?): library ${lib} is aligned but not registered")
         }
         rows.each { row ->
             def meta = zgCheckpointMeta(row)
@@ -497,7 +500,7 @@ def zgAlignmentInputs() {
             out.records << [meta.id, zgCheckpointRecord(settings, row)]
         }
     }
-    zgCheckStoredCrams("${params.store}/cram", out.checkpoint.collect { c -> c[0].id })
+    zgCheckStoredCrams("${params.outdir}/cram", out.checkpoint.collect { c -> c[0].id })
     return out
 }
 
@@ -645,7 +648,7 @@ def zgCheckpointRecord(Map settings, Map row) {
                   stage1_tool_versions: zgParseToolVersions(row.stage1_tool_versions)]
     def reg = row.registry_note ? null : (zgRegistryFields() + zgRegistryResolvedFields()).collectEntries { f -> [f, row["reg_${f}".toString()]] }
     def registry = zgRegistrySnapshot(row.registry_file, row.stage1_code_version, reg)
-    return zgProvenanceRecord(settings, meta, "${params.store}/cram", origin, row.read_group, registry) + [
+    return zgProvenanceRecord(settings, meta, "${params.outdir}/cram", origin, row.read_group, registry) + [
         // CUTADAPT's ext.args = -a <adapter_r1> -A <adapter_r2> <args> (conf/modules.config). No phred field: cutadapt reads
         // qualities as phred+33 by default (--quality-base 33), with no auto-detection, so an empty sample needs no option.
         trimming : [tool: row.trim_tool, adapter_r1: row.trim_adapter_r1, adapter_r2: row.trim_adapter_r2, args: row.trim_args],
@@ -949,10 +952,10 @@ def zgImportInputs() {
         // e.g. the SRA B73 controls); the import sheet's own row is in origin.import_sheet_row
         def registry = zgRegistrySnapshot(registry_file, settings.code_version, registry_rows[row.id])
         out.imports << [meta, path, index, read_group]
-        out.records << [meta.id, zgProvenanceRecord(settings, meta, "${params.store}/cram_import", origin,
+        out.records << [meta.id, zgProvenanceRecord(settings, meta, "${params.outdir}/cram_import", origin,
                         'from the input header if it has exactly one @RG with SM = sample, else the sample sheet (see <sample>.read_group.txt)', registry)]
     }
-    zgCheckStoredCrams("${params.store}/cram_import", out.imports.collect { i -> i[0].id })
+    zgCheckStoredCrams("${params.outdir}/cram_import", out.imports.collect { i -> i[0].id })
     return out
 }
 
@@ -1106,7 +1109,7 @@ def zgImportRowSnapshot(Map row, path, index) {
 }
 
 //
-// Store (params.store): every output is published there (publishDir mode copy, overwrite false; conf/modules.config) and
+// Store (params.outdir): every output is published there (publishDir mode copy, overwrite false; conf/modules.config) and
 // the workflow skips work whose stored output exists (no storeDir). A sample's CRAM counts as stored only when the CRAM
 // and its .crai exist and the CRAM ends with the CRAM 3 EOF container, so a copy cut short by a killed head job is caught.
 //
@@ -1125,7 +1128,7 @@ def zgCramEofOk(cram) {
     return cram.withInputStream { s -> s.skipNBytes(size - eof.length); java.util.Arrays.equals(s.readNBytes(eof.length), eof) }
 }
 
-// The files a sample leaves in a store CRAM directory (<store>/cram or <store>/cram_import)
+// The files a sample leaves in a store CRAM directory (<outdir>/cram or <outdir>/cram_import)
 def zgSampleStoreFiles(String dir, String id) {
     return ['.cram', '.cram.crai', '.markdup.stats', '.align_markdup.versions.yml', '.markdup_import.versions.yml', '.read_group.txt',
             '.stats', '.CollectWgsMetrics.coverage_metrics', '.provenance.json', '.provenance.versions.yml'].collect { s -> file("${dir}/${id}${s}") }
@@ -1170,7 +1173,7 @@ def zgStoredQc(String dir, String id) {
     return [id, ["${id}.stats", "${id}.CollectWgsMetrics.coverage_metrics", "${id}.markdup.stats", "${id}.provenance.json"].collect { n -> file("${dir}/${n}") }.findAll { f -> f.exists() }]
 }
 
-// Demux QC of a library already in <store>/demux_qc: [ library, [ tsv, summary.tsv if present ] ], [] when its tsv is not
+// Demux QC of a library already in <outdir>/demux_qc: [ library, [ tsv, summary.tsv if present ] ], [] when its tsv is not
 // there (READ_DEMULTIPLEXING then runs DEMUX_QC)
 def zgStoredDemuxQc(String store, String lib) {
     def tsv = file("${store}/demux_qc/${lib}.tsv")
@@ -1178,7 +1181,7 @@ def zgStoredDemuxQc(String store, String lib) {
     return [lib, tsv.exists() ? [tsv] + (summary.exists() ? [summary] : []) : []]
 }
 
-// A library whose registry entry is already in <store>/registry (REGISTRY is not run again)
+// A library whose registry entry is already in <outdir>/registry (REGISTRY is not run again)
 def zgIsRegistered(String store, String lib) {
     return file("${store}/registry/${lib}.registry.tsv").exists()
 }

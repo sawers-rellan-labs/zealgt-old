@@ -9,7 +9,7 @@
     --entry read_alignment --libraries <lib>       stage 2 alone, from <fastq_checkpoint>/<lib>/samplesheet.csv: ALIGN_MARKDUP
                                                    -> SAMTOOLS_STATS + PICARD -> PROVENANCE -> REGISTRY
     --entry markdup_import [--import_sheet <csv>]  existing CRAMs (meta/dev_import.csv) -> MARKDUP_IMPORT -> QC
-    All end at the CRAM stop point (§3): CRAM + QC + provenance in the store (params.store), MultiQC per library (published).
+    All end at the CRAM stop point (§3): CRAM + QC + provenance in the store (params.outdir), MultiQC per library (published).
     Store outputs are published (copied, never overwritten; conf/modules.config); this workflow skips work whose stored
     output exists: a sample whose CRAM is stored and verified (zgIsStored) is not aligned again, a library whose demux QC /
     registry entry is stored gets no DEMUX_QC / REGISTRY task, stored QC and provenance are not made again.
@@ -49,9 +49,9 @@ workflow CRAM {
     outdir         // string: params.outdir
 
     main:
-    log.info("zealgt CRAM workflow: entry=${params.entry} store=${params.store} subsample=${zgSubsample()}" +
+    log.info("zealgt CRAM workflow: entry=${params.entry} outdir=${params.outdir} subsample=${zgSubsample()}" +
              (params.entry == 'markdup_import' ? '' : " fastq_checkpoint=${params.fastq_checkpoint}"))
-    def store  = params.store
+    def store  = params.outdir
     def fasta  = file(params.fasta, checkIfExists: true)
     def ch_ref = channel.value([[id: fasta.baseName], fasta, file("${fasta}.fai", checkIfExists: true),
                                 [file("${fasta}.l2b", checkIfExists: true), file("${fasta}.mbw", checkIfExists: true)]])
@@ -201,7 +201,7 @@ workflow CRAM {
         .map { process, tool_versions -> "${process}:\n${tool_versions.unique().sort().join('\n')}" }
     def ch_collated_versions = softwareVersionsToYAML(topic_versions.versions_file)
         .mix(topic_versions_string)
-        .collectFile(storeDir: "${outdir}/pipeline_info", name: 'zealgt_software_mqc_versions.yml', sort: true, newLine: true)
+        .collectFile(storeDir: "${outdir}/pipeline_info/${params.run_id ?: 'run'}", name: 'zealgt_software_mqc_versions.yml', sort: true, newLine: true)
 
     //
     // MODULE: MultiQC, one report per library (import set for markdup_import)

@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: marker_union
-description: Union of the tier-A sites of a donor set in one region (stage 5), keyed by chrom, pos, ref, alt; multiallelic positions flagged; read-only reference-donor tables add their tier-A sites and tier-ref calls (gaps and step-1 prior of single-donor runs); also writes the site list of the stage-6 counts. published to <store>/genotype/<key>/union.
+description: Union of the tier-A sites of a donor set in one region (stage 5), keyed by chrom, pos, ref, alt; multiallelic positions flagged; read-only reference-donor tables add their tier-A sites and tier-ref calls (gaps and step-1 prior of single-donor runs); also writes the site list of the stage-6 counts. published to <outdir>/genotype/<key>/union.
 keywords:
   - genotyping
   - marker union

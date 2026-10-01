@@ -23,7 +23,7 @@ nextflow_workflow {
 
         when {
             params {
-                store              = "${outputDir}/store_stub"
+                outdir             = "${outputDir}/store_stub"
                 genotype_store_key = 'test'
                 qc_panel           = "${projectDir}/tests/fixtures/genotype/panel.tsv"
                 regions            = 'chr10:1-16000'
@@ -69,7 +69,7 @@ nextflow_workflow {
 
         when {
             params {
-                store              = "${outputDir}/store_stub"
+                outdir             = "${outputDir}/store_stub"
                 genotype_store_key = 'test'
                 qc_panel           = null
             }

@@ -1,6 +1,6 @@
 //
 // READ_DEMULTIPLEXING (PLAN §3 row 1): one DEMUX task per library x lane -> MERGE_LANES (per sample, one FASTQ pair per
-// library) -> per-library demux QC in the store (DEMUX_QC sums the lane reports; published to <store>/demux_qc,
+// library) -> per-library demux QC in the store (DEMUX_QC sums the lane reports; published to <outdir>/demux_qc,
 // conf/modules.config). A library whose demux QC is already stored (ch_stored_qc) gets no DEMUX_QC task: the stored files
 // are emitted instead. Every read of the library is demultiplexed exactly once; the registry records one demux pass per library.
 // FETCH_LIBRARY of the plan is DEMUX's input stage (lane FASTQs read in place, batch-1 tar members extracted per lane).

@@ -21,7 +21,7 @@ nextflow_workflow {
 
         when {
             params {
-                store              = "${outputDir}/store_stub"
+                outdir             = "${outputDir}/store_stub"
                 genotype_store_key = 'test'
                 donor_set          = 'test_set'
             }
@@ -74,7 +74,7 @@ nextflow_workflow {
 
         when {
             params {
-                store              = "${outputDir}/store_stub"
+                outdir             = "${outputDir}/store_stub"
                 genotype_store_key = 'test'
                 donor_set          = 'test_set'
             }

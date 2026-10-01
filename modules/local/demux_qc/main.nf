@@ -1,5 +1,5 @@
 // DEMUX_QC — per-library demultiplexing QC, one file set per library in the store (PLAN §3 row 1, §4 #4: the zealbc1 table
-// was overwritten by every pool run). Published to <store>/demux_qc (conf/modules.config: copy, never overwritten);
+// was overwritten by every pool run). Published to <outdir>/demux_qc (conf/modules.config: copy, never overwritten);
 // READ_DEMULTIPLEXING runs no DEMUX_QC for a library whose table is already stored.
 // Reports per-sample assigned pairs and the assignment rate (from the cutadapt JSON), and for the Gate 1 read-structure check
 // the base composition of the first bases of the demuxed reads plus the TruSeq read-through share

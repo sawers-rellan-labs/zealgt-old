@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: rasterize
-description: Genotypes of a donor's lines at the non-multiallelic union sites of a region (math supplement Eq. S5.1) - gt = x if D = ALT, 0 if D = REF, NA if D is missing and x > 0, NA where the ancestry is unknown or the line was excluded by line QC; dosage_expected = x * p_alt. Long and wide tables. published to <store>/genotype/<key>/genotypes/<set>.
+description: Genotypes of a donor's lines at the non-multiallelic union sites of a region (math supplement Eq. S5.1) - gt = x if D = ALT, 0 if D = REF, NA if D is missing and x > 0, NA where the ancestry is unknown or the line was excluded by line QC; dosage_expected = x * p_alt. Long and wide tables. published to <outdir>/genotype/<key>/genotypes/<set>.
 keywords:
   - genotyping
   - imputation

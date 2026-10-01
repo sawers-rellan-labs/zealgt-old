@@ -10,6 +10,5 @@ workflow: cram
 entry: read_demultiplexing
 libraries: BZea5
 subsample: 2000000
-store: /share/maize/frodrig4/nf_work/demux_batch1_g1/store/subsample_2000000
+outdir: /share/maize/frodrig4/nf_work/demux_batch1_g1/store/subsample_2000000
 fastq_checkpoint: /share/maize/frodrig4/nf_work/demux_batch1_g1/checkpoint/subsample_2000000
-outdir: /share/maize/frodrig4/nf_work/demux_batch1_g1/results

@@ -23,7 +23,7 @@ nextflow_workflow {
 
         when {
             params {
-                store              = "${outputDir}/store_stub"
+                outdir             = "${outputDir}/store_stub"
                 genotype_store_key = 'test'
             }
             workflow {
@@ -65,7 +65,7 @@ nextflow_workflow {
 
         when {
             params {
-                store              = "${outputDir}/store_stub"
+                outdir             = "${outputDir}/store_stub"
                 genotype_store_key = 'test'
                 tier_counts_source = 'mpileup'
             }

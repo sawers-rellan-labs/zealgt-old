@@ -35,7 +35,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -63,7 +63,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -117,7 +117,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
                 tiers_test_args = '--input-format counts'
             }
             process {
@@ -151,7 +151,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
                 tiers_test_args = '--input-format counts --keep-zero-depth'
             }
             process {
@@ -194,7 +194,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """

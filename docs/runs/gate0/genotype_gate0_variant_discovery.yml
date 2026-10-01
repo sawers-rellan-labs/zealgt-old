@@ -3,7 +3,7 @@
 # --cram_store as read-only symlinks and checked by PIPELINE_INITIALISATION, so the store must hold them (see cram_store).
 #
 # Run the seven cards IN ORDER on the same store (each entry reads the outputs of the ones before it from
-# <store>/genotype/<genotype_store_key>/ and refuses to start when they are missing). One head job per entry, after the
+# <outdir>/genotype/<genotype_store_key>/ and refuses to start when they are missing). One head job per entry, after the
 # previous one has finished:
 #   bash agent/20260929_020100_submit_genotype_gate0.sh \
 #     /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/gate0/genotype_gate0_{entry}.yml variant_discovery
@@ -38,5 +38,5 @@ reference_donor_taxa: "Zx.0570_P2=mexicana"
 # store: ONE stub store for all seven entries (not the per-entry <outdir>/store_stub of conf/stub.config), so they chain.
 # The run guard accepts a stub run only inside a directory named store_stub*. Fresh key: the settings guard hashes the
 # module code, so a Gate 0 attempt after any module edit needs a new key (gate0_wp9b, ...), never a reused one.
-store: /share/maize/frodrig4/nf_work/genotype_gate0/store_stub
+outdir: /share/maize/frodrig4/nf_work/genotype_gate0/store_stub
 genotype_store_key: gate0_wp9a

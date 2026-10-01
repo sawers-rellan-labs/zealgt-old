@@ -4,7 +4,7 @@
 //   REGION_BED (per region) -> MASK_READ_STARTS (per role group: the donor's BC1 samples, its lines; the B73 controls per region)
 //   lines -> WITNESS_POOL -> CRISP (BC1 pools + witness) -> BED_CLIP (bcftools view -T region BED) -> WITNESS_VETO
 //   -> B73_CONTROL_COUNTS (B73 controls at the kept sites) [+ BC1_SITE_COUNTS when tier_counts_source = mpileup]
-//   -> POOLED_LIKELIHOOD_TIERS (stored in <store>/genotype/<key>/step4: <donor>.<label>.sites.tsv.gz, summary, pool_qc, run_info)
+//   -> POOLED_LIKELIHOOD_TIERS (stored in <outdir>/genotype/<key>/step4: <donor>.<label>.sites.tsv.gz, summary, pool_qc, run_info)
 // Sample map of step 4 (zealbc1 map.tsv): BC1 pools -> donor, witness <donor without dots>_BC2S3 -> donor BC2S3 (crisp mode
 // only: a counts table has no witness column), B73 controls -> donor B73. No B73 group for a region (stub runs only; the utils
 // guard refuses it in a real run) -> no extra counts.

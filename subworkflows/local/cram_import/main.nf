@@ -1,7 +1,7 @@
 //
 // CRAM_IMPORT (PLAN §0 Task 2 bullet 4): existing zealbc1 / nilhmm CRAMs -> MARKDUP_IMPORT (read groups + duplicate marking,
-// no realignment; published to <store>/cram_import) -> CRAM_QC_PROVENANCE (SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS +
-// PROVENANCE, published into <store>/cram_import), apart from the CRAMs the CRAM workflow aligns itself (<store>/cram).
+// no realignment; published to <outdir>/cram_import) -> CRAM_QC_PROVENANCE (SAMTOOLS_STATS + PICARD_COLLECTWGSMETRICS +
+// PROVENANCE, published into <outdir>/cram_import), apart from the CRAMs the CRAM workflow aligns itself (<outdir>/cram).
 // Imports already stored and verified arrive in ch_stored (the CRAM workflow decides, zgIsStored).
 //
 include { MARKDUP_IMPORT     } from '../../../modules/local/markdup_import/main'
@@ -10,11 +10,11 @@ include { CRAM_QC_PROVENANCE } from '../cram_qc_provenance/main'
 workflow CRAM_IMPORT {
 
     take:
-    ch_input     // channel: [ val(meta), cram|bam, crai|bai, read_group ]  CRAMs to import (not yet in <store>/cram_import)
+    ch_input     // channel: [ val(meta), cram|bam, crai|bai, read_group ]  CRAMs to import (not yet in <outdir>/cram_import)
     ch_stored    // channel: [ val(meta), cram, crai, [ versions.yml ] ]  imports already stored
     ch_ref       // channel: value [ val(meta2), fasta, fai, [ index files ] ]
     ch_records   // channel: [ sample_id, record map ]  one per sample
-    ch_stored_qc // channel: [ sample_id, [ QC files and provenance.json already in <store>/cram_import ] ]  one per sample
+    ch_stored_qc // channel: [ sample_id, [ QC files and provenance.json already in <outdir>/cram_import ] ]  one per sample
 
     main:
     MARKDUP_IMPORT(ch_input, ch_ref.map { meta2, fasta, fai, _index -> [meta2, fasta, fai] })

@@ -2,7 +2,7 @@
 //   minibwa map -x sr -R <read group>  (the RG tag goes on every record; minibwa 0.7 format.c writes RG:Z per record)
 //   -> samtools fixmate -m -> sort -> markdup -d 2500 (optical distance for patterned flow cells; duplicates FLAGGED, not removed)
 //   -> CRAM against B73 v5, no MAPQ filter, all records kept -> .crai; markdup statistics next to the CRAM.
-// Published to <store>/cram (conf/modules.config: copy, never overwritten); the CRAM workflow does not align a sample whose
+// Published to <outdir>/cram (conf/modules.config: copy, never overwritten); the CRAM workflow does not align a sample whose
 // CRAM is stored and verified (zgIsStored), whatever changed in this module (PLAN §2 rule 3). The tool versions go into one
 // versions.yml (one line per tool), published next to the CRAM: PROVENANCE of an already-stored CRAM reads it from there.
 // Threads / memory from task.cpus / task.memory, the standard nf-core way (Nextflow >= 26.04.6 does not hash the resource

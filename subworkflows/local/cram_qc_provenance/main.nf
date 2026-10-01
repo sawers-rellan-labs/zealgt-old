@@ -1,7 +1,7 @@
 //
 // CRAM_QC_PROVENANCE: per-CRAM QC (SAMTOOLS_STATS, PICARD_COLLECTWGSMETRICS) and the PROVENANCE record, all published into the
-// store next to the CRAM (conf/modules.config), shared by READ_ALIGNMENT (new CRAMs, <store>/cram) and CRAM_IMPORT (imported
-// CRAMs, <store>/cram_import). QC files and provenance records already in the store arrive in ch_stored_qc and are not made
+// store next to the CRAM (conf/modules.config), shared by READ_ALIGNMENT (new CRAMs, <outdir>/cram) and CRAM_IMPORT (imported
+// CRAMs, <outdir>/cram_import). QC files and provenance records already in the store arrive in ch_stored_qc and are not made
 // again (the stored ones are emitted instead).
 //
 include { SAMTOOLS_STATS           } from '../../../modules/nf-core/samtools/stats/main'

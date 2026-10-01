@@ -8,7 +8,7 @@
 // (summary prior_source_used), no special case.
 // Inputs: the union (MARKER_UNION) and the JOINT_POOLED_LIKELIHOOD per-donor tables <donor>.<region>.sites.tsv.gz (matched to
 // `donors` by name; columns chrom pos ref alt n a tier flags LLR, plus n_pools_alt n0 a0 eps logodds when present).
-// published to <store>/genotype/<key>/gap_bc1 (conf/genotype_modules.config) -> versions.yml (a module template: `eval` outputs need a Bash script).
+// published to <outdir>/genotype/<key>/gap_bc1 (conf/genotype_modules.config) -> versions.yml (a module template: `eval` outputs need a Bash script).
 // Own environment.yml (python only).
 // ext.args = fill_gaps_bc1.py options: --gap-alt-posterior (0.999) --gap-prior-w (2) --gap-prior-scope (all|same_taxon)
 // --gap-prior-source (other_donors|fixed|mu_only) --gap-prior-fixed (0.5) --ref-llr (-4) --ref-min-depth (12)

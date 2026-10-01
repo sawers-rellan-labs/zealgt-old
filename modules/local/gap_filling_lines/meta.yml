@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module with its own environment.yml (python only; identical copies share one content-keyed prefix).
 name: gap_filling_lines
-description: Stage-6 gap filling step 2, the per-line ALT rescue of one donor in one region at the gaps step 1 left missing - logit(pi) + LLR_BC1 + LLR_lines >= logit(0.999) -> ALT, never REF; lines split by RTIGER ancestry, donor-copy mappability c summed out under the taxon prior; flagged sites never promoted; x = 0 line reads are zero-class reads (eps_s) and significant ALT in them blocks the site. published to <store>/genotype/<key>/gap_lines/<set>.
+description: Stage-6 gap filling step 2, the per-line ALT rescue of one donor in one region at the gaps step 1 left missing - logit(pi) + LLR_BC1 + LLR_lines >= logit(0.999) -> ALT, never REF; lines split by RTIGER ancestry, donor-copy mappability c summed out under the taxon prior; flagged sites never promoted; x = 0 line reads are zero-class reads (eps_s) and significant ALT in them blocks the site. published to <outdir>/genotype/<key>/gap_lines/<set>.
 keywords:
   - genotyping
   - gap filling

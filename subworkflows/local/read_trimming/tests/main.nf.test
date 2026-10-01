@@ -17,7 +17,7 @@ nextflow_workflow {
 
         when {
             params {
-                store            = "${outputDir}/store_stub"
+                outdir           = "${outputDir}/store_stub"
                 fastq_checkpoint = "${outputDir}/checkpoint_stub"
             }
             workflow {

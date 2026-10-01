@@ -50,7 +50,7 @@
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
-                    "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+                    "description": "The one permanent home of every stored output (CRAMs, QC, provenance, demux QC, registry, genotype outputs), the same for all runs (hazel production and Gate 2: /rsstu/users/r/rrellan/BZea/ZEAL/store); per-run reports go to pipeline_info/<run_id>/ and multiqc/<run_id>/. Outputs are copied in and never overwritten; stored work is skipped. A --subsample run needs an --outdir named subsample_<N>; a stub run one outside ZEAL/store.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "multiqc_title": {
@@ -119,7 +119,7 @@
                     ],
                     "pattern": "^\\d+$",
                     "default": 0,
-                    "description": "Read pairs per library for Gate 1 (0 = all); each lane gives its first ceil(N / lanes) pairs. With N > 0, --store and --fastq_checkpoint must be directories named subsample_<N> (e.g. <store>/subsample_<N>), so a subset never lands where the real CRAMs or FASTQs go.",
+                    "description": "Read pairs per library for Gate 1 (0 = all); each lane gives its first ceil(N / lanes) pairs. With N > 0, --outdir and --fastq_checkpoint must be directories named subsample_<N> (e.g. <dir>/subsample_<N>), so a subset never lands where the real CRAMs or FASTQs go.",
                     "minimum": 0
                 },
                 "import_samples": {
@@ -147,20 +147,13 @@
             }
         },
         "store_and_reference": {
-            "title": "Store and reference",
+            "title": "Reference and FASTQ checkpoint",
             "type": "object",
             "fa_icon": "fas fa-database",
-            "description": "Permanent store (/rsstu), FASTQ checkpoint (/share) and the B73 v5 reference.",
+            "description": "FASTQ checkpoint (/share on hazel) and the B73 v5 reference; hazel's paths are set in conf/hazel.config.",
             "properties": {
-                "store": {
-                    "type": "string",
-                    "default": "/rsstu/users/r/rrellan/BZea/ZEAL/store",
-                    "description": "Store root: demux_qc/, cram/, cram_import/, registry/ (PLAN §5 rule 2). Outputs are copied in and never overwritten; stored work is skipped. A --subsample run needs a store named subsample_<N>; a stub run one named store_stub* (conf/stub.config).",
-                    "format": "directory-path"
-                },
                 "fastq_checkpoint": {
                     "type": "string",
-                    "default": "/share/maize/frodrig4/fastq_checkpoint",
                     "description": "FASTQ checkpoint root: <library>/ holds the trimmed pairs (hardlinks of the work/ files, so it must be on the filesystem of work/), samplesheet.csv (read by --entry read_alignment) and cleanup_status.tsv. A --subsample run needs a directory named subsample_<N>; a stub run one named checkpoint_stub* (conf/stub.config).",
                     "format": "directory-path"
                 },
@@ -168,8 +161,7 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "default": "/rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa",
-                    "description": "B73 v5 FASTA with .fai and the minibwa index (.l2b, .mbw) next to it."
+                    "description": "B73 v5 FASTA with .fai and the minibwa index (.l2b, .mbw) next to it (hazel: conf/hazel.config)."
                 },
                 "registry_seed": {
                     "type": "string",
@@ -409,13 +401,12 @@
                 "cram_store": {
                     "type": "string",
                     "format": "directory-path",
-                    "default": "/rsstu/users/r/rrellan/BZea/ZEAL/store",
-                    "description": "Read-only CRAM store of the CRAM workflow: <cram_store>/{cram,cram_import}/<sample_id>.cram, .crai, .CollectWgsMetrics.coverage_metrics, .provenance.json. The genotype workflow never writes there."
+                    "description": "Read-only CRAM store of the CRAM workflow: <cram_store>/{cram,cram_import}/<sample_id>.cram, .crai, .CollectWgsMetrics.coverage_metrics, .provenance.json. The genotype workflow never writes there. (hazel: conf/hazel.config.)"
                 },
                 "genotype_store_key": {
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_.-]+$",
-                    "description": "Required. Names <store>/genotype/<key>/, where the genotype outputs and settings/<stage>.json go; a rerun with the same key and other settings, code or samples is refused (review #7)."
+                    "description": "Required. Names <outdir>/genotype/<key>/, where the genotype outputs and settings/<stage>.json go; a rerun with the same key and other settings, code or samples is refused (review #7)."
                 },
                 "input_store_key": {
                     "type": "string",

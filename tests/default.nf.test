@@ -12,21 +12,20 @@ nextflow_pipeline {
         when {
             params {
                 outdir           = "$outputDir"
-                store            = "$outputDir/store_stub"
                 fastq_checkpoint = "$outputDir/checkpoint_stub"
             }
         }
 
         then {
             // stable_path: All files + folders in ${params.outdir}/ with a stable path (including file name)
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/*/*.{html,json,txt}', 'pipeline_info/*/cleanup_*.sh'])
             // stable_content: All files in ${params.outdir}/ with stable content
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             // the registry snapshot of every provenance record (the rest of the record holds run fields; .nftignore)
-            def registry = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+            def registry = new File("$outputDir/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
                 .collect { f -> def r = new groovy.json.JsonSlurper().parse(f).registry; [f.name, "registry file: ${r.file}", r.row, r.resolved, r.note] }
             // end-of-run cleanup commands (name has the session id: path and content outside the snapshot)
-            def cleanup = new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }
+            def cleanup = new File("$outputDir/pipeline_info/run").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }
             def cl = cleanup ? cleanup[0].readLines() : []
             assertAll(
                 { assert workflow.success },
@@ -45,7 +44,7 @@ nextflow_pipeline {
                 { assert cl.any { l -> l.startsWith('# CONSENT: nextflow clean -f ') } },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
-                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
+                    removeNextflowVersion("$outputDir/pipeline_info/run/zealgt_software_mqc_versions.yml"),
                     // All stable path name, with a relative path
                     stable_path,
                     // All files with stable contents
@@ -66,14 +65,13 @@ nextflow_pipeline {
         when {
             params {
                 outdir           = "$outputDir"
-                store            = "$outputDir/store_stub"
                 fastq_checkpoint = "$outputDir/checkpoint_stub"
                 libraries        = 'LIBB1'
             }
         }
 
         then {
-            def records = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+            def records = new File("$outputDir/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
                 .collect { f -> new groovy.json.JsonSlurper().parse(f) }
             def registry = records.collect { r -> [r.sample, "registry file: ${r.registry.file}", r.registry.row, r.registry.resolved, r.registry.note] }
             def demux = workflow.trace.tasks().collect { t -> t.name }.findAll { n -> n.contains(':DEMUX (') }.sort()
@@ -109,7 +107,6 @@ nextflow_pipeline {
         when {
             params {
                 outdir           = "$outputDir"
-                store            = "$outputDir/store_stub"
                 fastq_checkpoint = "$outputDir/checkpoint_stub"
                 max_libraries    = 1
                 // LIBZ: a checkpoint left by an earlier run (its FASTQs are still on disk)
@@ -137,7 +134,6 @@ nextflow_pipeline {
         when {
             params {
                 outdir           = "$outputDir"
-                store            = "$outputDir/store_stub"
                 fastq_checkpoint = "$outputDir/checkpoint_stub"
                 libraries        = 'LIBX,LIBY'
                 max_libraries    = 2
@@ -177,7 +173,6 @@ nextflow_pipeline {
         when {
             params {
                 outdir           = "$outputDir"
-                store            = "$outputDir/store_stub"
                 fastq_checkpoint = "$outputDir/checkpoint_stub"
                 entry            = 'read_alignment'
                 // a checkpoint of two samples (touch-file FASTQs) as stage 1 writes it, and the library's demux QC table
@@ -217,17 +212,17 @@ nextflow_pipeline {
                     cols.collect { c -> row[c] }.join(',')
                 }
                 new File(ck, 'samplesheet.csv').text = ([cols.join(',')] + rows).join('\n') + '\n'
-                def dq = new File("$outputDir/store_stub/demux_qc")
+                def dq = new File("$outputDir/demux_qc")
                 dq.mkdirs()
                 new File(dq, 'LIBX.tsv').text = 'sample_id\tread_pairs\nLX_1\t10\nLX_2\t10\n'
             }
         }
 
         then {
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/*/*.{html,json,txt}', 'pipeline_info/*/cleanup_*.sh'])
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             // registry snapshots rebuilt from the checkpoint samplesheet (code_version: the sheet's stage1_code_version)
-            def records = new File("$outputDir/store_stub/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+            def records = new File("$outputDir/cram").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
                 .collect { f -> new groovy.json.JsonSlurper().parse(f) }
             def registry = records.collect { r -> [r.sample, r.registry + [file: "registry file: ${r.registry.file}"]] }
             assertAll(
@@ -237,8 +232,8 @@ nextflow_pipeline {
                 { assert !workflow.trace.tasks().any { t -> t.name =~ /DEMUX|MERGE_LANES|CUTADAPT|FASTQC/ } },
                 { assert file("$outputDir/checkpoint_stub/LIBX/cleanup_status.tsv").readLines()[-1].contains(': removable (4 files') },
                 // cleanup commands: no stage-1 task in this run, so only the checkpoint's (commented) removal line
-                { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.with { cls -> cls.size() == 1 } },
-                { assert new File("$outputDir/pipeline_info").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.every { cl ->
+                { assert new File("$outputDir/pipeline_info/run").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.with { cls -> cls.size() == 1 } },
+                { assert new File("$outputDir/pipeline_info/run").listFiles().findAll { f -> f.name ==~ /cleanup_.*\.sh/ }.collect { f -> f.readLines() }.every { cl ->
                     cl.any { l -> l.startsWith('# work/: this run used no stage-1 task of LIBX') } && cl.count { l -> l.startsWith('# rm -r -- ') } == 1 } },
                 { assert records.size() == 2 && records.every { r -> r.registry.code_version == 'test' } },
                 // raw values as written (text: FALSE, 1), resolved values separately; LX_2 has no registry row
@@ -246,7 +241,7 @@ nextflow_pipeline {
                 { assert records[0].registry.resolved == [pedigree_resolved: 'Zx.TEST_P9_P1', nil_id_resolved: 'Zx9000009', donor_resolved: 'Zx.TEST_P9', correction_ids: 'C9001'] },
                 { assert records[1].registry.row == null && records[1].registry.resolved == null && records[1].registry.note == 'sample_id not in the registry' },
                 { assert snapshot(
-                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
+                    removeNextflowVersion("$outputDir/pipeline_info/run/zealgt_software_mqc_versions.yml"),
                     stable_path,
                     stable_content,
                     registry
@@ -262,7 +257,6 @@ nextflow_pipeline {
         when {
             params {
                 outdir       = "$outputDir"
-                store        = "$outputDir/store_stub"
                 entry        = 'markdup_import'
                 // two touch-file CRAMs to import and one excluded row (include = FALSE)
                 def imp = new File("$outputDir/imp")
@@ -280,18 +274,18 @@ nextflow_pipeline {
         }
 
         then {
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/cleanup_*.sh'])
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', 'pipeline_info/*/*.{html,json,txt}', 'pipeline_info/*/cleanup_*.sh'])
             def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             // import records: the import sheet's row (origin.import_sheet_row, path / index dropped: under $outputDir) and the
             // registry snapshot (IMP_* are not in the fixture registry: row null with a note)
-            def records = new File("$outputDir/store_stub/cram_import").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
+            def records = new File("$outputDir/cram_import").listFiles().findAll { f -> f.name.endsWith('.provenance.json') }.sort { f -> f.name }
                 .collect { f -> new groovy.json.JsonSlurper().parse(f) }
             def rows = records.collect { r -> [r.sample, r.origin.import_sheet_row.findAll { k, _v -> !(k in ['path', 'index']) }, "registry file: ${r.registry.file}", r.registry.row, r.registry.note] }
             assertAll(
                 { assert workflow.success },
                 { assert workflow.trace.succeeded().size() == 9 },
                 { assert snapshot(
-                    removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
+                    removeNextflowVersion("$outputDir/pipeline_info/run/zealgt_software_mqc_versions.yml"),
                     stable_path,
                     stable_content,
                     rows

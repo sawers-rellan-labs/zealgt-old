@@ -1,7 +1,7 @@
 // RTIGER — stage 4 (ancestry_inference) ancestry segments per line (design §2.3; PLAN §3 row 4, §4 #10 decided 2026-09-24:
 // run as zealbc1 ran it, own tier-A sites, rigidity 500, parameters learned from the data; zealbc1 PHG/bin/rtiger_poolseq.R):
 // nilHMM::call_ancestry(caller = "rtiger") on the LINE_MARKER_QC counts of the lines that passed the coverage floor.
-// published to <store>/genotype/<key>/ancestry (conf/genotype_modules.config): <prefix>.segments.csv (source, donor, name, chr,
+// published to <outdir>/genotype/<key>/ancestry (conf/genotype_modules.config): <prefix>.segments.csv (source, donor, name, chr,
 // start_bp, end_bp, state). With no passing line it writes the header only and a warning (exit 0).
 // templates/infer_ancestry_rtiger.R is a module template (hashed by content); nilHMM threads = task.cpus (RcppParallel stays
 // at 1 thread, nested threads crashed R). Own image (modules/local/rtiger/Dockerfile: nilHMM v0.3.1 = the code of 248e67e;

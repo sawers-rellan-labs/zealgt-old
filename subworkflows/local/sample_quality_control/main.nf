@@ -1,6 +1,6 @@
 //
 // SAMPLE_QUALITY_CONTROL (stage 2b; PLAN §3 row 2b; genotype design §2.1): MIN_COVERAGE on the cohort's stored
-// CollectWgsMetrics, then SAMPLE_QC_TABLE (stored in <store>/genotype/<key>/sample_qc: cohort.sample_qc.tsv), which every later
+// CollectWgsMetrics, then SAMPLE_QC_TABLE (stored in <outdir>/genotype/<key>/sample_qc: cohort.sample_qc.tsv), which every later
 // entry reads to drop failed samples. With a blind QC panel the role groups are masked (MASK_READ_STARTS, per donor x region x
 // role, on the region's lowcopy BED) and counted at the panel sites (QC_PANEL_COUNTS), and COVERAGE_QC, RELATEDNESS_QC and
 // DONOR_CONTENT_QC feed the table; without a panel (design §10 item 6) the panel tables are [] and only MIN_COVERAGE decides

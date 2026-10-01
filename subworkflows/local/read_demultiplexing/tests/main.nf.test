@@ -18,7 +18,7 @@ nextflow_workflow {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             workflow {
                 """
@@ -57,7 +57,7 @@ nextflow_workflow {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             workflow {
                 """

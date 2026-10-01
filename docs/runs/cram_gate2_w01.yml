@@ -23,6 +23,5 @@ libraries: 2A,2F,3B,BZea5
 force_demux: 2A,2F,3B
 # checkpoint root holds no library yet (checked 2026-09-29: the root does not exist), so 4 requested <= 4
 max_libraries: 4
-store: /rsstu/users/r/rrellan/BZea/ZEAL/store
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/store
 fastq_checkpoint: /share/maize/frodrig4/fastq_checkpoint
-outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_w01

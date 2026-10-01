@@ -8,8 +8,8 @@
 //                            whenever the sheet RG is used, the input's @RG header lines are dropped first (gawk), so no stale
 //                            sample remains in the header.
 // The inputs keep their zealbc1 MAPQ 20 / -F 0x904 filter (the provenance record says so); reads whose mate was filtered are
-// marked as single-end by markdup. Published to <store>/cram_import (conf/modules.config: copy, never overwritten), separate
-// from new CRAMs (<store>/cram); the CRAM workflow does not import a sample whose CRAM there is stored and verified.
+// marked as single-end by markdup. Published to <outdir>/cram_import (conf/modules.config: copy, never overwritten), separate
+// from new CRAMs (<outdir>/cram); the CRAM workflow does not import a sample whose CRAM there is stored and verified.
 // Threads / memory from task.cpus / task.memory (standard nf-core; not hashed on Nextflow >= 26.04.6). samtools sort gets
 // threads = min(task.cpus, 4) and the bounded share rule of ALIGN_MARKDUP with its own reserve:
 //   sort_mem_mb = max(768, floor((task.memory in MB - reserve_mb) x share / threads))

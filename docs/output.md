@@ -2,12 +2,13 @@
 
 ## Introduction
 
-The CRAM workflow writes its costly, reusable outputs into the **store** (`--store`, on /rsstu), its trimmed FASTQs into the
-**FASTQ checkpoint** (`--fastq_checkpoint`, on the `work/` filesystem) and only QC reports into the results directory
-(`--outdir`). Store files are published by copy and never overwritten; the workflow skips work whose stored output exists
+Every run publishes into `--outdir`, the **store**: one permanent home, the same for all runs (hazel production and Gate 2:
+`/rsstu/users/r/rrellan/BZea/ZEAL/store`; PLAN §6 Gate 2 TODO 7). Its trimmed FASTQs go into the **FASTQ checkpoint**
+(`--fastq_checkpoint`, on the `work/` filesystem), per-run reports into `pipeline_info/<run_id>/` and `multiqc/<run_id>/` under
+`--outdir`. Store files are published by copy and never overwritten; the workflow skips work whose stored output exists
 (docs/PLAN_pipeline.md §2, §5; docs/usage.md "Store rules").
 
-## Store (`--store`)
+## Store (`--outdir`)
 
 | path | written by | files |
 |---|---|---|
@@ -82,7 +83,7 @@ docs/usage.md "Store rules" and "Waves of libraries"). The cutadapt logs live he
 ## Genotype workflow (`--workflow genotype`)
 
 The genotype workflow reads `--cram_store` and never writes there. Its reusable outputs go into the keyed genotype store
-`<store>/genotype/<genotype_store_key>/` (published: copied, never overwritten). Each `--entry` writes its own kinds and
+`<outdir>/genotype/<genotype_store_key>/` (published: copied, never overwritten). Each `--entry` writes its own kinds and
 skips a unit whose final outputs are already there; the next entry reads them
 (`--input_store_key` points it at another key). `<region>` is the region label (`chr10`, `chr10_1-20000000`), and `<set>` is
 `--donor_set`.
@@ -96,7 +97,7 @@ resolved columns are read (`meta/corrections.csv` applied by `meta/build_samples
 is refused. Replicate wells that share a
 `nil_id` in one unit are labelled `<nil_id>_<sample_id>` and listed in the `collision` column of `sample_labels.tsv`.
 
-### Genotype store (`<store>/genotype/<key>/`)
+### Genotype store (`<outdir>/genotype/<key>/`)
 
 | path | entry (process) | files |
 |---|---|---|

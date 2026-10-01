@@ -15,7 +15,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -54,7 +54,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -91,7 +91,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -146,7 +146,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -187,7 +187,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -220,7 +220,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """
@@ -254,7 +254,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_stub"
+                outdir = "${outputDir}/store_stub"
             }
             process {
                 """

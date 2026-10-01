@@ -4,9 +4,9 @@
     genotypes, reporting (docs/PLAN_pipeline.md §3 rows 2b-8; genotype design agent/20260928_071950_genotype_design.md).
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     --entry <stage> runs that stage only (design §0.1). Its upstream inputs are read from the keyed genotype store
-    <store>/genotype/<input_store_key or genotype_store_key>/ (zgStorePath); their existence, the provenance of the CRAMs and
+    <outdir>/genotype/<input_store_key or genotype_store_key>/ (zgStorePath); their existence, the provenance of the CRAMs and
     the stage settings were checked by PIPELINE_INITIALISATION (utils genotype_functions.nf). Outputs are published (copied,
-    never overwritten) to <store>/genotype/<genotype_store_key>/ (conf/genotype_modules.config), and a unit whose final
+    never overwritten) to <outdir>/genotype/<genotype_store_key>/ (conf/genotype_modules.config), and a unit whose final
     outputs are already there is not run again (zgIsStageStored; skip-if-stored instead of storeDir). Unit = donor x region; the B73 controls form one
     role group per region. Samples that failed stage 2b (sample_qc.tsv pass = false) are removed before any read consumer.
     This file only wires channels.
@@ -41,7 +41,7 @@ workflow GENOTYPE {
     def units = donors.collectMany { d -> zgRegions().collect { rmeta, r -> [id: "${d}.${rmeta.id}".toString(), donor: d, region: rmeta.id, interval: r] } }
     def sets  = zgRegions().collect { rmeta, r -> [id: "${dset}.${rmeta.id}".toString(), donor_set: dset, region: rmeta.id, interval: r] }
     // skip-if-stored (zgIsStageStored): a unit (set for marker_union / donor_allele_calling) whose final outputs are already in
-    // <store>/genotype/<genotype_store_key>/ is not run again; only the others go on
+    // <outdir>/genotype/<genotype_store_key>/ is not run again; only the others go on
     def per_set    = entry in ['marker_union', 'donor_allele_calling']
     def todo_sets  = sets.findAll { s -> !zgIsStageStored(entry, donors, s.region) }
     def todo_units = per_set ? units.findAll { u -> u.region in todo_sets*.region } : units.findAll { u -> !zgIsStageStored(entry, [u.donor], u.region) }
@@ -169,7 +169,7 @@ workflow GENOTYPE {
         .map { process, tool_versions -> "${process}:\n${tool_versions.unique().sort().join('\n')}" }
     softwareVersionsToYAML(topic_versions.versions_file)
         .mix(topic_versions_string)
-        .collectFile(storeDir: "${params.outdir}/pipeline_info", name: "zealgt_genotype_${entry}_software_versions.yml", sort: true, newLine: true)
+        .collectFile(storeDir: "${params.outdir}/pipeline_info/${params.run_id ?: 'run'}", name: "zealgt_genotype_${entry}_software_versions.yml", sort: true, newLine: true)
 
     emit:
     versions = ch_versions // channel: versions.yml files and [ process, tool, version ] tuples of the stage

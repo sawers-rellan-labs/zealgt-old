@@ -1,6 +1,6 @@
 //
 // MARKER_UNION_STAGE (stage 5; PLAN §3 row 5; genotype design §2.4): the tier-A union of one donor set per region
-// (MARKER_UNION; published to <store>/genotype/<key>/union: <set>.<label>.tsv.gz, .union_sites.tsv, .per_donor.tsv). The step-4
+// (MARKER_UNION; published to <outdir>/genotype/<key>/union: <set>.<label>.tsv.gz, .union_sites.tsv, .per_donor.tsv). The step-4
 // tables of the run donors come from the store; reference donors (run card reference_donor_tables) are read-only tables of
 // donors not called in the run, staged by position in the order of reference_donors. The workflow is named *_STAGE because
 // its module is MARKER_UNION (a subworkflow cannot share a process's name; directory marker_union as design §8.1).

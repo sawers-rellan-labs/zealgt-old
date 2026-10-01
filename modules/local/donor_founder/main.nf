@@ -5,7 +5,7 @@
 // RASTERIZE's dosage_expected (review #9). templates/call_donor_founder.py (module template, hashed by content).
 // Inputs: the set's GAP_FILLING_BC1 table (the donor's rows are picked by `donor`), the donor's GAP_FILLING_LINES table and
 // the union (MARKER_UNION).
-// published to <store>/genotype/<key>/donor_alleles/<set> (conf/genotype_modules.config) -> versions.yml (a module template: `eval` outputs need a Bash script). Own environment.yml (python only). ext.args: none.
+// published to <outdir>/genotype/<key>/donor_alleles/<set> (conf/genotype_modules.config) -> versions.yml (a module template: `eval` outputs need a Bash script). Own environment.yml (python only). ext.args: none.
 process DONOR_FOUNDER {
     tag "${meta.id}"
     label 'process_single'

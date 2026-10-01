@@ -2,7 +2,7 @@
 // parameters, aligner and version, markdup settings, code version). The pipeline builds the settings part
 // (zgProvenanceRecord in subworkflows/local/utils_nfcore_zealgt_pipeline; single-line JSON in `record`); this module adds the
 // versions.yml files of the steps that made the CRAM and its size (templates/write_provenance.py, a module template: hashed
-// by content). Published to <store>/cram (or <store>/cram_import), next to the CRAM (conf/modules.config: copy, never
+// by content). Published to <outdir>/cram (or <outdir>/cram_import), next to the CRAM (conf/modules.config: copy, never
 // overwritten); CRAM_QC_PROVENANCE runs no PROVENANCE for a sample whose record is already stored. The template has no
 // options, so there is no task.ext.args; the python version goes into a versions.yml kept next to the record, not an
 // `eval` topic tuple: a python module template, and Nextflow 26.04.6 refuses `eval` outputs for non-Bash scripts

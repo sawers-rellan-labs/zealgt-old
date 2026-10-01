@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module. Wraps a python module template.
 name: registry
-description: Demux registry entry of one library, written only when its demux QC table and all its sample CRAMs are in the store; published to <store>/registry.
+description: Demux registry entry of one library, written only when its demux QC table and all its sample CRAMs are in the store; published to <outdir>/registry.
 keywords:
   - registry
   - demultiplexing

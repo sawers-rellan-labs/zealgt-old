@@ -40,7 +40,7 @@ entries end at the CRAM stop point and write one MultiQC report per library (per
   `stage1_tool_versions` (`PROCESS.tool=version;...` of DEMUX and CUTADAPT, e.g. `CUTADAPT.cutadapt=5.2;DEMUX.cutadapt=4.9;...`). Both stage-2 entries build meta, read group and the
   provenance record from these columns with the same function, so the records differ only in the run fields.
 - `read_alignment` validates the sheet with nf-schema (the FASTQs must exist). It does not demultiplex, so no registry guard
-  applies; it needs `<store>/demux_qc/<lib>.tsv` for the registry entry (without it the library is aligned, not registered,
+  applies; it needs `<outdir>/demux_qc/<lib>.tsv` for the registry entry (without it the library is aligned, not registered,
   with a warning).
 - `read_demultiplexing` refuses a library whose checkpoint samplesheet was written by another session: use `--entry
   read_alignment`, or `-resume <that session>`, or `--force_demux <lib>` (demultiplexes again and replaces the checkpoint).
@@ -119,15 +119,16 @@ timestamp.
 
 ### Store rules
 
-- `--store` (default `ZEAL/store`) is the permanent store root. Outputs are copied in by `publishDir` (`overwrite: false`: a
+- `--outdir` is the permanent store root, the same for every run (hazel production and Gate 2: `ZEAL/store`; no default,
+  set in the run card; per-run reports under `pipeline_info/<run_id>/`, `multiqc/<run_id>/`). Outputs are copied in by `publishDir` (`overwrite: false`: a
   stored file is never replaced) and the workflow skips work whose stored output exists, whatever changed (no `storeDir`):
   a sample whose CRAM is stored is not aligned (or imported) again, a library with a stored demux QC table gets no DEMUX_QC and
   one with a registry entry no REGISTRY, stored QC files and provenance records are not made again (missing ones are).
 - A CRAM counts as stored only if the CRAM and its `.crai` exist and the CRAM ends with the CRAM 3 EOF container. A sample with
   an unverified CRAM (e.g. a copy cut short by a killed head job), or with files left over without its CRAM, stops the run
   before any task, naming the files to check and remove by hand.
-- `--subsample N` (Gate 1) needs a store **and** a checkpoint directory named `subsample_<N>`, e.g. `--store
-  ZEAL/store/subsample_1000000 --fastq_checkpoint /share/maize/frodrig4/fastq_checkpoint/subsample_1000000`, so a subset never
+- `--subsample N` (Gate 1) needs an `--outdir` **and** a checkpoint directory named `subsample_<N>`, e.g. `--outdir
+  /share/maize/frodrig4/nf_work/<run_id>/subsample_1000000 --fastq_checkpoint /share/maize/frodrig4/fastq_checkpoint/subsample_1000000`, so a subset never
   lands where the real CRAMs or FASTQs go; a `subsample_*` directory without `--subsample` is refused too, and
   `read_alignment` refuses a checkpoint written with another `--subsample`.
   N is read pairs per library: DEMUX runs once per library x lane, and each of the library's lanes gives its first
@@ -135,7 +136,7 @@ timestamp.
 - Stub runs need a store inside a directory named `store_stub*` outside `ZEAL/store` and a checkpoint inside `checkpoint_stub*`
   outside `/share/maize/frodrig4/fastq_checkpoint`; `-profile stub` sets `<outdir>/store_stub` and `<outdir>/checkpoint_stub`. On hazel the
   outdir is on `/rsstu`, so a stub run passes `--fastq_checkpoint /share/maize/frodrig4/nf_work/<run_id>/checkpoint_stub`.
-- A library in the registry (`assets/registry_seed.csv` or `<store>/registry/<lib>.registry.tsv`) is refused unless named with
+- A library in the registry (`assets/registry_seed.csv` or `<outdir>/registry/<lib>.registry.tsv`) is refused unless named with
   `--force_demux <lib>`.
 - `--max_libraries N` (default 4) bounds the libraries whose FASTQs a run leaves on `/share` (nothing is removed automatically:
   `work/` keeps every library of the run, the checkpoint keeps each library until the user removes it). `read_demultiplexing` is
@@ -175,7 +176,7 @@ listed (`nextflow log <run name> -f name,status,workdir` in the launch dir shows
 earlier stages, which it reads from the keyed genotype store. A missing input stops the run at initialisation, and the
 message names the entry to run first. `--workflow genotype` without `--entry` is refused, and so is a CRAM entry under it.
 
-| # | entry | runs per | writes (`<store>/genotype/<genotype_store_key>/`) |
+| # | entry | runs per | writes (`<outdir>/genotype/<genotype_store_key>/`) |
 |---|---|---|---|
 | 2b | `sample_quality_control` | cohort (the `--donors` rows + `--b73_controls`) | `sample_qc/sample_qc.tsv` (pass / fail per sample; every later stage drops failed samples) |
 | 3 | `variant_discovery` | donor × region | `step4/<donor>.<region>.sites.tsv.gz` (+ summary, pool QC, run info) |
@@ -212,7 +213,7 @@ message names the entry to run first. `--workflow genotype` without `--entry` is
 ### Store rules (genotype)
 
 - **Two stores:** `--cram_store` is where CRAMs, QC and provenance are read, and the genotype workflow never writes there.
-  Genotype outputs are published (copied, never overwritten) to `<store>/genotype/<genotype_store_key>/`.
+  Genotype outputs are published (copied, never overwritten) to `<outdir>/genotype/<genotype_store_key>/`.
 - **Skip-if-stored:** an entry does not run again a unit (donor x region; donor set x region for `marker_union` and
   `donor_allele_calling`; the cohort for `sample_quality_control`) whose final outputs are already in that store, and
   logs it; `reporting` always runs. To redo a unit, use a new key.
@@ -283,13 +284,16 @@ Deliberate deviations from the nf-core specifications. The same list, word for w
 - **Cache test as an operator script, not an nf-test** (spec: tests are nf-test). `scripts/test_cache.sh` resumes one
   Nextflow session across several runs (raised resources, an edited module, stage 2 alone) and compares the task hashes; nf-
   test starts a new session for every run and cannot share one.
-- **Permanent store and FASTQ checkpoint outside `--outdir`** (spec: outputs published to `--outdir`). CRAMs, QC,
-  provenance, demux QC and the registry are copied into `--store` (never overwritten) and the workflow skips work whose
-  stored output exists; the trimmed pairs are hardlinked into `--fastq_checkpoint` (the filesystem of `work/`), with
-  CUTADAPT's log (one `publishDir` map: a second one whose path uses `meta` breaks `nextflow config -o json`, so nf-core
-  lint). The genotype workflow's keyed store `<store>/genotype/<genotype_store_key>/` works the same way: stage outputs are
-  copied there (never overwritten), a later `--entry` reads them, the workflow skips a unit whose stored outputs exist, and
-  a settings guard refuses a changed setting or code under the same key. Only reports go to `--outdir`.
+- **FASTQ checkpoint outside `--outdir`, and skip-if-stored** (spec: outputs published to `--outdir`). Every stored output
+  is published to `--outdir` (nf-core), and every run uses the same `--outdir`, the one permanent home (hazel: `ZEAL/store`;
+  user 2026-10-01, PLAN §6 Gate 2 TODO 7; the former separate `--store` is gone): CRAMs, QC, provenance, demux QC and the
+  registry are copied in (never overwritten) and the workflow skips work whose stored output exists; per-run reports go to
+  `pipeline_info/<run_id>/` and `multiqc/<run_id>/`. The deviations left: the trimmed pairs are hardlinked into
+  `--fastq_checkpoint` (the filesystem of `work/`), with CUTADAPT's log (one `publishDir` map: a second one whose path uses
+  `meta` breaks `nextflow config -o json`, so nf-core lint), and the skip-if-stored logic itself. The genotype workflow's keyed
+  store `<outdir>/genotype/<genotype_store_key>/` works the same way: stage outputs are copied there (never overwritten), a
+  later `--entry` reads them, the workflow skips a unit whose stored outputs exist, and a settings guard refuses a changed
+  setting or code under the same key.
 - **`versions.yml` files for 25 local modules** (spec: versions as `eval` topic tuples). ALIGN_MARKDUP and MARKDUP_IMPORT
   publish theirs next to the CRAM, one line per tool of the pipe, because PROVENANCE of an already stored CRAM (skipped, not
   made again) needs the versions of the tools that made it; DEMUX_QC, PROVENANCE and REGISTRY and the genotype modules

@@ -1,7 +1,7 @@
 // REGISTRY — the demux registry entry of one library (PLAN §0 Task 2): written only when the library's demux QC table and
 // ALL its sample CRAMs are there (templates/write_registry.py checks the staged files and refuses otherwise). Published to
-// <store>/registry (conf/modules.config: copy, never overwritten): <library>.registry.tsv; the CRAM workflow runs no REGISTRY
-// for a library already registered. PIPELINE_INITIALISATION reads <store>/registry/*.registry.tsv plus
+// <outdir>/registry (conf/modules.config: copy, never overwritten): <library>.registry.tsv; the CRAM workflow runs no REGISTRY
+// for a library already registered. PIPELINE_INITIALISATION reads <outdir>/registry/*.registry.tsv plus
 // assets/registry_seed.csv (the libraries PLAN §0 lists as demultiplexed) before any DEMUX and refuses a registered library
 // unless --force_demux <library>. The template has no options, so there is no task.ext.args; the python version goes into a
 // versions.yml kept next to the entry, not an `eval` topic tuple: a python module template, and Nextflow 26.04.6 refuses

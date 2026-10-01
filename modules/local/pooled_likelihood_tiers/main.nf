@@ -13,7 +13,7 @@
 //                                       (zealbc1 map.tsv: witness -> donor 'BC2S3', B73 controls -> donor 'B73')
 //   region                              'chr' or 'chr:start-end'; the file label is the region with ':' -> '_'
 //   [annotation_names, annotations]     optional annotation site lists (chrom pos ref alt) -> in_<name> columns; [[], []]
-// Outputs (stored in <store>/genotype/<key>/step4 or joint_step4/<set>, conf/genotype_modules.config)
+// Outputs (stored in <outdir>/genotype/<key>/step4 or joint_step4/<set>, conf/genotype_modules.config)
 //   <donor>.<label>.sites.tsv.gz per bc1_sample donor of the map, <prefix>.summary.tsv, .pool_qc.tsv, .run_info.txt and a
 //   versions.yml (a module template: `eval` outputs need a Bash script). Column contract of the sites table (stage 6 depends on it): chrom pos ref alt n a
 //   n_pools n_pools_alt eps n0 a0 self_in_zero LLR logodds posterior tier flags [in_<annotation>...] pool_counts; n0 / a0 =

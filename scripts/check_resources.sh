@@ -10,7 +10,7 @@
 # fixture library LIBX, markdup_import on touch-file CRAMs) and of the 7 genotype entries (tests/fixtures/genotype, each on
 # a store seeded with the earlier stages' outputs) with the real profiles (-profile hazel,<p>), plus an override
 # config that only swaps the executor to local with a large pool (64 cpus, 1 TB: nothing is capped by the laptop), turns
-# conda and Apptainer off (tasks on the host, as the stub shims expect), and puts work/, TMPDIR (+ its beforeScript), outdir, a store_stub* store and a checkpoint_stub* FASTQ checkpoint under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
+# conda and Apptainer off (tasks on the host, as the stub shims expect), and puts work/, TMPDIR (+ its beforeScript), an outdir (the store_stub* store) and a checkpoint_stub* FASTQ checkpoint under the scratch dir. The trace's cpus / memory / time / queue per process (first attempt; stub tasks do not
 # retry) are compared with the table: every observed process needs a row, every row must be observed, values must match.
 # Then a size probe (conf/hazel.config scales the per-sample times with the input size and conf/normal.config routes each
 # task by its time; the fixtures only reach the 15 min floor): five stand-in processes on sparse 100 M / 310 M pair
@@ -229,21 +229,21 @@ for prof in normal short; do
         C="$D/cram_$entry"; mkdir -p "$C"      # own launch dir, work dir, store and checkpoint per CRAM entry
         submit "hazel,$prof  --entry $entry" "$prof" "$C" "$C/nextflow.log" "$C/trace.txt" \
             nextflow run "$REPO" -profile "hazel,$prof" -stub -c "$D/override.config" -w "$C/work" \
-            --run_id "check_resources_$prof" --entry "$entry" --outdir "$C/results" --store "$C/store_stub" \
+            --run_id "check_resources_$prof" --entry "$entry" --outdir "$C/store_stub" \
             --fastq_checkpoint "$C/checkpoint_stub" -with-trace "$C/trace.txt"
     done
     for entry in sample_quality_control variant_discovery ancestry_inference marker_union donor_allele_calling genotype_imputation reporting; do
         G="$D/genotype_$entry"
         submit "hazel,$prof  --workflow genotype --entry $entry" "$prof" "$G" "$G/nextflow.log" "$G/trace.txt" \
             nextflow run "$REPO" -profile "hazel,$prof" -stub -c "$D/genotype_override.config" -w "$G/work" \
-            --run_id "check_resources_genotype_$prof" --entry "$entry" --outdir "$G/results" --store "$G/store_stub" \
+            --run_id "check_resources_genotype_$prof" --entry "$entry" --outdir "$G/store_stub" \
             -with-trace "$G/trace.txt"
     done
     G="$D/genotype_variant_discovery_mpileup"
     submit "hazel,$prof  --workflow genotype --entry variant_discovery --tier_counts_source mpileup" "$prof" "$G" "$G/nextflow.log" "$G/trace.txt" \
         nextflow run "$REPO" -profile "hazel,$prof" -stub -c "$D/genotype_override.config" -w "$G/work" \
-        --run_id "check_resources_genotype_$prof" --entry variant_discovery --tier_counts_source mpileup --outdir "$G/results" \
-        --store "$G/store_stub" -with-trace "$G/trace.txt"
+        --run_id "check_resources_genotype_$prof" --entry variant_discovery --tier_counts_source mpileup --outdir "$G/store_stub" \
+        -with-trace "$G/trace.txt"
     Q="$D/probe"; mkdir -p "$Q"
     submit "hazel,$prof  size probe (100 M / 310 M pairs)" "${prof}_tag" "$Q" "$Q/nextflow.log" "$Q/trace.txt" \
         nextflow run "$P/main.nf" -c "$REPO/conf/hazel.config" -c "$REPO/conf/$prof.config" -c "$D/probe_override.config" \

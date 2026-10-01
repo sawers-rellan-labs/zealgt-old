@@ -18,7 +18,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_test"
+                outdir = "${outputDir}/store_test"
             }
             process {
                 """
@@ -73,7 +73,7 @@ nextflow_process {
 
         when {
             params {
-                store = "${outputDir}/store_test"
+                outdir = "${outputDir}/store_test"
                 genotype_store_key = 'test'
             }
             process {

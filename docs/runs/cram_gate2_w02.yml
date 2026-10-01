@@ -20,6 +20,5 @@ force_demux: 2B,2H,3C
 # User decision 2026-09-29: the Gate 2 checkpoints are kept until the genotype workflow's Gate 2 passes, so wave 1's 4
 # checkpoint dirs are still under --fastq_checkpoint; --max_libraries 4k for wave k (4 held + 4 requested = 8).
 max_libraries: 8
-store: /rsstu/users/r/rrellan/BZea/ZEAL/store
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/store
 fastq_checkpoint: /share/maize/frodrig4/fastq_checkpoint
-outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_w02

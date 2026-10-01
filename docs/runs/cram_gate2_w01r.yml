@@ -10,6 +10,5 @@
 workflow: cram
 entry: read_alignment
 libraries: 2A,2F,3B
-store: /rsstu/users/r/rrellan/BZea/ZEAL/store
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/store
 fastq_checkpoint: /share/maize/frodrig4/fastq_checkpoint
-outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_w01r

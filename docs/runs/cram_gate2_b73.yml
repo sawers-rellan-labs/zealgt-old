@@ -1,4 +1,4 @@
-# Run card (params): CRAM Gate 2, B73 controls — markdup_import into the production store (<store>/cram_import/). Approved by
+# Run card (params): CRAM Gate 2, B73 controls — markdup_import into the production store (<outdir>/cram_import/). Approved by
 # the user 2026-09-29 (submitted together with wave 1); card docs/runs/cram_gate2_b73.md. Independent of the demux waves: markdup_import adds no library, so neither the registry guard
 # nor --max_libraries applies; it can run next to wave 1 (own run_id, own work/).
 # Import sheet: docs/runs/cram_gate2_b73_import.csv = the two import_set b73_control rows of meta/dev_import.csv, verbatim
@@ -16,5 +16,4 @@ workflow: cram
 entry: markdup_import
 import_sheet: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/cram_gate2_b73_import.csv
 import_sets: b73_control
-store: /rsstu/users/r/rrellan/BZea/ZEAL/store
-outdir: /rsstu/users/r/rrellan/BZea/ZEAL/results/zealgt/cram_gate2_b73
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/store
