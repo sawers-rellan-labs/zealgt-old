@@ -1,0 +1,114 @@
+---
+title: "zealgt pipeline overview"
+subtitle: "Stages, inputs and outputs of the CRAM and genotype workflows (from docs/PLAN_pipeline.md §3, 2026-09-27)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+    mermaid:
+      theme: neutral
+---
+
+**What this is.** One page to plan from: the stage table of `docs/PLAN_pipeline.md` §3 and a diagram of how the stages connect.
+The two workflows are named by their endpoints and share one contract, the **CRAM store**: the **CRAM workflow** turns raw libraries into
+analysis-ready CRAMs once; the **genotype workflow** reads only the store and produces the genotype table, and can be rerun as often as
+needed. Mapping (GWAS, interval mapping) sits downstream of the genotype table; it is not a pipeline stage yet (pilots: notebooks 02, 03).
+Only decided items are drawn; open proposals are listed in §3.
+
+## 1. Diagram
+
+```{mermaid}
+%%| fig-width: 9
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "clusterBkg": "#ffffff", "clusterBorder": "#000000", "edgeLabelBackground": "#ffffff", "fontSize": "14px"}}}%%
+flowchart TD
+  subgraph WC["CRAM workflow · raw libraries → CRAM store (once per library)"]
+    RAW[("raw libraries<br/>BC1 pools · BC2S3 batches 1–2")]
+    S1["1 · read_demultiplexing<br/>cutadapt exact inline → demux QC"]
+    S1b["1b · read_trimming<br/>Trimmomatic → FastQC"]
+    S2["2 · read_alignment<br/>minibwa → read groups → mark duplicates<br/>→ CRAM, no MAPQ filter"]
+    QC["2 · QC<br/>samtools stats + markdup stats<br/>Picard CollectWgsMetrics → MultiQC"]
+    RAW --> S1 --> S1b --> S2 --> QC
+  end
+
+  STORE[("CRAM store<br/>BC1 samples · BC2S3 lines · B73 controls<br/>+ QC + provenance")]
+  S2 --> STORE
+  QC --> STORE
+
+  subgraph WG["genotype workflow · CRAM store → genotype table (rerun as needed)"]
+    S2b["2b · sample_quality_control<br/>exclude < 0.05× coverage<br/>→ coverage · relatedness · donor content<br/>→ sample_qc.tsv"]
+    S3["3 · variant_discovery (per donor)<br/>witness pool → CRISP → BED clip → witness veto<br/>→ B73 control counts → LLR tiers"]
+    S4["4 · ancestry_inference (per donor)<br/>line counts at own tier-A sites → RTIGER"]
+    S5["5 · marker_union (donor set)<br/>tier-A sites of all donors"]
+    S6a["6 · gap filling step 1 · BC1<br/>REF if LLR ≤ −4, ALT if posterior ≥ 0.999"]
+    S6b["6 · gap filling step 2 · per-line ALT rescue<br/>ALT reads only in donor-segment lines<br/>posterior ≥ 0.99, never REF"]
+    FD[("final donor<br/>ALT / REF / missing per union site")]
+    S7["7 · genotype_imputation<br/>raster: RTIGER ancestry × donor allele"]
+    PHG["optional · PHG<br/>B73 + donor pseudo-assembly"]
+    S8["8 · reporting<br/>paintings · missing data · single-locus checks"]
+  end
+
+  STORE --> S2b
+  S2b --> S3
+  S2b --> S4
+  S3 --> S4
+  S3 --> S5
+  S5 --> S6a --> S6b --> FD
+  S4 --> S6b
+  S4 --> S7
+  FD --> S7
+  FD -.-> PHG -.-> S7
+  S7 --> S8
+
+  GT[("genotype table<br/>lines × union sites")]
+  S7 --> GT
+
+  subgraph MAP["Mapping (downstream, pilots)"]
+    GWAS["GWAS · R-EMMAX<br/>taxon fixed + K random<br/>(notebook 02)"]
+    RQTL["interval mapping · R/qtl bcsft<br/>RTIGER ancestry on the TeoNAM grid<br/>(notebook 03)"]
+  end
+  PHENO[("phenotypes<br/>SpATS BLUEs (zealhmm)")]
+  GT --> GWAS
+  S4 --> RQTL
+  PHENO --> GWAS
+  PHENO --> RQTL
+
+  classDef default fill:#ffffff,stroke:#000000,color:#000000;
+  classDef opt fill:#ffffff,stroke:#000000,color:#000000,stroke-dasharray: 4 3;
+  class PHG opt;
+```
+
+Solid arrows are data dependencies; the dashed path is optional. Stage 4 (RTIGER) needs only the donor's own discovery (stage 3), so it
+runs before the union; step 2 of gap filling and the raster both use it.
+
+## 2. Stages
+
+| # | workflow | entry | what it does | per | main output |
+|---|---|---|---|---|---|
+| 1 | CRAM | `read_demultiplexing` | fetch library → exact inline demultiplexing (cutadapt) → demux QC | library | per-sample FASTQ (task scratch only), `demux_qc/<library>.tsv` |
+| 1b | CRAM | `read_trimming` | Trimmomatic (batch-1 parameters) → FastQC | sample | trimmed FASTQ (scratch only), FastQC report |
+| 2 | CRAM | `read_alignment` | minibwa `-x sr` → read groups → **mark duplicates** (`samtools markdup -d 2500`) → CRAM without MAPQ filter → samtools stats + markdup stats → Picard CollectWgsMetrics (λ = `MEAN_COVERAGE`, missing = 1 − `PCT_1X`) → MultiQC; no mosdepth | sample | `cram/<sample>.cram` + QC + provenance |
+| 2b | genotype | `sample_quality_control` | **exclude samples below 0.05× coverage** from all processing → counts at a blind QC panel → coverage, relatedness and donor-content QC | sample / cohort | `sample_qc.tsv` (pass/fail + reason), read by every later stage |
+| 3 | genotype | `variant_discovery` | witness pool → CRISP (BC1 samples + witness) → BED clip → witness veto → B73 control counts → pooled-likelihood tiers | donor × chr | `step4/<donor>.sites.tsv.gz` |
+| 4 | genotype | `ancestry_inference` | per-line counts at the donor's own tier-A sites → RTIGER (rigidity 500) | donor × chr | ancestry segments per line |
+| 5 | genotype | `marker_union` | union of the donor set's tier-A sites (multi-allelic dropped) | donor set × chr | `union/<set>_<chr>.tsv.gz` |
+| 6 | genotype | `donor_allele_calling` | union-site counts → joint pooled likelihood → **gap filling step 1** (BC1) → per-line union counts → **gap filling step 2** (per-line ALT rescue, uses stage 4) → final donor | donor set × chr | donor allele table: ALT / REF / missing per union site |
+| 7 | genotype | `genotype_imputation` | raster: genotype = RTIGER ancestry × donor allele (NA where ancestry is unknown, or the line carries the donor segment and the donor allele is missing); optional PHG | donor × chr | genotypes at the union sites |
+| 8 | genotype | `reporting` | chromosome paintings, missing-data tables, single-locus checks | donor × chr | paintings, tables |
+| — | mapping | (not a stage yet) | GWAS: R-EMMAX, taxon fixed + K random; interval mapping: R/qtl `bcsft` on RTIGER ancestry | trait | scans, thresholds, peaks |
+
+## 3. Status and open proposals (2026-09-27)
+
+| part | status |
+|---|---|
+| CRAM workflow | pilot CRAMs exist for the two mexicana donors (MAPQ-filtered, no read groups); duplicate marking run on them (array 963772); the production module (no MAPQ filter, read groups) is not built |
+| stage 2b | 0.05× exclusion decided (batch 1: 15 samples); the rest is a proposal |
+| stages 3–6 | scripts in zealbc1 (`PHG/bin/`) and zealgt `agent/`; step 2 of gap filling validated on the QC set, not yet a module |
+| stage 7 | raster built for the pilot (notebook 02); PHG optional (§7 of the plan) |
+| mapping | pilots on 83 lines, chr10 (notebooks 02, 03) |
+| disk | scratch: group quota 20 TB / 1,000,000 files (78 % of files used); CRAM workflow needs ≈ 1.8–2.1 TB of store and ≤ 1.5 TB scratch peak (§5) |
+
+Open proposals, not yet in the plan or the diagram: the witness counted as a pool for tier A; a B73 check pipeline (per-check QC,
+acceptance criterion, one clean check pool counted once, B73-ALT site filter); a coverage calibration step between the workflows; one
+per-line count VCF per donor (AD + RTIGER ancestry as a FORMAT field).
