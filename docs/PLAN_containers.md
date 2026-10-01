@@ -231,5 +231,8 @@ download scripts. Tests on hazel (submitted from the laptop file via stdin, haze
 - Job 1018005 `--check-all`: all 18 SIFs 0 missing, launcher ok, exit 0, 11 s.
 - Job 1018060, the python SIF (`…eab5e327…`) renamed to `.aside` (user's OK): fetched that one (144 MB, 2 s), byte-identical
   to the `.aside` copy (`cmp`), its 13 modules' commands present, exit 0.
-- Limitation: a command is checked only if it is also a program on the xfer host (as the 2026-09-30 audit, job 1001550);
-  tools only in the images (samtools, minibwa, bcftools, CRISP) are not checked there.
+- The host-PATH filter of those runs (as the 2026-09-30 audit, job 1001550) left tools only in the images (samtools,
+  minibwa, bcftools, CRISP) unchecked. Replaced by an ignore list: every command-position word that is not a shell
+  builtin/keyword, a name the module defines, or a `CMD_IGNORE` word (Groovy/heredoc values: `END_VERSIONS`, `ZG_EOF`,
+  `bc1_sample`, `csi`, `tbi`) is checked inside the image; the parser reads only the shell text of the script blocks and
+  the string literals of Groovy assignments.

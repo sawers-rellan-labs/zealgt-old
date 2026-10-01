@@ -21,10 +21,10 @@
 #      Each one missing from the cache is fetched under Nextflow's name (URL / image without scheme, ':' and '/' -> '-', + .img):
 #      https -> curl; anything else -> `apptainer pull --disable-cache docker://<image>`. Written as <name>.part, checked to
 #      be a SIF (its `run-singularity` header), then renamed. Every cached file is checked for that header too.
-#   2. Commands inside each fetched SIF (--check-all: every SIF): the programs each module using the image calls (words of its
-#      script/stub blocks that are programs on this host, as the module tools audit of 2026-09-30), its templates' interpreter
-#      (python3 / Rscript) and Nextflow's wrapper needs (bash cat ps touch). A missing one would fail the task: reported as
-#      MISSING (Seqera SIFs have no gzip, cmp, find, ... unless the module's environment.yml declares them).
+#   2. Commands inside each fetched SIF (--check-all: every SIF): the commands each module using the image runs (parsed from
+#      its main.nf, below; shell builtins and the CMD_IGNORE words left out), its templates' interpreter (python3 / Rscript)
+#      and Nextflow's wrapper needs (bash cat ps touch). A missing one would fail the task: reported as MISSING (Seqera
+#      SIFs have no gzip, cmp, find, ... unless the module's environment.yml declares them).
 #   3. Launcher: the `nextflow` prefix of `scripts/build_envs.sh --list`; built (`build_envs.sh --only nextflow`) when the
 #      prefix is absent, else checked (`nextflow -version`, the nf-schema plugin dir).
 # Prints what it fetched. Never removes anything but its own partial download (<name>.part of a failed curl/pull): a bad cached file or a broken launcher prefix is reported (exit 1) and left
@@ -106,35 +106,57 @@ while read -r img; do
 done <<< "$IMAGES"
 
 # ---- 2. commands inside the fetched SIFs ----
-# The commands a module runs in its image that are programs on this host, + its templates' interpreter. Only words in
-# command position (first word of a line, or after | ; & ( { ` $( and after then/do/else/if/while/!/time) of: the script: /
-# stub: blocks, with comment lines and quoted text dropped (only the $(...) inside "..." kept); the Groovy strings of a
-# `def x = ...` line there (commands spliced into the script, e.g. DEMUX's `tar -xOf`); every `eval('...')` output (the
-# versions commands, also run in the image). Words of messages and arguments (`samtools view`, "... file ...") are not
-# commands: an all-words version flagged as, file, view, conda on the xfer host.
+# The commands a module runs in its image: words in command position (first word of a line, or after | ; & ( { ` $( and
+# after then/do/else/if/while/!/time; not assignments) of
+#   - the shell text of its script: / stub: blocks (inside """..."""), with comment lines, Groovy ${...}, $((...)) and quoted
+#     text dropped (only the $(...) inside "..." kept);
+#   - the string literals assigned to a name in the Groovy code there (commands spliced into the script, e.g. DEMUX's
+#     `tar -xOf`);
+#   - every `eval('...')` output (the versions commands, also run in the image).
+# Names the module defines (def, process inputs, shell functions) are skipped. Words of messages and arguments
+# (`samtools view`, "... file ...") are not commands: an all-words version flagged as, file, view, conda on the xfer host.
 script_cmds() {
-    perl -ne '
-        sub firsts { for my $seg (split /\|\||&&|[|;&({`\n]|\$\(/, $_[0]) {
+    perl -0777 -ne '
+        my %skip;                                   # Groovy names (def, inputs) and shell functions of the module
+        $skip{$_} = 1 for /\bdef\s+(\w+)/g, /\b(?:path|val|env)\(\s*(\w+)/g, /^\s*(\w+)\s*\(\)\s*\{/mg;
+        for my $l (/\bdef\s*\(([^)]*)\)/g) { $skip{$_} = 1 for $l =~ /(\w+)/g }
+        sub firsts { my ($t, $skip) = @_; for my $seg (split /\|\||&&|[|;&({`\n]|\$\(/, $t) {
             my @w = split " ", $seg;
             shift @w while @w && ($w[0] =~ /^(then|do|else|elif|if|while|until|!|time|exec)$/ || $w[0] =~ /^[A-Za-z_]\w*=/);
-            print "$w[0]\n" if @w && $w[0] =~ /^[A-Za-z][A-Za-z0-9_.+-]*$/;
+            print "$w[0]\n" if @w && $w[0] =~ /^[A-Za-z][A-Za-z0-9_+-]*$/ && !$skip->{$w[0]};
         } }
-        while (/\beval\(\s*([\x27"])(.*?)\1\s*\)/g) { firsts($2) }
-        if (/^\s*(script|stub|shell):/) { $on = 1; next }
-        next if !$on || /^\s*(\/\/|#)/;
-        if (/^\s*def\s+\w+\s*=(.*)/) { my $r = $1; $r =~ s/["?:]/ ; /g; $r =~ s/\x27/ /g; firsts($r); next }
-        if (/\\\s*$/) { s/\\\s*$/ /; $buf .= $_; next }
-        $buf .= $_;
-        $_ = $buf; $buf = "";
-        s/(^|\s)(#|\/\/)\s.*$//;
-        s/\x27[^\x27\n]*\x27/ /g;
-        s{"([^"\n]*)"}{ " " . join(" ; ", $1 =~ /\$\(([^)]*)\)/g) . " " }ge;
-        firsts($_);' "$1" | sort -u
+        while (/\beval\(\s*([\x27"])(.*?)\1\s*\)/gs) { firsts($2, \%skip) }
+        my ($s) = /^\s*(?:script|stub|shell):\s*\n(.*)\z/ms or exit;
+        $s =~ s/^\s*(\/\/|#).*$//mg;                # comment lines
+        my @part = split /"""/, $s;                 # even: Groovy code, odd: the shell script text
+        for my $i (0 .. $#part) {
+            my $p = $part[$i];
+            $p =~ s/(?<!\\)\$\{[^}]*\}//g;          # Groovy interpolations ${...} (not the escaped shell \${...})
+            if ($i % 2 == 0) {                      # Groovy: only the string literals assigned to a name (spliced into the script)
+                while ($p =~ /^\s*(?:def\s+)?\w+\s*[+]?=(.*)$/mg) {
+                    my $r = $1;
+                    while ($r =~ /"((?:\\.|[^"\\])*)"|\x27([^\x27]*)\x27/g) { firsts(defined $1 ? $1 : $2, \%skip) }
+                }
+                next;
+            }
+            $p =~ s/\$\(\(.*?\)\)/ /gs;             # shell arithmetic $(( ... ))
+            $p =~ s/\\\s*\n/ /g;                    # line continuations
+            $p =~ s/(^|\s)(#|\/\/)\s.*$//mg;        # trailing comments
+            $p =~ s{"((?:\\.|[^"\\])*)"}{ " ; " . join(" ; ", $1 =~ /\$\(([^)]*)\)/g) . " ; " }ge;   # "..." -> its $(...) only, as commands
+            $p =~ s/\x27[^\x27]*\x27/ /g;           # single-quoted text, also multi-line (awk programs)
+            firsts($p, \%skip);
+        }' "$1" | sort -u
 }
+# Words in command position that are not programs (Groovy, awk, heredoc words the parser cannot tell apart); everything
+# else that is not a shell builtin/keyword is checked inside the image, so tools only in the image (samtools, minibwa,
+# bcftools, CRISP) are checked too. A new false MISSING: add the word here.
+CMD_IGNORE=" END_VERSIONS ZG_EOF bc1_sample csi tbi "
 mod_cmds() {
     local d="$REPO/$1" w out="" t
     for w in $(script_cmds "$d/main.nf"); do
-        [ "$(type -t "$w")" = file ] && out="$out $w"
+        case "$CMD_IGNORE" in *" $w "*) continue ;; esac
+        case "$(type -t "$w")" in builtin|keyword) continue ;; esac
+        out="$out $w"
     done
     for t in "$d"/templates/*; do
         [ -f "$t" ] || continue
