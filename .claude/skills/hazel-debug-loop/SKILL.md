@@ -40,7 +40,7 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   (it would enter every task hash): python helpers are module templates (`modules/local/*/templates/`); resources come from
   `${task.cpus}` / `task.memory` in the script (not hashed on 26.04.6), and `bin/` is empty. **Cache consequence (tested 2026-09-28, `nextflow-cache` skill):** a non-executable or interpreter-called `bin/`
   script is not part of any task hash, so editing it reruns nothing and keeps stale outputs — in the hazel checkout every `bin/` script
-  is non-executable. Output-affecting helper code goes in module templates (hashed by content). Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `run_checks.sh`, `check_resources.sh`).
+  is non-executable. Output-affecting helper code goes in module templates (hashed by content). Operator scripts live in `scripts/` (`submit_head_job.sbatch`, `build_envs.sbatch`, `build_envs.sh`, `restore_images.sbatch`, `run_checks.sh`, `check_resources.sh`).
 
 ## How commands run
 - Each hazel action is one **non-interactive, one-line** `ssh hazel '<cmd>'`, self-contained (`cd`, `conda activate`). No state
@@ -79,6 +79,13 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   `/share/maize/frodrig4/apptainer/cache` under Nextflow's name (the URL without scheme, `:` and `/` -> `-`, + `.img`). A
   missing image fails the task (no pull at run time). Seqera SIFs: `curl` the https blob URL; GHCR images: `apptainer pull
   --disable-cache <cache>/<name>.img docker://<image>`. `nextflow inspect -profile hazel …` lists every process's image.
+- **/share deletes files not read for 30 days** (no backup): an image no task has read for a month, or the launcher env,
+  can disappear. Never touch files to reset the clock. After a pause of > 30 days, an "image not found" task failure, or
+  "nextflow env not built", run `sbatch scripts/restore_images.sbatch` (from the checkout; xfer) first: it fetches each
+  image the modules' `container` lines name that is missing from the cache, checks the commands inside each fetched SIF
+  (`--check-all`: every SIF), and rebuilds an absent launcher prefix. Idempotent; it never removes anything but its own
+  partial download (a bad cached file or a broken launcher is reported, exit 1). Log
+  `/share/maize/frodrig4/nf_work/restore_images_<jobid>.log`.
 - **A changed `environment.yml` means a new image:** request it from Seqera Containers (versions only, frozen, linux/amd64;
   use a Seqera Platform token, anonymous requests are limited to 25 builds a day), update the module's `container` line,
   download the SIF, and **check the commands the module calls inside the SIF** (`apptainer exec <sif> sh -c 'command -v …'`):

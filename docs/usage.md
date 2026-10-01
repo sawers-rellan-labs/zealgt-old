@@ -105,6 +105,10 @@ sbatch /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch <r
 Profiles: `hazel,stub` (Gate 0, `-stub`), `hazel,short` (gates, 1 h cap), `hazel,normal` (Gate 2 and later; 24 h limit, each
 task on short QOS when it asks <= 1 h 45, else on compute/normal; head job `sbatch --qos=normal --partition=compute --time=3-00:00:00`), `hazel,local` (one allocation, per-task cap in `conf/local.config`). Every process runs in its image with
 Apptainer; the images are downloaded once by an xfer job into `/share/maize/frodrig4/apptainer/cache` (no pull at run time).
+`/share` deletes files not read for 30 days, so after a pause of more than 30 days (or when a task fails because its image
+is missing, or the head job says "nextflow env not built") run `cd /rsstu/users/r/rrellan/BZea/ZEAL/zealgt && sbatch
+scripts/restore_images.sbatch` first: it fetches every image the modules name that is not in the cache, checks the commands
+inside each new image, and rebuilds the Nextflow launcher if it is gone. With nothing missing it fetches nothing.
 Resources are Nextflow directives (`conf/base.config` labels, per-process values in `conf/hazel.config`, per-sample times scaled
 by the task's input size; routing in `conf/normal.config`)
 that the scripts read as `task.cpus` / `task.memory`; a resource change does not rerun cached tasks (Nextflow 26.04.6 does

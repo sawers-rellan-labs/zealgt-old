@@ -218,3 +218,22 @@ Next: PR to `main`, then cleanup 1 (docs/PLAN_cleanup.md) and the CRAM Gate 2 re
   >= 1 min even on the whole chromosome (longest POOLED_LIKELIHOOD_TIERS and GAP_FILLING_LINES, 22 s).
 
 **Container migration checked end to end on a whole chromosome: outputs unchanged.**
+
+**Restore script** (2026-10-01; `scripts/restore_images.sbatch`, handover 2026-09-30 "Next" step 3; /share deletes files
+unread for 30 days). Xfer job, idempotent: the images from the modules' own `container` lines (37 modules, 18 distinct images,
+the 18 in hazel's cache), each missing one fetched (curl / `apptainer pull --disable-cache`) and checked as a SIF, the
+commands each fetched SIF needs checked inside it, the launcher rebuilt only if its prefix is absent. Replaces the scratch
+download scripts. Tests on hazel (submitted from the laptop file via stdin, hazel checkout `main` e27c56f untouched):
+- Job 1017971 `--check-all`, full cache: 0 fetched, launcher ok (26.04.6, nf-schema 2.5.1); the command check took every
+  word of the scripts and flagged words that are host programs on the xfer node (`as`, `file`, `view`, `conda`, from
+  messages and arguments): false alarms. Fixed: only words in command position, plus the commands spliced in by `def`
+  strings (DEMUX's `tar -xOf`) and the versions `eval(...)` commands.
+- Job 1018005 `--check-all`: all 18 SIFs 0 missing, launcher ok, exit 0, 11 s.
+- Job 1018060, the python SIF (`…eab5e327…`) renamed to `.aside` (user's OK): fetched that one (144 MB, 2 s), byte-identical
+  to the `.aside` copy (`cmp`), its 13 modules' commands present, exit 0.
+- The host-PATH filter of those runs (as the 2026-09-30 audit, job 1001550) left tools only in the images (samtools,
+  minibwa, bcftools, CRISP) unchecked. Replaced by an ignore list: every command-position word that is not a shell
+  builtin/keyword, a name the module defines, or a `CMD_IGNORE` word (Groovy/heredoc values: `END_VERSIONS`, `ZG_EOF`,
+  `bc1_sample`, `csi`, `tbi`) is checked inside the image; the parser reads only the shell text of the script blocks and
+  the string literals of Groovy assignments. Job 1018131 `--check-all` (7261f94): all 18 SIFs 0 missing, now including
+  samtools, minibwa, bcftools, CRISP, tabix, picard, cutadapt, fastqc, multiqc; launcher ok, exit 0, 15 s.
