@@ -22,7 +22,9 @@ None of the 13 has a partial file in the store (the start-up guard refuses a CRA
 - `docs/runs/cram_gate2_w01r.yml` (params); the checkpoint samplesheets `<fastq_checkpoint>/<lib>/samplesheet.csv`.
 - Code: main at the commit that adds this card; containers (`-profile hazel` = Apptainer, 18 images checked present by the
   head job). CodeRabbit on the executing changes since the last review (d94158f..90f025c: `scripts/restore_images.sbatch`,
-  `submit_head_job.sbatch`, `test_cache.sbatch`); the alignment path is unchanged since the containers Gate 1.
+  `submit_head_job.sbatch`, `test_cache.sbatch`): 3 findings, 2 fixed (a1a7cd8), 1 skipped (a docs record); review of the
+  fix: 1 finding, fixed (48168b5); review of 48168b5: **0 findings**. The alignment path is unchanged since the containers
+  Gate 1.
 
 ## Command
 ```
