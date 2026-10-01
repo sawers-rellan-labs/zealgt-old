@@ -235,4 +235,5 @@ download scripts. Tests on hazel (submitted from the laptop file via stdin, haze
   minibwa, bcftools, CRISP) unchecked. Replaced by an ignore list: every command-position word that is not a shell
   builtin/keyword, a name the module defines, or a `CMD_IGNORE` word (Groovy/heredoc values: `END_VERSIONS`, `ZG_EOF`,
   `bc1_sample`, `csi`, `tbi`) is checked inside the image; the parser reads only the shell text of the script blocks and
-  the string literals of Groovy assignments.
+  the string literals of Groovy assignments. Job 1018131 `--check-all` (7261f94): all 18 SIFs 0 missing, now including
+  samtools, minibwa, bcftools, CRISP, tabix, picard, cutadapt, fastqc, multiqc; launcher ok, exit 0, 15 s.
