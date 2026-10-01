@@ -52,18 +52,21 @@ JOB="${SLURM_JOB_ID:-$$}"
 export APPTAINER_TMPDIR="$(dirname "$CACHE")/tmp_restore_$JOB" APPTAINER_CACHEDIR="$(dirname "$CACHE")/cachedir_restore_$JOB"
 log() { echo "$(date '+%F %T') restore_images: $*"; }
 # launcher_files <prefix>: stat only. Prints what is missing of what every head job reads: bin/nextflow, the build record,
-# and the nf-schema plugin pinned in nextflow.config (its META-INF/MANIFEST.MF, extensions.idx and lib/*.jar; files a run
-# never loads may age out of /share harmlessly, so they are not checked).
+# and each file of the nf-schema plugin pinned in nextflow.config that envs/nextflow/nf-schema-<version>.files lists (its
+# MANIFEST.MF, extensions.idx and lib jars; files a run never loads may age out of /share harmlessly, so they are not listed).
 launcher_files() {
-    local p="$1" v d j miss=""
+    local p="$1" v d f list miss=""
     [ -x "$p/bin/nextflow" ] || miss="$miss bin/nextflow"
     [ -f "$p/.zg_env_info.tsv" ] || miss="$miss .zg_env_info.tsv"
     v="$(grep -oE "nf-schema@[0-9][0-9.]*" "$REPO/nextflow.config" | head -1)"
-    d="$p/share/nextflow/plugins/${v/@/-}"
+    v="${v/@/-}"; d="$p/share/nextflow/plugins/$v"; list="$REPO/envs/nextflow/$v.files"
     if [ -z "$v" ]; then miss="$miss nf-schema-version-in-nextflow.config"
+    elif [ ! -s "$list" ]; then miss="$miss file-list:envs/nextflow/$v.files"
     else
-        for j in classes/META-INF/MANIFEST.MF classes/META-INF/extensions.idx; do [ -s "$d/$j" ] || miss="$miss ${v/@/-}/$j"; done
-        ls "$d"/lib/*.jar > /dev/null 2>&1 || miss="$miss ${v/@/-}/lib/*.jar"
+        while read -r f; do
+            case "$f" in ''|'#'*) continue ;; esac
+            [ -s "$d/$f" ] || miss="$miss $v/$f"
+        done < "$list"
     fi
     echo "$miss"
 }

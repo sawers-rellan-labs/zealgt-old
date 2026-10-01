@@ -1,0 +1,10 @@
+# Files of the nf-schema 2.5.1 plugin (installed by build.sh into <prefix>/share/nextflow/plugins/nf-schema-2.5.1/) that
+# every head job loads: scripts/restore_images.sbatch (launcher_files) stats each one; a missing one = launcher broken.
+# Not every file of the plugin: classes a run never loads may age out of /share (30-day purge) harmlessly.
+# Listed from hazel's install, 2026-10-01. A new nf-schema version in nextflow.config needs its own nf-schema-<version>.files.
+# Not part of the launcher prefix hash (scripts/build_envs.sh hashes environment.yml and build.sh only).
+classes/META-INF/MANIFEST.MF
+classes/META-INF/extensions.idx
+lib/jmail-1.6.3.jar
+lib/json-20240303.jar
+lib/json-schema-1.5.0.jar
