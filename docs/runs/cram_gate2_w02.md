@@ -1,7 +1,9 @@
 # cram_gate2_w02 — CRAM Gate 2, wave 2 of 3
 
-**Status:** approved by the user 2026-09-29; w01 + b73 submitted 2026-09-29; **w02 not submitted**: awaits the coordinator's
-review of w01 (no failed task, checkpoints removable, ALIGN_MARKDUP memory peaks).
+**Status:** approved by the user 2026-09-29; w01 + b73 submitted 2026-09-29; **w02 not submitted**. Gate 2 paused by the user
+2026-09-29 ~19:45 for containerization: w02 is **re-planned after containerization** (option: split by library type, BC1-only
+and batch-1-only runs, since only batch-1 DEMUX is blocked; PLAN §6 TODO). Its 2B / 2H carry the ALIGN_MARKDUP 48 GB check
+(w01 peaks 32.4–36.2 GB).
 
 ## Purpose
 CRAM Gate 2 (docs/PLAN_pipeline.md §6), second wave. Holds the deepest samples of the Gate 2 set (2H 140 M pairs, 2B 131 M).
