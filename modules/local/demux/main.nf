@@ -38,10 +38,11 @@
 // cutadapt runs in its own process group (set -m around the background job): when its main process dies (the cgroup OOM
 // killer picks it), its forked reader/worker processes are orphaned, deadlock at 0 CPU and keep the stderr pipe of the
 // Nextflow wrapper (`| tee .command.err`) open, so the task sat until the Slurm time limit (exit 140) instead of failing
-// with 137. On a non-zero exit the whole group and the compressors are killed and the exit status is propagated (137
-// -> memory retry). The FIFOs are removed by the EXIT trap.
-// TODO(Gate 2 after containerization): batch-1 DEMUX memory/time unmeasured at full size; measure and correct (w01 BZea5
-// with the old .gz outputs: OOM at 2 GB after ~80 s, at 4 GB after ~4 min; this layout is flat at 3 M and 12 M pairs locally).
+// with 137. On a non-zero exit of cutadapt its exit status is propagated (137 -> memory retry); on any exit path the EXIT
+// trap kills what still runs (cutadapt's group, the compressors) and removes the FIFOs and the task-dir copies.
+// Measured on hazel (2026-10-01, docs/REQUIREMENTS.md §4): a full batch-1 lane (224 M pairs, 96 barcodes) ran in 53 min 35 at
+// 4 cpus, flat at 529-533 MB anon; failure paths (cutadapt killed with orphaned workers, a failing command after the
+// compressors started) end the task in 1-2 s (production image, Docker).
 // Reads without a barcode match are discarded (ext.args --discard-untrimmed); their count is in the JSON report.
 // meta.id = <library>.<lane> (READ_DEMULTIPLEXING). Output names: demux/<sample>.<meta.id>_R{1,2}.fastq.gz (the lane keeps the files of one sample apart in MERGE_LANES).
 // Tool versions: one `versions` topic tuple per tool (cutadapt, pigz, tar); coreutils (head) is pinned in environment.yml

@@ -335,6 +335,28 @@ completed row below is attempt 1. Memory: Nextflow's "GB" = GiB; hazel kills at 
 - **Checkpoint, measured** (`du -s`, 19:40): 2A 107.3 GB, 2F 97.4 GB, 3B 85.8 GB = **0.81 / 0.80 / 0.81 × raw** (290.5 GB for
   360 GB raw), 3 % under the 0.83 × raw estimate (299.9 GB).
 
+**Batch-1 DEMUX fix, Gate 1 + full-lane probe (2026-10-01; containers; branch `demux-batch1-fix`; run card
+`docs/runs/demux_batch1_g1.md`).** Fix: cutadapt writes plain FASTQ into one FIFO per output, each compressed by its own
+`pigz -1 -p 1`; cutadapt in its own process group; the EXIT trap stops the group and the compressors on any exit path; batch-1
+DEMUX 3 GB × attempt.
+- **Gate 1** `demux_batch1_g1` (head 1018793, COMPLETED 57 min 37; BZea5, `--subsample 2000000` = 1 M pairs per lane, 96 samples):
+  both DEMUX tasks exit 0 at attempt 1 in 27–28 s, peak RSS **0.36 / 0.70 GB of 3 GB** (old layout at the earlier Gate 1: 1.6 of
+  2 GB), 192 `.fastq.gz` and nothing else in `demux/`. Stage 2 for the 96 tiny samples (~20 k pairs each), per task: ALIGN_MARKDUP
+  ≈ 30 s (0.06 CPU-h at 8 cpu: the start-up cost is small), PICARD_COLLECTWGSMETRICS 6.7 min mean, 7.8 max (0.11 CPU-h; full-size
+  BC1: 21–32 min), SAMTOOLS_STATS peak 773 MB mean, **825 MB max of 1 GB**, one OOM kill (PN5_SID390, retried at 2 GB) → SAMTOOLS_STATS
+  raised to 2 GB (`conf/hazel.config`). Full-size BC1 in `cram_gate2_w01r`: 15 of 15 at attempt 1, 0.41 GB.
+- **Full-lane probe** (`scripts/probe_demux_memory.sbatch`, job 1018848; Gate 1's DEMUX task of BZea5 L001 rerun on its full lane,
+  4 cpu, 3 GB, the task's own image, binds and `--pid`): **exit 0 in 53 min 35** (≈ 3 min tar member extraction, ≈ 50 min cutadapt);
+  **224,336,462 pairs** (67.7 Gbp), 205,949,289 (91.8 %) with a barcode, written to 192 `.fastq.gz` (33.7 GB); job cgroup anon
+  memory **529 → 533 MB over the whole lane** (peak 533 MB; cutadapt 450 MB, the 192 compressors 491 MB, ≈ 2.5 MB each); page cache
+  ≈ 2.4 GB (the extraction; hazel's sacct MaxRSS counts it — the "95 %" of w01 — the kernel reclaims it). ≈ 13.4 µs per pair at
+  4 cpu; sacct 3 h 12 CPU, 89.5 % of 4 cores: CPU-bound. **Batch-1 DEMUX ≈ 54 min and ≈ 3.6 CPU-h per ~224 M-pair lane.**
+- **Where the CPU goes** (job 1020547, same lane, per-process CPU sampled every 10 s, read at 890 s of steady state, then
+  cancelled: the split was settled): the 4 cutadapt workers (barcode matching, 96 anchored adapters) **≈ 80 %**, `pigz -1`
+  compression of the outputs ≈ 15 %, cutadapt's reader (input gzip decompression + chunking) ≈ 4 %, cutadapt's main (writing the
+  pipes) ≈ 1 %. Compression and decompression together are < 20 %; time scales with `-j`. Records:
+  `agent/archive/demux_probe_L001_{r2,cpu}/` (laptop).
+
 **CRAM Gate 2, B73 controls (`cram_gate2_b73`, head 992885, COMPLETED 1 h 26 wall, 17:10–18:36; trace
 `ZEAL/results/zealgt/cram_gate2_b73/pipeline_info/execution_trace_2026-09-29_17-10-57.txt`).**
 

@@ -588,7 +588,9 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
     **not submitted**; to be re-planned after containerization (option: split by library type — one BC1-only run, one batch-1-only
     run — since only batch-1 DEMUX is blocked). Checkpoint after w01's BC1 part measured 0.80–0.81 × raw (estimate 0.83).
   - **TODO(Gate 2 after containerization):**
-    1. merge the `gate2-bug` DEMUX fix (fix the stub shim, address the EXIT-trap finding), then re-measure batch-1 DEMUX memory and
+    1. **Done 2026-10-01** (branch `demux-batch1-fix`; run card `docs/runs/demux_batch1_g1.md`, numbers in docs/REQUIREMENTS.md §4):
+       the `gate2-bug` fix merged, the EXIT-trap finding fixed, the stub shim was a stale local copy; Gate 1 (BZea5, 1 M pairs per
+       lane) passed and a full-lane probe ran flat at 533 MB anon for 224 M pairs (53 min 35 at 4 cpus). Was: merge the `gate2-bug` DEMUX fix (fix the stub shim, address the EXIT-trap finding), then re-measure batch-1 DEMUX memory and
        time at full size on hazel (peak vs pairs at two subsample sizes first, lesson below; use the process RSS, not sacct MaxRSS);
        expected ~50 min per ~228 M-pair lane. The DEMUX script change reruns DEMUX → MERGE_LANES → CUTADAPT for any relaunched
        library: take finished BC1 libraries (2A, 2F, 3B) through `--entry read_alignment` from the checkpoint instead;
@@ -619,10 +621,11 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
       2,283 samples, 6,935 GB** — BC1 32 libraries / 384 samples / 4,972 GB (80–362 GB each; 1A–1F and 4E deepest), batch-1 16
       plates / 1,515 / 1,457 GB (41–154 GB), batch-2 32 rows / 384 / 506 GB (9–22 GB). Gate 2's 12 libraries: 1,268 GB.
     - *Compute model* (from the Gate 2 traces so far: w01 BC1 2A / 2F / 3B and gate2_3A, allocated CPU-h): ALIGN_MARKDUP ≈ 0.85
-      CPU-h per raw GB (0.7–1.0), DEMUX + CUTADAPT + FASTQC ≈ 0.13 per raw GB, per sample ≈ 1 CPU-h fixed (PICARD's ~20–30 min
-      heap-bound walk, SAMTOOLS_STATS, alignment start-up; the start-up guessed, Gate 1 batch-1 traces to replace it); batch-1
-      DEMUX ≈ 3.6 CPU-h per lane (probe, 224 M pairs in 54 min at 4 cpu). **Total ≈ 9,100 CPU-h (7,500–11,000)**; the same model
-      gives ≈ 1,900 CPU-h for the Gate 2 set, as its run cards planned (2,000–2,300).
+      CPU-h per raw GB (0.7–1.0), DEMUX + CUTADAPT + FASTQC ≈ 0.13 per raw GB, per sample a fixed part: ≈ 0.2 CPU-h for a small
+      sample (Gate 1 batch-1, ~20 k pairs: ALIGN_MARKDUP start-up ≈ 30 s at 8 cpu, PICARD 6.7 min), up to ≈ 0.6 for full-size BC1
+      (PICARD's 21–32 min walk); batch-1 DEMUX ≈ 3.6 CPU-h per lane (probe, 224 M pairs in 54 min at 4 cpu). **Total ≈ 7,500 CPU-h
+      (6,500–9,500)** (6,935 GB × 0.98 + 384 × 0.6 + 1,899 × 0.2 + batch-1 DEMUX) — first estimate 9,100 with a guessed 1 CPU-h
+      per sample; the Gate 2 set ≈ 1,400 CPU-h (its run cards planned 2,000–2,300, with the old Trimmomatic and retry costs).
     - *Limits* (live, 2026-10-01): QOS `short` 768 cpu per user, 2 h; `normal` 1,024 cpu per user, 4 days per job; no group cap
       on account `maize_cpu`; `p_maize` priority 100, 4 days, but 32 cpu for the whole group (head jobs, the longest tasks);
       `/share` group quota 20 TB (1.5 TB used) and 1 M files (371 K used). Disk is not the binding limit: every checkpoint kept

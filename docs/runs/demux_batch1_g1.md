@@ -1,6 +1,11 @@
 # demux_batch1_g1 — batch-1 DEMUX fix: Gate 1 (BZea5, small) + full-lane memory probe
 
-**Status:** approved by the user 2026-10-01 ("probe plus small Gate 1"; "go").
+**Status:** approved by the user 2026-10-01 ("probe plus small Gate 1"; "go"). **Done 2026-10-01: both passed.**
+Gate 1 head 1018793 COMPLETED (57 min 37; DEMUX 0.36 / 0.70 GB of 3 GB, attempt 1; one SAMTOOLS_STATS OOM → 2 GB). Probe job
+1018848 (first attempt 1018809 failed in 1 s on two probe-script bugs: an unbound raw-data path and a `du` before `demux/` existed):
+exit 0 in 53 min 35, 224 M pairs, anon 529 → 533 MB flat, 192 outputs. CPU split (job 1020547, cancelled once settled): cutadapt
+workers ≈ 80 %, compression ≈ 15 %, decompression ≈ 4 %. Details: docs/REQUIREMENTS.md §4. Probe dirs removed with consent after
+their records were copied to the laptop (`agent/archive/demux_probe_L001_{r2,cpu}/`).
 
 ## Purpose
 CRAM Gate 2 w01 (2026-09-29): batch-1 DEMUX (BZea5, 96 barcodes, 192 outputs) was OOM-killed at 2 GB and at 4 GB, memory
