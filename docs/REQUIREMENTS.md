@@ -335,6 +335,18 @@ completed row below is attempt 1. Memory: Nextflow's "GB" = GiB; hazel kills at 
 - **Checkpoint, measured** (`du -s`, 19:40): 2A 107.3 GB, 2F 97.4 GB, 3B 85.8 GB = **0.81 / 0.80 / 0.81 × raw** (290.5 GB for
   360 GB raw), 3 % under the 0.83 × raw estimate (299.9 GB).
 
+**CRAM Gate 2 wave 1 restart (`cram_gate2_w01r`, head 1018340, COMPLETED 2 h 46 wall, 2026-10-01 14:54–17:40; containers,
+code 44299aa; trace `ZEAL/results/zealgt/cram_gate2_w01r/pipeline_info/execution_trace_2026-10-01_14-54-23.txt`).** Stage 2 alone
+from the kept checkpoint (`--entry read_alignment --libraries 2A,2F,3B`): the 13 CRAMs w01 did not store, plus the QC / provenance
+w01 had not finished for 7 stored samples. **All 36 CRAMs of 2A / 2F / 3B stored and verified** (CRAM + .crai + CRAM 3 EOF + QC +
+provenance; `agent/20261002_024500_verify_w01r.sh`). 0 failed tasks, every task at attempt 1.
+
+| process | tasks | request → peak RSS | realtime | note |
+|---|---|---|---|---|
+| ALIGN_MARKDUP | 13 | 48 GB → **32.4–36.5 GB** (71–80 % of the 45.6 GiB cap) | **1 h 34 – 2 h 09** | %cpu 698–741 of 800; rchar 192–260 GB; = w01 under conda (32.4–36.2 GB): containers do not change it |
+| SAMTOOLS_STATS | 15 | 1 GB → 0.40–0.41 GB | — | full-size BC1 well under 1 GB (the 1 → 2 GB change is for small batch-1 samples) |
+| PICARD_COLLECTWGSMETRICS | 20 | 5 GB | ≈ 20–30 min | |
+
 **Batch-1 DEMUX fix, Gate 1 + full-lane probe (2026-10-01; containers; branch `demux-batch1-fix`; run card
 `docs/runs/demux_batch1_g1.md`).** Fix: cutadapt writes plain FASTQ into one FIFO per output, each compressed by its own
 `pigz -1 -p 1`; cutadapt in its own process group; the EXIT trap stops the group and the compressors on any exit path; batch-1
