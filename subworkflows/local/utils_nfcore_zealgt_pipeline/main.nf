@@ -1002,12 +1002,21 @@ def zgCodeVersion() {
     }
 }
 
+// SHA-256 of the reference FASTA from <fasta>.sha256 (sha256sum format, written once next to it; '' when there is none), so
+// the record names the exact FASTA without hashing ~2 GB on every run
+def zgReferenceSha256() {
+    def f = file("${params.fasta}.sha256")
+    return f.exists() ? f.text.trim().tokenize(' \t')[0] : ''
+}
+
 // Run-level settings recorded in every provenance record (PLAN §3 stop point), computed once per run. The record is a
 // PROVENANCE input (hashed), so it holds nothing that changes between launches of one session: no workflow.runName (a
 // -resume would rerun every PROVENANCE task; session_id + run_id + code_version identify the run).
 def zgRunSettings() {
     return [
         reference    : params.fasta,
+        reference_assembly : params.reference_assembly ?: '',
+        reference_sha256   : zgReferenceSha256(),
         code_version : zgCodeVersion(),
         pipeline     : "${workflow.manifest.name} ${workflow.manifest.version}".toString(),
         entry        : params.entry,

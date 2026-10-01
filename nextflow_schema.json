@@ -163,6 +163,11 @@
                     "exists": true,
                     "description": "B73 v5 FASTA with .fai and the minibwa index (.l2b, .mbw) next to it (hazel: conf/hazel.config)."
                 },
+                "reference_assembly": {
+                    "type": "string",
+                    "description": "Assembly name of --fasta, recorded with the FASTA's SHA-256 (<fasta>.sha256) in every provenance record (hazel: Zm-B73-REFERENCE-NAM-5.0, conf/hazel.config).",
+                    "fa_icon": "fas fa-dna"
+                },
                 "registry_seed": {
                     "type": "string",
                     "format": "file-path",

@@ -168,6 +168,20 @@ Evidence:
 - **Why:** better adapter removal, poly-G handling, one tool family with DEMUX, a maintained nf-core module, multi-core, a
   MultiQC-native log, and no Java heap tuning.
 
+## Reference: Zm-B73-REFERENCE-NAM-5.0 (named in full from 2026-10-01)
+
+- **Assembly:** B73 v5, MaizeGDB **Zm-B73-REFERENCE-NAM-5.0** (`/rsstu/users/r/rrellan/BZea/ref/Zm-B73-REFERENCE-NAM-5.0.fa`,
+  2,209,359,010 bytes, SHA-256 `52f0663221e46f562eb0923c6dfa1bb43537abb7f13e0f637b5def2571de2c11`, in
+  `ZEAL/reference/Zm-B73-REFERENCE-NAM-5.0.fa.sha256`).
+- **Before 2026-10-01** the pipeline read it through the alias `ZEAL/reference/B73.fa` (a link to that same file, made
+  2026-09-11; minibwa index `B73.fa.{l2b,mbw}`). The **38 CRAMs stored before the change** — the 36 BC1 CRAMs of 2A / 2F / 3B
+  (`cram_gate2_w01`, `cram_gate2_w01r`) and the 2 B73 controls (`cram_gate2_b73`, `cram_import/`) — record `B73.fa` in their
+  provenance (`"reference"`) and CRAM headers (`@SQ UR:`, `@PG`); they are aligned to Zm-B73-REFERENCE-NAM-5.0. Their `@SQ M5:`
+  per-chromosome checksums pin the sequences either way. They are not rewritten (the store is never overwritten).
+- **From 2026-10-01** (PLAN §6 Gate 2 TODO 6): `params.fasta` = `ZEAL/reference/Zm-B73-REFERENCE-NAM-5.0.fa` (links in
+  `ZEAL/reference/` to the same file and the same minibwa index; `B73.fa` kept), and every provenance record carries
+  `reference_assembly` and `reference_sha256`.
+
 ## Development import sheet (`meta/dev_import.csv`, 2026-09-24)
 The existing CRAMs zealgt's development entries start from (docs/PLAN_pipeline.md §0), read in place from `ZEAL/results/` (written by
 zealbc1 / nilhmm) — not copied. 96 rows: per donor (`import_set` Zx.0540_P3, Zx.0570_P2) 5 BC1 samples (`results/cram/`, nilhmm pool_run
