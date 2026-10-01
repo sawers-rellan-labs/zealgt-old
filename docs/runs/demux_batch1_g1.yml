@@ -1,0 +1,15 @@
+# Run card (params): batch-1 DEMUX fix, Gate 1 — BZea5 at --subsample 2000000 (1,000,000 pairs per lane, 2 tar lanes),
+# card docs/runs/demux_batch1_g1.md. A bug check through the full code path (tar members, 96 barcodes, cutadapt -j 4,
+# FIFO + pigz outputs), not a production run: store, checkpoint and results stay under nf_work/demux_batch1_g1/.
+# Code: branch demux-batch1-fix, hazel worktree ZEAL/zealgt-demux (ZEAL/zealgt stays on main while cram_gate2_w01r runs).
+# Input: meta/samples.csv (the default --input; BZea5's 96 rows).
+#
+# Submit (short QOS head job, the default of the head script):
+#   ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-demux /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-demux/scripts/submit_head_job.sbatch demux_batch1_g1 -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-demux/docs/runs/demux_batch1_g1.yml'
+workflow: cram
+entry: read_demultiplexing
+libraries: BZea5
+subsample: 2000000
+store: /share/maize/frodrig4/nf_work/demux_batch1_g1/store/subsample_2000000
+fastq_checkpoint: /share/maize/frodrig4/nf_work/demux_batch1_g1/checkpoint/subsample_2000000
+outdir: /share/maize/frodrig4/nf_work/demux_batch1_g1/results
