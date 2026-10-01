@@ -1,6 +1,6 @@
 # PLAN: cleanup after the container phase
 
-Written 2026-09-30, on branch `containers`. Nothing here is done yet. Order of the project (user, 2026-09-30):
+Written 2026-09-30, on branch `containers`; progress in §6. Order of the project (user, 2026-09-30):
 
 1. **Switch** to the container version of the workflow (docs/PLAN_containers.md step 5, merged into `main`).
 2. **Cleanup 1**: the container-phase leftovers **and the conda envs** (except the Nextflow launcher). Everything the CRAM
@@ -55,7 +55,7 @@ Baseline 2026-09-30 after the stale-env removal: group **521,333 files**; frodri
 | H3 | `nf_work/<run>/` of finished runs: `work/`, `tmp/`, stub stores, checkpoints of test runs (`containers_g0`, `containers_g1`, `conda_g1`, the genotype container tests, older gate runs); the gate2 runs' `work/` only (§1a) | 56,982 (all nf_work) | cleanup 1, after each run's comparison / measurements are written up; the pipeline's own `cleanup_<run>.sh` lists stage-2 dirs (usage.md "Waves of libraries") |
 | H4 | Apptainer temp and layer cache `/share/maize/frodrig4/apptainer/{apptainer_tmp,apptainer_cachedir}` | 2 | cleanup 1 (images stay in `apptainer/cache/`) |
 | H5 | SIFs no module references any more (after an image update) in `apptainer/cache/` | 1 file each | compare the cache with `nextflow inspect -profile hazel,apptainer_hazel` of `main` |
-| H6 | hazel checkouts no longer needed: `ZEAL/zealgt-genotype` (branch merged), `ZEAL/zealgt-containers` (after the containers merge) | ~1,500 each | on `/rsstu`, not the /share quota; after checking no session submits from them (`ZG_REPO`) |
+| H6 | hazel checkouts no longer needed: `ZEAL/zealgt-genotype` (branch merged), `ZEAL/zealgt-containers` (after the containers merge) | ~1,500 each | on `/rsstu`, not the /share quota; after checking no session submits from them (`ZG_REPO`) **and no tracked file reads from them**: until 2026-10-01 the genotype params ymls took `genotype_input`, `qc_panel` and `mappability_priors` from `ZEAL/zealgt-genotype` (the switch Gate 0 read them there); now `ZEAL/zealgt` |
 | H7 | the wave-1 checkpoints `fastq_checkpoint/2A,2F,3B` and the gate2 runs' logs | 118 + small | **cleanup 2**, after the 13 CRAMs are stored and verified (the pipeline's `cleanup_status.tsv` per library) |
 | H8 | old job logs in `/share/maize/frodrig4/nf_work/*.log`, `/share/maize/frodrig4/zg_*.log` | small | keep; move to one `logs/` dir only if wanted |
 
@@ -77,7 +77,9 @@ Categories:
 - **L-keep, tooling:** `bin/` (nextflow, nf-test), `stubbin/` (version shims), `.venv_nfcore/`, and the cutadapt venvs if a
   script still uses them. One copy is enough: the checks point `ZG_CHECK_PATH` at `~/repos/zealgt/agent`; the other
   checkouts keep only their own `stubbin/` (the containers one is the current version).
-- **L-keep, records:** scripts, logs, notes, tsv tables, handovers.
+- **L-keep, records:** scripts, logs, notes, tsv tables, handovers. Before a worktree is removed, its records are copied to
+  `~/repos/zealgt/agent/archive/<worktree>/` under their own names. The docs cite agent files by their timestamped name and
+  no reference is rewritten: find one with `find ~/repos/zealgt/agent/archive -name '<name>'`.
 - **L1, run output (remove):** Nextflow work dirs of local runs and tests: `*_localrun*/`, `*_localrun_*`, `nft_*/`,
   `*_nftest/`, `*_gaterun/`, `cachetest/`, `check_resources/<timestamp>/` except the latest. Regenerable.
 - **L2, demux test data** (`~/repos/zealgt/agent/*demux_test*`, 15 GB): the zealgt-fe session's CRAM Gate 2 bug work;
@@ -151,6 +153,17 @@ Categories:
 4. Laptop L1 in `~/repos/zealgt-containers` and `~/repos/zealgt-genotype` (their sessions' own run output), L3 (docker),
    L4 for the merged branches.
 5. Prevention changes (§5) as a small code commit, checked like any other.
+
+**Cleanup 1, done** (user-approved path by path; scripts and logs in `agent/`, archived with the worktree):
+- 2026-09-30, H1 + H2 (job 1006531): 498/498 removed (17 module prefixes, 481 `pkgs` entries); launcher kept; group
+  552,971 -> 429,450 files.
+- 2026-10-01, H5 (job 1016028): the 6 SIFs no branch tip names: ALLELE_COUNTS (2 builds, before gzip and before diffutils),
+  MERGE_LANES and DEMUX (before gzip), CHROMOSOME_PAINTING (before r-logger), `zealgt-nilhmm:0.3.1`; cache 24 -> 18 files,
+  5.4 -> 4.0 GB, the 18 images `main` names.
+- 2026-10-01, laptop L1 in `zealgt-containers/agent`: 43 run-output dirs; 6.8 GB -> 4.6 GB, 179,573 -> 16,143 entries.
+- 2026-10-01, listed (job 1016009): `nf_work` 88,767 entries, 1.1 TB (≈ 1.09 TB the Gate 2 runs, kept). Approved (option
+  A): `work/` + `tmp/` of the finished non-Gate-2 runs (209 dirs, 75,765 entries, ≈ 25 GB) and the 4 empty
+  Apptainer temp dirs (H4); their stores, results, stub stores and Gate 0 baselines kept. Group before: 429,446 files.
 
 **Cleanup 2** (after the Gate 2 restart, with the zealgt-fe session's handover):
 1. H7: the wave-1 checkpoints `2A/2F/3B` (after their 13 CRAMs are stored and verified) and the gate2 runs' logs once their

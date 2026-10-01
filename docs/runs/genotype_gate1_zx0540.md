@@ -82,8 +82,8 @@ For each entry, in the order sample_quality_control, variant_discovery, ancestry
 donor_allele_calling, genotype_imputation, reporting, submit the next one only after the previous one has finished:
 
 ```
-ssh hazel 'git -C /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype pull --ff-only'
-ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_nomask_r3_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
+ssh hazel 'git -C /rsstu/users/r/rrellan/BZea/ZEAL/zealgt pull --ff-only'
+ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch genotype_gate1_nomask_r3_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_gate1_zx0540.yml --entry <entry>'
 ```
 
 For pass B, use run ids `genotype_gate1_mask_<entry>` and add the three overrides above. Before any

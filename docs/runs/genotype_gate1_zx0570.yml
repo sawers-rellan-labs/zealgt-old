@@ -3,7 +3,7 @@
 # value, and its [OPEN] / [STOP-GAP] mark, is the Zx.0540 card's (see docs/runs/genotype_gate1_zx0540.md).
 # Genotype design §7.4. Real tools, hazel, -profile hazel,short. One head job per entry, in order, each after the previous
 # one finished (an entry reads the earlier entries' outputs from the keyed store and refuses to start without them):
-#   ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch genotype_gate1_zx0570_r1_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/genotype_gate1_zx0570.yml --entry <entry>'
+#   ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch genotype_gate1_zx0570_r1_<entry> -profile hazel,short -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_gate1_zx0570.yml --entry <entry>'
 #   entries: sample_quality_control variant_discovery ancestry_inference marker_union donor_allele_calling genotype_imputation reporting
 # One pass only (mask off); the mask effect was measured on Zx.0540 (pass B, gate1_zx0540_mask).
 #
@@ -24,7 +24,7 @@ regions: "chr10:1-20000000"
 b73_controls: B73_skim10
 
 # ------------------------------------------------------------------------------------------------ inputs
-genotype_input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/meta/genotype_dev.csv
+genotype_input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/meta/genotype_dev.csv
 # the genotype-only markdup_import of meta/dev_import.csv (read-only for this workflow; the production ZEAL/store and
 # ZEAL/store_gate1 belong to the CRAM session and are not used)
 cram_store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
