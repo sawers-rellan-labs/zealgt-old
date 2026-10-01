@@ -619,6 +619,13 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
        kept once a library's CRAMs are verified (the CRAMs hold every read; the Gate 2 libraries' checkpoints stay until genotype
        Gate 2, user 2026-09-29); a wave driver that submits the waves in sequence and stops at the first failure. Items 6–8 are
        one batch: one Gate 0 (stub) + one CodeRabbit, then the run cards of the remaining Gate 2 libraries.
+    9. **All 32 batch-2 rows (V21A–V24H) join the next waves** (user, 2026-10-01): the genotype workflow's B73 pools need the
+       batch-2 checks' CRAMs, and refining the genotype workflow must start from stored CRAMs (the CRAM stop point), never from
+       a realignment. `meta/samples.csv`: 13 check wells (`is_check` TRUE), pedigree **B73 ×11** in 9 rows (V21C ×2, V21D, V21E, V21H,
+       V22C ×2, V22D, V22G, V23C, V24H) and **NC358 ×2** (V23A, V23D); donor / taxon / nil_id blank; 9 `empty` wells. All 32 rows,
+       not only the 11 with checks: a row is demultiplexed whole anyway; 506 GB raw, 384 samples, ≈ 600 CPU-h. First a **batch-2
+       Gate 1** (one row, `--subsample`): its layout (plain FASTQs, inline barcodes on R1 and R2) has not been through zealgt's
+       code yet (testing ladder: every input layout gets a Gate 1).
 - **Genotype workflow Gate 1 / Gate 2** on those CRAMs (genotype session's gates; Gate 2 = the development donors in full).
 - **Gate 3 · full dataset in waves, on the user's go**, once the Gate 2 numbers justify the allocation. CRAM workflow: **waves** of ≤ `--max_libraries` libraries,
   one `read_demultiplexing` run (own `--run_id`) per wave (§5 rule 3). Between two waves: the wave's head job has ended, its log
