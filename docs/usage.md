@@ -24,7 +24,7 @@ One `read_demultiplexing` command per request runs both stages; stage 2 takes th
 without demultiplexing again (nextflow-cache skill: the task cache does not carry across entries, the checkpoint does). All
 entries end at the CRAM stop point and write one MultiQC report per library (per import set).
 
-### FASTQ checkpoint (`--fastq_checkpoint`, default `/share/maize/frodrig4/fastq_checkpoint`)
+### FASTQ checkpoint (`--fastq_checkpoint`; hazel: `/share/maize/frodrig4/fastq_checkpoint`, conf/hazel.config)
 
 - CUTADAPT's `publishDir` **hardlinks** each sample's trimmed pair to `<fastq_checkpoint>/<lib>/<sample>_{1,2}.trim.fastq.gz`
   (and its log `<sample>.cutadapt.log`)
@@ -146,6 +146,14 @@ timestamp.
   requested libraries then all run concurrently (no `maxForks`). `read_alignment` adds no library and is not bounded.
 
 ### Waves of libraries (Gate 3) and the cleanup file
+
+**Production (user, 2026-10-01; PLAN §5 rule 4 production exception, §6 Gate 2 TODO 8) is unattended:** submit every wave at
+once with `bash scripts/submit_waves.sh <card 1>.yml <card 2>.yml ...` (profile `hazel,normal,production`; each wave starts only
+after the previous head job succeeded). Launching it is the permission for its own cleanup: a wave that **succeeds** deletes
+its `work/` (`cleanup = true`) and removes the FASTQ checkpoint of every library whose CRAMs are all stored and verified
+(`--remove_verified_checkpoints`); a wave that **fails** removes nothing and stops the chain, its `work/` kept for debugging.
+**Development and gate runs keep the rules below** (nothing removed automatically; the cleanup file, removals only with the
+user's consent; Gate 2 cards set `remove_verified_checkpoints: false`, their checkpoints stay until genotype Gate 2).
 
 The full run (Gate 3, docs/PLAN_pipeline.md §6) is a series of **waves**: one `read_demultiplexing` run of at most
 `--max_libraries` libraries each, with its own `--run_id` (e.g. `bc1_w01`, `bc1_w02`, ...), so its scratch dir, launch dir and
