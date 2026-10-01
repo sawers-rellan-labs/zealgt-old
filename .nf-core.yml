@@ -62,6 +62,8 @@ lint:
   # Pinned binary source export (meta/sources/SOURCES.tsv) contains a literal "{{" in its cell data; not a template string.
   template_strings:
     - meta/sources/drive/23_ncs_psu_langebio_fields.xlsx
+    # Rendered notebook (Quarto embed-resources): the embedded KaTeX/mermaid code contains literal "{{"; not a template string.
+    - docs/notebooks/00_pipeline_overview.html
   files_unchanged:
     - .prettierignore
     - docs/CONTRIBUTING.md
