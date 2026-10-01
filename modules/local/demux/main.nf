@@ -104,7 +104,17 @@ process DEMUX {
         printf '>%s\\n%s\\n' ${fa_r2} > barcodes_r2.fa
     fi
 
-    trap 'rm -f ${lane}_R1.fastq.gz ${lane}_R2.fastq.gz demux/*.${lane}_R1.fastq demux/*.${lane}_R2.fastq' EXIT
+    # EXIT trap: on any exit path, stop what is still running (cutadapt's process group, the compressors: a pigz left blocked
+    # on its FIFO would keep the task's stderr pipe open, the w01 hang) and remove the task-dir copies and the FIFOs. The
+    # success path clears cutadapt_pid / zips once they have ended, so nothing is signalled then.
+    cutadapt_pid=''
+    zips=''
+    zg_cleanup() {
+        if [ -n "\$cutadapt_pid" ]; then kill -KILL -- -"\$cutadapt_pid" 2>/dev/null || true; fi
+        if [ -n "\$zips" ]; then kill \$zips 2>/dev/null || true; fi
+        rm -f ${lane}_R1.fastq.gz ${lane}_R2.fastq.gz demux/*.${lane}_R1.fastq demux/*.${lane}_R2.fastq
+    }
+    trap zg_cleanup EXIT
     zg_pipe_ok() {
         local read=\$1 n i s
         shift
@@ -142,7 +152,6 @@ process DEMUX {
     fi
 
     mkdir demux
-    zips=''
     for s in ${samples}; do
         for r in R1 R2; do
             mkfifo "demux/\${s}.${lane}_\${r}.fastq"
@@ -166,14 +175,14 @@ process DEMUX {
     cutadapt_status=0
     wait \$cutadapt_pid || cutadapt_status=\$?
     if [ "\$cutadapt_status" -ne 0 ]; then
-        kill -KILL -- -"\$cutadapt_pid" 2>/dev/null || true
-        kill \$zips 2>/dev/null || true
         echo "DEMUX ${prefix}: cutadapt exited \$cutadapt_status" >&2
         exit "\$cutadapt_status"
     fi
+    cutadapt_pid=''
     for p in \$zips; do
         wait "\$p"
     done
+    zips=''
     """
 
     stub:
