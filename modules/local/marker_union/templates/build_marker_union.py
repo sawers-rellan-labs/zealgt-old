@@ -40,13 +40,42 @@ import os
 import platform
 import shlex
 import sys
+import logging
+import time
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("marker_union")
+
+
+class Progress:
+    """A progress line about once a minute (CLAUDE.md): n[/total] done, elapsed, ETA; done() logs the total once."""
+
+    def __init__(self, what, total=None, every=60.0):
+        self.what, self.total, self.every = what, total, every
+        self.n, self.t0 = 0, time.monotonic()
+        self.last = self.t0
+
+    def tick(self, k=1):
+        self.n += k
+        now = time.monotonic()
+        if now - self.last >= self.every:
+            self.last = now
+            el = (now - self.t0) / 60
+            if self.total:
+                LOG.info(">>> %d/%d %s done | elapsed %.1f min | ETA ~%.1f min remaining", self.n, self.total, self.what,
+                         el, el / self.n * (self.total - self.n))
+            else:
+                LOG.info(">>> %d %s done | elapsed %.1f min", self.n, self.what, el)
+
+    def done(self):
+        LOG.info("%d %s done in %.1f min", self.n, self.what, (time.monotonic() - self.t0) / 60)
 
 TAB = chr(9)
 NL = chr(10)
 
 
 def log(msg):
-    sys.stderr.write("[marker_union] " + msg + NL)
+    LOG.info(msg)
 
 
 def gz_write(path):
@@ -110,7 +139,9 @@ def read_step4(path, region):
         for need in ("chrom", "pos", "ref", "alt", "tier"):
             if need not in col:
                 raise SystemExit(f"MARKER_UNION: {os.path.basename(path)} has no column '{need}' (header {header})")
+        prog = Progress(f"site rows read ({os.path.basename(path)})")
         for line in fh:
+            prog.tick()
             x = line.rstrip(NL).split(TAB)
             chrom, pos, ref, alt, tier = x[col["chrom"]], int(x[col["pos"]]), x[col["ref"]], x[col["alt"]], x[col["tier"]]
             if len(ref) != 1 or len(alt) != 1 or not in_region(chrom, pos, region):
@@ -121,6 +152,7 @@ def read_step4(path, region):
                 tier_a.add(key)
             elif tier == "ref":
                 tier_ref.add(key)
+        prog.done()
     return tier_a, tier_ref, n
 
 

@@ -13,6 +13,9 @@ process WITNESS_POOL {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/b4/b476dc301990ee1df5d8030b0b2599d39f817d679ddd9a27c03eb8179d6f1d54/data'
+        : 'community.wave.seqera.io/library/samtools_htslib:1.21--339049028850ddef'}"
 
     input:
     tuple val(meta), path(bams, stageAs: 'in/*'), path(bais, stageAs: 'in/*'), val(witness)

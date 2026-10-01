@@ -137,6 +137,61 @@ everything fits the short QOS. Two failures fixed on the way (ALLELE_COUNTS SIGP
 unfixed intermittent: a storeDir output on `/rsstu` not yet visible to the head node ("Missing output file(s)" after exit 0,
 2 of ~90 storeDir tasks), recovered by `-resume`.
 
+**Genotype workflow: scaling to the whole genome and all donors (ESTIMATE, 2026-09-30; not measured at that size).**
+Measured on conda, both mexicana donors (Zx.0540_P3 + Zx.0570_P2: 10 BC1 pools, 84 lines), port code 9377898; traces
+`results/zealgt/genotype_gate1_mex2_port/` and `genotype_chr10_mex2_port/pipeline_info/execution_trace_2026-09-29_*.txt`
+(script `agent/20260930_174000_genotype_scaling.sh`):
+
+| 2 donors | chr10:1-20 Mb | whole chr10 (152 Mb) | ratio |
+|---|---:|---:|---:|
+| wall, 7 chained head jobs | 46 min | ≈ 59 min | 1.3 × |
+| summed task realtime | 7 min | 39 min | 5.5 × |
+| summed task CPU | 11 min | 68 min | 6.1 × |
+| longest task (CRISP) | 76 s | 444 s | 5.8 × |
+
+At 20 Mb ≈ 85 % of the wall is fixed overhead; the work itself runs in parallel. Where the Gate 1 wall went, per entry
+(head jobs 994256-994418; submit / duration / realtime of the traces; `agent/20260930_174500_gate1_time_budget.sh`):
+Nextflow start-up to the first task ≈ 40 s every time; almost every task waited 56-59 s between finishing and being seen
+(`duration - realtime`), and every head job ended ≈ 62 s after its last task: the **1-min `executor.pollInterval`**, paid
+once per dependency step, not Slurm queueing. ≈ 7 min of real work, ≈ 5 min of start-up, ≈ 30 min of polling delay.
+`pollInterval` only checks each task's `.exitcode` (Nextflow default 5 s for grid executors); the scheduler is queried by
+`queueStatInterval` (5 min here). Set to 10 s on 2026-09-30 (`conf/hazel.config`), before the containers' genotype Gate 1:
+the same chain then took 21 min 21 s (46 before), each stage 40-55 % of its old time.
+Nextflow start-up of one head job (≈ 40 s; `.nextflow.log` of two containers Gate 1 entries,
+`agent/20260930_182000_profile_startup.sh`): Java + config + profiles + nf-schema ≈ 7-9 s; **parsing and compiling the
+pipeline scripts** ("Session start" → "Launching execution") ≈ 16-19 s, likely slow because the checkout is on `/rsstu`
+(to test from a `/share` checkout); nf-schema validation of `meta/samples.csv` (2,283 rows, the CRAM `--input`, validated
+even for `--workflow genotype`) ≈ 3.5 s; genotype initialisation (settings guard, store) ≈ 2-4 s. Per stage at whole chr10 (CPU): variant_discovery 1,672 s (mostly CRISP), reporting 1,056 s,
+donor_allele_calling 920 s, ancestry_inference 384 s, the other three ≈ 35 s.
+
+Full dataset (`meta/samples.csv`): **95 genotypable donors, 384 BC1 pools, 1,766 lines** (vs 2 / 10 / 84). Whole genome
+≈ 2,130 Mb ≈ 14 × chr10. Scaling each stage by what it reads:
+
+| stage | grows with | × genome | × samples | whole genome, all donors |
+|---|---|---:|---:|---:|
+| variant_discovery (CRISP) | donors × pools per donor | 14 | ≈ 38 (47.5 donors × 0.8; 4.0 pools per donor vs 5) | ≈ 245 CPU-h |
+| reporting | lines | 14 | 21 | ≈ 86 CPU-h |
+| donor_allele_calling | lines | 14 | 21 | ≈ 75 CPU-h |
+| ancestry_inference (RTIGER) | lines | 14 | 21 | ≈ 31 CPU-h |
+| sample QC, marker union, imputation | | | | < 5 CPU-h |
+| **total** | | | | **≈ 450 CPU-h** (order of magnitude 300-700) |
+
+**The joint stages and the union size.** The marker union across donors does not grow linearly: with the model of
+`docs/notebooks/01_union_rarefaction.qmd` (neutral 1/p spectrum, measured discovery sensitivity r ≈ 0.1) the union is
+4.1 × the 2-donor union at 10 donors, 6.8 × at 20, 10.1 × at 40 and **14.4 × at 95** (r 0.05: 21.7 ×; r 0.15: 11.5 ×;
+`agent/20260930_180000_union_growth.py`): it saturates, since common variants are found by the first donors. The heavy steps
+are read-bound: the longest tasks of donor_allele_calling and reporting are MASK_READ_STARTS (reads every read of a line),
+and `bcftools mpileup -T <sites>` streams each line's CRAM once whatever the number of sites; so they grow with lines and
+reads (21 ×), not with union × lines. Upper bound if some step did per-site work across all lines: 14.4 × 21 ≈ 300 × the
+2-donor cost, **≈ 2,500 CPU-h**.
+
+**Wall time** is set by parallelism: ≈ 95 donors × 10 chromosomes ≈ 950 tasks per heavy stage; at 40 concurrent jobs (short
+QOS) the CRISP stage alone is ≈ 3 h, at 160 (normal) ≈ 1 h; the whole genotype run ≈ half a day to a day.
+
+To confirm before a full run: a whole-chromosome run with 10-20 donors (union 4-7 × the pilot's by the curve above), for the
+joint stages' time and memory. This covers the genotype workflow only; the CRAM workflow (demux + alignment of every
+library) is measured by Gate 2.
+
 **Measured usage, zealgt Gate 2 (2026-09-28, full BC1 library 3A, never demuxed before; `-profile hazel,normal`; traces
 `results/zealgt/gate2_3A/pipeline_info/execution_trace_2026-09-28_{07-24-13,10-24-23}.txt`; head jobs 972212 (stopped) and 973369
 (`-resume`, COMPLETED 4 h 15, 0.42 GB); `agent/handover_20260929_063000_gate2.md`, calibration `agent/20260928_204500_align_memory_calibration.md`).**

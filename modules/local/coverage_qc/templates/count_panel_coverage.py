@@ -22,6 +22,10 @@ import json
 import platform
 import shlex
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("coverage_qc")
 
 TAB = chr(9)
 NL = chr(10)
@@ -112,8 +116,7 @@ def read_counts(paths, panel):
                     keep = []
                     for i, s in enumerate(cols):
                         if s in seen:
-                            print(f"{PROCESS}: sample {s} is in more than one count table; first one kept ({path} skipped)",
-                                  file=sys.stderr)
+                            LOG.info(f"{PROCESS}: sample {s} is in more than one count table; first one kept ({path} skipped)")
                         else:
                             keep.append(i)
                             seen.add(s)
@@ -190,7 +193,7 @@ def main():
                        str(s in counted).lower(), str(below).lower()] + [str(k < t).lower() for t in report_at]
                 out.write(TAB.join(str(v) for v in row) + NL)
             n_low += low
-    print(f"coverage_qc {PREFIX}: {len(SAMPLE_MAP)} samples, {len(panel)} panel sites on {len(contigs)} contigs, "
+    LOG.info(f"coverage_qc {PREFIX}: {len(SAMPLE_MAP)} samples, {len(panel)} panel sites on {len(contigs)} contigs, "
           f"{n_low} samples with a contig below {a.min_markers} covered markers")
     with open(f"{PREFIX}.coverage_qc.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')

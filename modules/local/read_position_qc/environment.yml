@@ -1,11 +1,11 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
 # READ_POSITION_QC: samtools view | python3 (standard library) per-read-position mismatch profile; the samtools/htslib and
-# python of the other modules. Exact version + build.
+# python of the other modules. Versions only (nf-core); the container image is built from these specs.
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconda::samtools=1.21=h96c455f_1
-  - bioconda::htslib=1.21=h566b1c6_1
-  - conda-forge::python=3.12.14=h5f976f7_3_cpython
+  - bioconda::samtools=1.21
+  - bioconda::htslib=1.21
+  - conda-forge::python=3.12.14

@@ -41,8 +41,10 @@ Sys.setenv(RCPP_PARALLEL_NUM_THREADS = "1")
 
 suppressPackageStartupMessages({
   library(data.table)
+  library(logger)
   library(nilHMM)
 })
+log_formatter(formatter_sprintf)   # CLAUDE.md "Logging in task scripts": logger, sprintf-style, to stderr, to the second
 
 cols <- c("source", "donor", "name", "chr", "start_bp", "end_bp", "state")
 out_f <- paste0(prefix, ".segments.csv")
@@ -56,23 +58,26 @@ obs <- ct[REF_COUNT + ALT_COUNT > 0,
                n_alt = as.integer(ALT_COUNT))]
 
 if (nrow(obs) == 0L) {
-  message(sprintf("WARN %s %s: no line passed LINE_MARKER_QC (0 observations); writing an empty segments table", proc,
-                  prefix))
+  log_warn("%s %s: no line passed LINE_MARKER_QC (0 observations); writing an empty segments table", proc, prefix)
   seg_out <- data.table(source = character(), donor = character(), name = character(), chr = integer(),
                         start_bp = integer(), end_bp = integer(), state = integer())
 } else {
-  message(sprintf("%s %s: %d lines, %d markers, %d observations, rigidity %d, threads %d, seed %d", proc, prefix,
-                  uniqueN(obs[["name"]]), uniqueN(obs[["pos"]]), nrow(obs), rigidity, threads, seed))
+  log_info("%s %s: %d lines, %d markers, %d observations, rigidity %d, threads %d, seed %d", proc, prefix,
+           uniqueN(obs[["name"]]), uniqueN(obs[["pos"]]), nrow(obs), rigidity, threads, seed)
   t0 <- Sys.time()
   seg <- as.data.table(call_ancestry(as.data.frame(obs), caller = "rtiger", rigidity = rigidity, threads = threads,
                                      seed = seed))
-  message(sprintf("%s %s: %d segments in %.1f min", proc, prefix, nrow(seg),
-                  as.numeric(difftime(Sys.time(), t0, units = "mins"))))
+  log_info("%s %s: %d segments in %.1f min", proc, prefix, nrow(seg),
+           as.numeric(difftime(Sys.time(), t0, units = "mins")))
   seg_out <- seg[, list(source = "RTIGER_poolseq", donor = donor_label, name, chr = chr_int, start_bp, end_bp, state)]
   missing_lines <- setdiff(unique(obs[["name"]]), unique(seg_out[["name"]]))
   if (length(missing_lines)) stop(sprintf("%s: RTIGER returned no segments for %s", proc,
                                           paste(missing_lines, collapse = ", ")))
-  print(seg_out[, list(Mb = sum(end_bp - start_bp) / 1e6, segments = .N), by = state][order(state)])
+  by_state <- seg_out[, list(Mb = sum(end_bp - start_bp) / 1e6, segments = .N), by = state][order(state)]
+  for (k in seq_len(nrow(by_state))) {
+    log_info("%s %s: state %d: %.1f Mb in %d segments", proc, prefix, by_state[["state"]][k], by_state[["Mb"]][k],
+             by_state[["segments"]][k])
+  }
 }
 setcolorder(seg_out, cols)
 fwrite(seg_out, out_f)

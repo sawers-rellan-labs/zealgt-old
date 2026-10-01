@@ -49,6 +49,35 @@ import os
 import platform
 import shlex
 import sys
+import logging
+import time
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("gap_filling_lines")
+
+
+class Progress:
+    """A progress line about once a minute (CLAUDE.md): n[/total] done, elapsed, ETA; done() logs the total once."""
+
+    def __init__(self, what, total=None, every=60.0):
+        self.what, self.total, self.every = what, total, every
+        self.n, self.t0 = 0, time.monotonic()
+        self.last = self.t0
+
+    def tick(self, k=1):
+        self.n += k
+        now = time.monotonic()
+        if now - self.last >= self.every:
+            self.last = now
+            el = (now - self.t0) / 60
+            if self.total:
+                LOG.info(">>> %d/%d %s done | elapsed %.1f min | ETA ~%.1f min remaining", self.n, self.total, self.what,
+                         el, el / self.n * (self.total - self.n))
+            else:
+                LOG.info(">>> %d %s done | elapsed %.1f min", self.n, self.what, el)
+
+    def done(self):
+        LOG.info("%d %s done in %.1f min", self.n, self.what, (time.monotonic() - self.t0) / 60)
 
 TAB = chr(9)
 NL = chr(10)
@@ -57,7 +86,7 @@ DOT = "."
 
 
 def log(msg):
-    sys.stderr.write("[gap_filling_lines] " + msg + NL)
+    LOG.info(msg)
 
 
 def gz_write(path):
@@ -279,13 +308,16 @@ def line_lambdas(keys, t, idx, xs_of, lines):
     """lambda_i = mean REF+ALT depth of line i over the keys where its x = 0 (None if it has no x = 0 site)."""
     tot = {ln: 0 for ln in lines}
     cnt = {ln: 0 for ln in lines}
+    prog = Progress("sites (line depths)", len(keys))
     for key in keys:
+        prog.tick()
         n, _a = site_counts(t, key, len(idx))
         xs = xs_of(key)
         for ln in lines:
             if xs[ln] == 0:
                 tot[ln] += n[idx[ln]]
                 cnt[ln] += 1
+    prog.done()
     return {ln: (tot[ln] / cnt[ln] if cnt[ln] else None) for ln in lines}
 
 

@@ -28,6 +28,9 @@ process MARKDUP_IMPORT {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/bc/bc649d5f390c4c8e770a4a99e65ec7eb3649f56f058532693bf1c18268fb0f2e/data'
+        : 'community.wave.seqera.io/library/samtools_htslib_gawk:a096f8727b7b7810'}"
 
     input:
     tuple val(meta), path(input, stageAs: 'input/*'), path(index, stageAs: 'input/*'), val(read_group)

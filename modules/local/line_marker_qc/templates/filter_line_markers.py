@@ -35,6 +35,10 @@ import math
 import platform
 import shlex
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("line_marker_qc")
 
 TAB = chr(9)
 NL = chr(10)
@@ -179,11 +183,11 @@ def main():
     for c, _ in kept:
         n_kept[c] += 1
     rigidity, why = effective_rigidity(len(kept), REGION, chrom_len)
-    print(f"line_marker_qc {PREFIX}: {why}")
+    LOG.info(f"line_marker_qc {PREFIX}: {why}")
     floor = math.ceil(MIN_MARKERS_FACTOR * rigidity)
     if floor < 2 * rigidity:
-        print(f"WARN {PROCESS}: floor {floor} (min_markers_factor {MIN_MARKERS_FACTOR} x rigidity {rigidity}) is below "
-              f"RTIGER's 2 x rigidity = {2 * rigidity}; using {2 * rigidity}", file=sys.stderr)
+        LOG.warning(f"{PROCESS}: floor {floor} (min_markers_factor {MIN_MARKERS_FACTOR} x rigidity {rigidity}) is below "
+              f"RTIGER's 2 x rigidity = {2 * rigidity}; using {2 * rigidity}")
         floor = 2 * rigidity
     with open(f"{PREFIX}.rigidity.txt", "w") as out:
         out.write(f"{rigidity}{NL}")
@@ -224,13 +228,12 @@ def main():
                     out.write(TAB.join([s, key[0], str(key[1]), str(rc), str(ac), ref, alt]) + NL)
                     n_obs += 1
     n_pass = sum(line_pass)
-    print(f"line_marker_qc {PREFIX}: {len(markers)} markers, {len(obs)} counted, {len(kept)} kept "
+    LOG.info(f"line_marker_qc {PREFIX}: {len(markers)} markers, {len(obs)} counted, {len(kept)} kept "
           f"(drop_invariant {str(drop_invariant).lower()}), floor {floor}; {n_pass} of {len(lines)} lines pass; "
           f"{n_obs} observations; skipped records {skipped}")
     excluded = [s for i, s in enumerate(lines) if not line_pass[i]]
     if excluded:
-        print(f"WARN {PROCESS} {PREFIX}: {len(excluded)} lines below {floor} covered markers, excluded: {excluded}",
-              file=sys.stderr)
+        LOG.warning(f"{PROCESS} {PREFIX}: {len(excluded)} lines below {floor} covered markers, excluded: {excluded}")
     with open(f"{PREFIX}.line_marker_qc.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')
 

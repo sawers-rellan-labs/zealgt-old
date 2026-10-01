@@ -26,6 +26,35 @@ import io
 import platform
 import shlex
 import sys
+import logging
+import time
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("rasterize")
+
+
+class Progress:
+    """A progress line about once a minute (CLAUDE.md): n[/total] done, elapsed, ETA; done() logs the total once."""
+
+    def __init__(self, what, total=None, every=60.0):
+        self.what, self.total, self.every = what, total, every
+        self.n, self.t0 = 0, time.monotonic()
+        self.last = self.t0
+
+    def tick(self, k=1):
+        self.n += k
+        now = time.monotonic()
+        if now - self.last >= self.every:
+            self.last = now
+            el = (now - self.t0) / 60
+            if self.total:
+                LOG.info(">>> %d/%d %s done | elapsed %.1f min | ETA ~%.1f min remaining", self.n, self.total, self.what,
+                         el, el / self.n * (self.total - self.n))
+            else:
+                LOG.info(">>> %d %s done | elapsed %.1f min", self.n, self.what, el)
+
+    def done(self):
+        LOG.info("%d %s done in %.1f min", self.n, self.what, (time.monotonic() - self.t0) / 60)
 
 TAB = chr(9)
 NL = chr(10)
@@ -34,7 +63,7 @@ DOT = "."
 
 
 def log(msg):
-    sys.stderr.write("[rasterize] " + msg + NL)
+    LOG.info(msg)
 
 
 def gz_write(path):
@@ -133,7 +162,9 @@ def genotype(x, d):
 def raster(alleles, seg, qc):
     lines = sorted(set(seg) | set(qc))
     out = {}
+    prog = Progress("lines rasterized", len(lines))
     for ln in lines:
+        prog.tick()
         ok = qc.get(ln, True)
         col = []
         for r in alleles:
@@ -144,6 +175,7 @@ def raster(alleles, seg, qc):
                 dose = 0.0 if x == 0 else (x * r["p_alt"] if r["p_alt"] is not None else None)
             col.append((x, gt, dose))
         out[ln] = col
+    prog.done()
     return lines, out
 
 

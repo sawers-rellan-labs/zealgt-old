@@ -19,6 +19,10 @@ import gzip
 import platform
 import shlex
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("rtiger_markers")
 
 TAB = chr(9)
 NL = chr(10)
@@ -85,9 +89,9 @@ def main():
         out.write(TAB.join(cols) + NL)
         out.write(TAB.join(str(v) for v in [PREFIX, n["rows"], a.tier, n["tier"], n["not_snv"], n["flagged"],
                                              n["multiallelic_positions"], len(out_rows)]) + NL)
-    print(f"rtiger_markers {PREFIX}: {len(out_rows)} markers from {n['tier']} tier-{a.tier} rows of {n['rows']}")
+    LOG.info(f"rtiger_markers {PREFIX}: {len(out_rows)} markers from {n['tier']} tier-{a.tier} rows of {n['rows']}")
     if not out_rows:
-        print(f"WARN rtiger_markers {PREFIX}: no tier-{a.tier} marker; RTIGER will have no input", file=sys.stderr)
+        LOG.warning(f"rtiger_markers {PREFIX}: no tier-{a.tier} marker; RTIGER will have no input")
     with open(f"{PREFIX}.rtiger_markers.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')
 

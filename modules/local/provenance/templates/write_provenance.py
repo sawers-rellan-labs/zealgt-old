@@ -16,6 +16,11 @@ import glob
 import json
 import os
 import platform
+import logging
+import sys
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("provenance")
 
 NL = chr(10)
 

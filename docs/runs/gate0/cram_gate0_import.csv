@@ -1,0 +1,4 @@
+sample_id,source,role,library,donor,import_set,path,index,size_bytes,made_by,dup_marked,read_groups,include,note
+B73_skim10,b73_control,b73_control,,,b73_control,/rsstu/users/r/rrellan/BZea/ZEAL/results/b73_control/skim10/B73_skim10.bam,/rsstu/users/r/rrellan/BZea/ZEAL/results/b73_control/skim10/B73_skim10.bam.bai,7296679956,zealbc1 b73_control/skim10/merge_skim10.sbatch,no,check,TRUE,"BAM, merge of 10 batch-1 B73 checks"
+PN5_SID464,bc2s3_batch1,line,BZea5,Zx.0540_P3,Zx.0540_P3,/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID464.cram,/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID464.cram.crai,147620056,zealbc1 PHG/bin/bc2s3_realign.sbatch,no,no,TRUE,
+S_2A_11,bc1,bc1_sample,2A,Zx.0540_P3,Zx.0540_P3,/rsstu/users/r/rrellan/BZea/ZEAL/results/cram/S_2A_11.cram,/rsstu/users/r/rrellan/BZea/ZEAL/results/cram/S_2A_11.cram.crai,1158133183,nilhmm pool_run (ALIGN),no,no,TRUE,

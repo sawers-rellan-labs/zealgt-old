@@ -1,0 +1,82 @@
+# Builds the images of the two local modules whose software is not on conda (docs/PLAN_containers.md §2) from the
+# Dockerfile in each module directory, for linux/amd64 (hazel), and pushes them to GitHub's container registry.
+# The tag is the pinned software version (CRISP: upstream commit; nilHMM: release) and equals the module's `container`
+# line. A tag that already exists is never overwritten, unless the manual run asks for it: a changed Dockerfile needs a
+# new tag (and the module's container line with it). New GHCR packages start private; set them public once (hazel pulls
+# them anonymously).
+name: build_images
+
+on:
+  push:
+    paths:
+      - modules/local/crisp/Dockerfile
+      - modules/local/rtiger/Dockerfile
+      - .github/workflows/build_images.yml
+  workflow_dispatch:
+    inputs:
+      overwrite:
+        description: Push even if the tag already exists
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: crisp
+            image: ghcr.io/sawers-rellan-labs/zealgt-crisp
+            tag: 1a9027e
+            smoke: "{ CRISP 2>&1 || true; } | grep -q CRISP_command_line && tabix --version | head -1"
+          - module: rtiger
+            image: ghcr.io/sawers-rellan-labs/zealgt-nilhmm
+            tag: 0.3.1-1
+            smoke: 'Rscript -e ''library(nilHMM); library(logger); cat(as.character(packageVersion("nilHMM")))'''
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Tag matches the module's container line
+        run: grep -qF 'container "${{ matrix.image }}:${{ matrix.tag }}"' modules/local/${{ matrix.module }}/main.nf
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Does the tag exist already?
+        id: exists
+        run: |
+          if docker manifest inspect "${{ matrix.image }}:${{ matrix.tag }}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.image }}:${{ matrix.tag }} exists; not overwritten (bump the tag, or run manually with overwrite)"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: modules/local/${{ matrix.module }}
+          platforms: linux/amd64
+          load: true
+          tags: ${{ matrix.image }}:${{ matrix.tag }}
+          cache-from: type=gha,scope=${{ matrix.module }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.module }}
+
+      - name: Smoke test (no entrypoint, as Nextflow runs it)
+        env:
+          SMOKE: ${{ matrix.smoke }}
+        run: docker run --rm --entrypoint bash "${{ matrix.image }}:${{ matrix.tag }}" -c "$SMOKE"
+
+      - name: Push
+        if: steps.exists.outputs.exists == 'false' || inputs.overwrite
+        run: docker push "${{ matrix.image }}:${{ matrix.tag }}"

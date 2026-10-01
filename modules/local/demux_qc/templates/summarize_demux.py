@@ -28,6 +28,10 @@ import shlex
 import shutil
 import sys
 from collections import Counter
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("demux_qc")
 
 TAB = chr(9)
 NL = chr(10)

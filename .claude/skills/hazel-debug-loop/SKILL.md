@@ -3,7 +3,7 @@ name: hazel-debug-loop
 description: Run and debug the zealgt Nextflow pipeline (read processing + genotyping) on the hazel HPC cluster from the laptop.
   Use whenever iterating on, submitting, or troubleshooting zealgt on the cluster — covers git-only transfer, the two filesystem
   facts (core.fileMode false + interpreter-invoked scripts), login-node policy (short QOS for all compute), job environment and
-  node sizes, conda env builds, where work/ and the store live, the inner fix loop, testing-ladder lessons, and killing a run safely.
+  node sizes, container images, where work/ and the store live, the inner fix loop, testing-ladder lessons, and killing a run safely.
 ---
 
 # Hazel debug loop (zealgt)
@@ -72,22 +72,25 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   every Gate 2 OOM = 0.95 × ReqMem): size memory so the modelled peak stays below 0.95 × the request.
 - xfer: 32 cpu / 188000 MB, no time limit (QOS `xfer` auto-set). Partition time limits show infinite; the QOS sets the real one.
 
-## Conda envs
-- Built by **`scripts/build_envs.sh` as an xfer job** (`sbatch scripts/build_envs.sbatch [<id>]`, submitted from the checkout so
-  `SLURM_SUBMIT_DIR` is the repo, or with `ZG_REPO=<checkout> sbatch --export=ALL <checkout>/scripts/build_envs.sbatch`) from each
-  module's pinned `environment.yml` (+ `build.sh` for non-conda tools) into `/share/maize/frodrig4/conda/zealgt/<first
-  dependency>-<sha8>`: keyed on content only (sha8 of the yml without comments / blank lines / `name:`, + build.sh bytes), so
-  identical envs share one prefix (DEMUX_QC, PROVENANCE, REGISTRY: one python prefix), across branches too.
-  `scripts/build_envs.sh --list` (process -> prefix), `--prefixes` (prefix -> processes, state on disk).
-- Never on `/rsstu` (too slow), never at task time (compute nodes are offline): `conf/env_prefixes.config` (generated,
-  `--write-config`; checked by `scripts/run_checks.sh`) points every process at its prefix; a `.nextflow.log` line "Creating env"
-  means a missing entry.
-- A dependency / channel / build.sh change gives a new prefix (a comment edit does not): rebuild before running. The prefix path
-  is part of every task hash (conda enabled), so a new prefix also reruns that process's tasks on `-resume`.
-- Nothing is ever deleted by the script. Old prefixes: `bash scripts/build_envs.sh --list-stale --all-refs` (in the hazel checkout
-  after `git fetch`; dirs no branch of the clone references) and `--inodes [<prefix>...]` (own inodes: `find <prefix> ! -type f -o
-  -type f -links 1 | wc -l`, i.e. not hardlinked from the pkgs cache). A failed build leaves its prefix in place. Removing any
-  prefix is the user's call.
+## Container images (since the switch, 2026-09-30; docs/PLAN_containers.md)
+- Every process runs in its module's image with **Apptainer 1.4.2** (`conf/hazel.config`; the binary
+  `/usr/local/apps/apptainer/1.4.2-1/bin` is put on PATH by `scripts/submit_head_job.sbatch`: the site module fails without
+  `TMPDIR`). Compute nodes are offline: every image is downloaded **once, by an xfer job**, into
+  `/share/maize/frodrig4/apptainer/cache` under Nextflow's name (the URL without scheme, `:` and `/` -> `-`, + `.img`). A
+  missing image fails the task (no pull at run time). Seqera SIFs: `curl` the https blob URL; GHCR images: `apptainer pull
+  --disable-cache <cache>/<name>.img docker://<image>`. `nextflow inspect -profile hazel …` lists every process's image.
+- **A changed `environment.yml` means a new image:** request it from Seqera Containers (versions only, frozen, linux/amd64;
+  use a Seqera Platform token, anonymous requests are limited to 25 builds a day), update the module's `container` line,
+  download the SIF, and **check the commands the module calls inside the SIF** (`apptainer exec <sif> sh -c 'command -v …'`):
+  Seqera SIFs have a leaner base than their Docker images (no gzip, zcat, cmp, diff, xargs, find, tar unless declared), and
+  under conda a task also saw the host's tools. CRISP / RTIGER: change the Dockerfile and bump the tag (a tag is never
+  overwritten); GitHub Actions builds and pushes it.
+- The image path is part of the task hash: a new image reruns that process's tasks on `-resume`.
+- Each task carries a `squashfuse_ll` helper (7-15 MB) and 1-2 `starter` processes (15-19 MB) in its job's memory (Apptainer is
+  not setuid on hazel): ≈ 30-50 MB extra per task.
+- Only the Nextflow launcher is still a conda env (`envs/nextflow`, built by `scripts/build_envs.sbatch`, found by the head job
+  via `scripts/build_envs.sh --list`), until docs/PLAN_containers.md §6 option B. Old prefixes:
+  `bash scripts/build_envs.sh --list-stale --all-refs` (lists only; removing any prefix is the user's call).
 
 ## Inner fix loop when a task fails
 1. `ssh hazel 'cat /share/maize/frodrig4/nf_work/<run>/<hash>/.command.err'` (also `.command.out`, `.command.log`, `.command.sh`).

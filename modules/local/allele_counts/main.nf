@@ -1,6 +1,6 @@
 // ALLELE_COUNTS — per-sample allele depths at fixed sites, the one counting helper of the genotype workflow (PLAN §4 #3;
 // genotype design §2.2 "ALLELE_COUNTS"). Included under many names (QC_PANEL_COUNTS, B73_CONTROL_COUNTS, BC1_SITE_COUNTS,
-// LINE_ALLELE_COUNTS, UNION_SITE_COUNTS, B73_UNION_COUNTS, LINE_UNION_COUNTS; envs/process_aliases.tsv), always batched:
+// LINE_ALLELE_COUNTS, UNION_SITE_COUNTS, B73_UNION_COUNTS, LINE_UNION_COUNTS; the `include ... as` aliases of the workflows), always batched:
 // one task per donor x region x role or per donor set x region (review #8), never per sample.
 //   sites (chrom pos ...; non-numeric pos lines such as a header are skipped) -> pos.tsv (chrom, pos; sorted, unique)
 //   bcftools mpileup -I -a AD -f <fasta> -r <region> -T pos.tsv ${args} -b <bams> -Ou
@@ -22,6 +22,9 @@ process ALLELE_COUNTS {
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/f7/f79e3aeb77eaa806b853aaa83b1f2645fc6502d5c64ac9fcc8a05417ac24862e/data'
+        : 'community.wave.seqera.io/library/bcftools_htslib_gzip_diffutils:6e04b4f4aa71ffd1'}"
 
     input:
     tuple val(meta), path(bams, stageAs: 'bam/*'), path(bais, stageAs: 'bam/*'), val(ids)

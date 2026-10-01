@@ -1,23 +1,2 @@
 # env_id<TAB>smoke command (run inside the env by scripts/build_envs.sh; first non-empty output line goes to envs/manifest.tsv)
 nextflow	NXF_HOME=$CONDA_PREFIX/share/nextflow/home NXF_OFFLINE=true nextflow -version 2>&1 | grep -m1 -i version
-fastqc	fastqc --version
-multiqc	multiqc --version
-samtools_stats	samtools --version | head -1
-picard_collectwgsmetrics	picard CollectWgsMetrics --version 2>&1 | grep -m1 -i version
-demux	cutadapt --version && pigz --version 2>&1 && head --version | head -1 && tar --version | head -1
-demux_qc	python3 --version
-align_markdup	minibwa version && samtools --version | head -1
-markdup_import	samtools --version | head -1 && gawk --version | head -1
-provenance	python3 --version
-registry	python3 --version
-allele_counts	bcftools --version | head -1
-mask_read_starts	samtools --version | head -1 && gawk --version | head -1
-witness_pool	samtools --version | head -1
-crisp	CRISP 2>&1 | head -2; test -x "$CONDA_PREFIX/bin/CRISP" && ldd "$CONDA_PREFIX/bin/CRISP" | grep -q 'libhts.so.3 => /'
-pooled_likelihood_tiers	python3 --version
-rtiger	Rscript -e 'suppressPackageStartupMessages(library(nilHMM)); cat(as.character(packageVersion("nilHMM")))'
-chromosome_painting	Rscript -e 'library(ggplot2); cat(as.character(packageVersion("ggplot2")))'
-read_position_qc	samtools --version | head -1 && python3 --version
-bcftools_view	bcftools --version | head -1
-merge_lanes	cat --version | head -1
-cutadapt	cutadapt --version

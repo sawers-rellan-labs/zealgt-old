@@ -25,6 +25,10 @@ import platform
 import shlex
 import statistics
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("donor_content_qc")
 
 TAB = chr(9)
 NL = chr(10)
@@ -115,8 +119,7 @@ def read_counts(paths, panel):
                     keep = []
                     for i, s in enumerate(cols):
                         if s in seen:
-                            print(f"{PROCESS}: sample {s} is in more than one count table; first one kept ({path} skipped)",
-                                  file=sys.stderr)
+                            LOG.info(f"{PROCESS}: sample {s} is in more than one count table; first one kept ({path} skipped)")
                         else:
                             keep.append(i)
                             seen.add(s)
@@ -221,7 +224,7 @@ def main():
             out.write(TAB.join([s, role, donor or ".", str(cov), str(nalt), fmt(share[s]), str(reads), str(alt),
                                 fmt(arf[s]), f"{exp:g}", fmt(ratio, 4), a.statistic, fmt(rel, 4), str(flag).lower(),
                                 ",".join(reasons) or "."]) + NL)
-    print(f"donor_content_qc {PREFIX}: {len(order)} samples, {len(panel)} panel sites, statistic {a.statistic}, "
+    LOG.info(f"donor_content_qc {PREFIX}: {len(order)} samples, {len(panel)} panel sites, statistic {a.statistic}, "
           f"{n_flag} flagged")
     with open(f"{PREFIX}.donor_content_qc.versions.yml", "w") as fh:
         fh.write(f'"{PROCESS}":{NL}    python: {platform.python_version()}{NL}')

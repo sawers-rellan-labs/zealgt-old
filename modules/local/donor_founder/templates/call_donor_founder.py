@@ -29,6 +29,35 @@ import math
 import platform
 import shlex
 import sys
+import logging
+import time
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("donor_founder")
+
+
+class Progress:
+    """A progress line about once a minute (CLAUDE.md): n[/total] done, elapsed, ETA; done() logs the total once."""
+
+    def __init__(self, what, total=None, every=60.0):
+        self.what, self.total, self.every = what, total, every
+        self.n, self.t0 = 0, time.monotonic()
+        self.last = self.t0
+
+    def tick(self, k=1):
+        self.n += k
+        now = time.monotonic()
+        if now - self.last >= self.every:
+            self.last = now
+            el = (now - self.t0) / 60
+            if self.total:
+                LOG.info(">>> %d/%d %s done | elapsed %.1f min | ETA ~%.1f min remaining", self.n, self.total, self.what,
+                         el, el / self.n * (self.total - self.n))
+            else:
+                LOG.info(">>> %d %s done | elapsed %.1f min", self.n, self.what, el)
+
+    def done(self):
+        LOG.info("%d %s done in %.1f min", self.n, self.what, (time.monotonic() - self.t0) / 60)
 
 TAB = chr(9)
 NL = chr(10)
@@ -38,7 +67,7 @@ STEPS = ["own", "step1_ref", "step1_alt", "step2_alt", "missing", "multiallelic"
 
 
 def log(msg):
-    sys.stderr.write("[donor_founder] " + msg + NL)
+    LOG.info(msg)
 
 
 def gz_write(path):
@@ -159,8 +188,11 @@ def main():
     rows, cnt = found(read_union(union), read_step1(step1, donor), read_step2(step2))
     with gz_write(f"{prefix}.tsv.gz") as o:
         o.write(TAB.join(["chrom", "pos", "ref", "alt", "D", "call_step", "logodds", "p_alt"]) + NL)
+        prog = Progress("founder rows", len(rows))
         for key, d, step, lo, p in rows:
+            prog.tick()
             o.write(TAB.join([key[0], str(key[1]), key[2], key[3], d, step, fmt(lo), fmt(p)]) + NL)
+        prog.done()
     s = summary(donor, cnt)
     with open(f"{prefix}.summary.tsv", "w") as o:
         o.write(TAB.join(SUMMARY_COLS) + NL)

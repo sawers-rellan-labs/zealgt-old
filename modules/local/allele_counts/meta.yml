@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 # zealgt local module (step-named; the name keys the hazel conda prefix). Included under many aliases
-# (envs/process_aliases.tsv: QC_PANEL_COUNTS, B73_CONTROL_COUNTS, BC1_SITE_COUNTS, LINE_ALLELE_COUNTS, UNION_SITE_COUNTS,
+# (the `include ... as` aliases of the workflows: QC_PANEL_COUNTS, B73_CONTROL_COUNTS, BC1_SITE_COUNTS, LINE_ALLELE_COUNTS, UNION_SITE_COUNTS,
 # B73_UNION_COUNTS, LINE_UNION_COUNTS -> allele_counts).
 name: allele_counts
 description: Per-sample allele depths (AD) at fixed sites for a batch of BAMs (one donor x region x role, or one donor set x region) with bcftools mpileup -I -a AD | bcftools query -H; one bgzipped table, samples named by read-group SM and checked against the input ids.

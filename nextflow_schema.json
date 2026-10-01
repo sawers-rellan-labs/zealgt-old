@@ -18,12 +18,11 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "schema": "assets/schema_input.json",
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
                     "default": "${projectDir}/meta/samples.csv",
                     "description": "The single sample sheet (meta/samples.csv, built by meta/build_samples.py): library, raw location, inline barcodes and read-group fields per sample. --entry read_demultiplexing takes the rows of --libraries.",
-                    "help_text": "Validated against assets/schema_input.json at parameter validation and parsed with samplesheetToList.",
+                    "help_text": "Checked for existence at parameter validation; validated against assets/schema_input.json and parsed by samplesheetToList when a CRAM entry reads it (not at start-up, so --workflow genotype runs, which never read it, skip the ~3.5 s validation).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "registry": {

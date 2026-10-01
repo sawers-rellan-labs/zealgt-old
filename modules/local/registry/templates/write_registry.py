@@ -17,6 +17,10 @@ import json
 import os
 import platform
 import sys
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+LOG = logging.getLogger("registry")
 
 TAB = chr(9)
 NL = chr(10)

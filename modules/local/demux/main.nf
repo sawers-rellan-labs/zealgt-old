@@ -36,6 +36,9 @@ process DEMUX {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/49/498407a88cdd8b16f9d68461500dcfc261f1ac3f4fff33bd208e54654dda0b8c/data'
+        : 'community.wave.seqera.io/library/cutadapt_python_pigz_coreutils_pruned:06082470000c3a86'}"
 
     input:
     tuple val(meta), path(r1, stageAs: 'raw_r1/*'), path(r2, stageAs: 'raw_r2/*'), val(barcodes), val(read_structures), val(tar_members), val(n_lanes)

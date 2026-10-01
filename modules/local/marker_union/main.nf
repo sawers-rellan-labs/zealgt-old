@@ -18,6 +18,9 @@ process MARKER_UNION {
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/fa/fa07e248b1e370d7821404c2c9b042d508e30e5147fa2509c4d58f8f103ebaee/data'
+        : 'community.wave.seqera.io/library/python_gzip:6ffdc9aac79f425a'}"
 
     input:
     tuple val(meta), path(tables, stageAs: 'step4/*'), path(reference_tables, stageAs: 'reference/?/*')

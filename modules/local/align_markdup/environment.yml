@@ -1,11 +1,11 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
 # ALIGN_MARKDUP: minibwa + samtools piped in one script (as nf-core bwamem2/mem pins bwa-mem2 + samtools); the versions
-# zealbc1 ran (envs/legacy_zealbc1/assembly.list.txt). Exact version + build.
+# zealbc1 ran (envs/legacy_zealbc1/assembly.list.txt). Versions only (nf-core); the container image is built from these specs.
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconda::minibwa=0.7=h118bc1c_0
-  - bioconda::samtools=1.21=h96c455f_1
-  - bioconda::htslib=1.21=h566b1c6_1
+  - bioconda::minibwa=0.7
+  - bioconda::samtools=1.21
+  - bioconda::htslib=1.21
