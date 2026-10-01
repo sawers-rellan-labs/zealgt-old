@@ -1,0 +1,188 @@
+---
+title: "DTA interval mapping pilot on two mexicana donors (R/qtl)"
+subtitle: "Haley–Knott scanone on the RTIGER ancestry of the zealbc1 nb06 lines, TeoNAM JLM 0.1-cM grid, chr10 (2026-09-27)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    code-fold: true
+    code-summary: "code"
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+**What this is.** The interval-mapping companion of notebook 02 (DTA GWAS), on the same 83 lines of the two mexicana donors
+(Zx.0540_P3, Zx.0570_P2) and the same phenotype, set up as zealhmm `scripts/zeal_rqtl_scan.R` /
+`analysis/zeal-rqtl-dta-lod-profile.qmd`:
+
+- **Genotype = ancestry**, not alleles: each line's RTIGER state (B73 = A, HET = H, donor = B), read from its segments at the marker
+  positions (zealhmm projects its SNP50K mosaic by nearest marker; here the segments are looked up directly).
+- **Markers and map** = the TeoNAM JLM 0.1-cM set (zealhmm `data/teonam/tassel/geno.hmp.txt`, v5 positions and TeoNAM cM from
+  `data/teonam/teonam_v5_native.tsv`), chr10.
+- **Cross** `bcsft` with BC.gen = 2, F.gen = 3 (BC2S3); `calc.genoprob(step = 1, error.prob = 0.01, haldane)`.
+- **Scans**: Haley–Knott `scanone` without covariate and with family (donor) as an additive covariate (zealhmm uses taxon; here both donors
+  are Zx), 1,000 permutations each; then per-family additive scans on the HMM expected dosage with zealhmm's filters (≥ 5 % of the family
+  introgressed, ≥ 3 lines in every present genotype class).
+- **Phenotype**: zealhmm `data/zeal/pheno_dta_blue.csv`, `DTA_mean` (SpATS BLUE, CLY23 + CLY25), as in notebook 02. zealhmm's R/qtl notebook
+  uses the Clayton-only `DTA_CLY`.
+
+```{r setup}
+library(qtl)
+library(data.table)
+library(ggplot2)
+set.seed(1234567890)
+ZH <- "/Users/fvrodriguez/repos/zealhmm"
+IN <- "../../agent/gwas_dta_20260927"
+donors <- c("Zx.0540_P3", "Zx.0570_P2")
+NPERM <- 1000L
+ERR_PROB <- 0.01
+INTRO_MIN <- 0.05
+MIN_CLASS <- 3L
+ZMCCT10 <- 96175873
+theme_set(theme_bw(base_size = 11))
+```
+
+## 1. Markers, map and genotypes
+
+```{r markers}
+jlm_rs <- fread(file.path(ZH, "data/teonam/tassel/geno.hmp.txt"), select = 1L)[[1]]
+tm <- fread(file.path(ZH, "data/teonam/teonam_v5_native.tsv"))
+mk <- tm[match(jlm_rs, marker), .(chr = chr_v5, pos = pos_v5, cm)][!is.na(pos) & !is.na(cm) & chr == 10][order(pos)]
+mk[, marker := sprintf("S10_%d", pos)]
+mk <- mk[!duplicated(marker)]
+
+state_at <- function(d) {
+  seg <- fread(file.path(IN, sprintf("rtiger_%s_r500_chr10.csv", d)))
+  sapply(unique(seg$name), function(ln) {
+    s <- seg[name == ln][order(start_bp)]
+    i <- findInterval(mk$pos, s$start_bp)
+    ifelse(i > 0 & mk$pos <= s$end_bp[pmax(i, 1)], s$state[pmax(i, 1)], NA)
+  })
+}
+S <- do.call(cbind, lapply(donors, state_at))
+line_donor <- unlist(lapply(donors, function(d) setNames(rep(d, ncol(state_at(d))), colnames(state_at(d)))))
+
+ss <- fread(file.path(ZH, "data/zeal/samplesheet_3way.csv"))[gwas_nil == TRUE]
+ph <- fread(file.path(ZH, "data/zeal/pheno_dta_blue.csv"))
+ped <- setNames(ss$pedigree, ss$skim_id)[colnames(S)]
+fam <- setNames(ss$donor_accession, ss$skim_id)[colnames(S)]
+y <- setNames(ph$DTA_mean, ph$Genotype)[ped]
+ok <- is.finite(y) & !is.na(fam)
+S <- S[, ok]; y <- as.numeric(y[ok]); fam <- factor(fam[ok]); ped <- ped[ok]
+knitr::kable(data.table(
+  quantity = c("JLM markers on chr10", "chr10 map length (TeoNAM cM)", "lines with DTA and family",
+               "genotype fractions A / H / B", "cells without ancestry"),
+  value = c(nrow(mk), round(max(mk$cm) - min(mk$cm), 1), paste(length(y), sprintf("(%s)", paste(names(table(fam)), table(fam), sep = ":", collapse = ", "))),
+            paste(sprintf("%.3f", c(mean(S == 0, na.rm = TRUE), mean(S == 1, na.rm = TRUE), mean(S == 2, na.rm = TRUE))), collapse = " / "),
+            sum(is.na(S)))))
+```
+
+## 2. Cross and genotype probabilities
+
+```{r cross}
+csv <- tempfile(fileext = ".csv")
+Gc <- matrix(c("A", "H", "B")[t(S) + 1L], nrow = ncol(S)); Gc[is.na(Gc)] <- "-"
+famcov <- as.integer(fam == levels(fam)[2])
+top <- rbind(c("id", "DTA", "family", mk$marker), c("", "", "", rep("10", nrow(mk))), c("", "", "", sprintf("%.6f", mk$cm)))
+body <- cbind(ped, formatC(y, format = "f", digits = 4), famcov, Gc)
+fwrite(as.data.table(rbind(top, body)), csv, col.names = FALSE, quote = FALSE)
+cross <- read.cross(format = "csv", file = csv, genotypes = c("A", "H", "B"), alleles = c("A", "B"), na.strings = "-",
+                    estimate.map = FALSE, BC.gen = 2, F.gen = 3, crosstype = "bcsft")
+cross <- jittermap(cross)
+cross <- calc.genoprob(cross, step = 1, error.prob = ERR_PROB, map.function = "haldane")
+cat(class(cross)[1], "|", nind(cross), "lines,", totmar(cross), "markers\n")
+```
+
+## 3. Scans and permutation thresholds
+
+```{r scans}
+covar <- matrix(famcov, ncol = 1, dimnames = list(NULL, "family"))
+one_nc <- scanone(cross, pheno.col = "DTA", method = "hk")
+one_fc <- scanone(cross, pheno.col = "DTA", method = "hk", addcovar = covar)
+perm_nc <- scanone(cross, pheno.col = "DTA", method = "hk", n.perm = NPERM, verbose = FALSE)
+perm_fc <- scanone(cross, pheno.col = "DTA", method = "hk", addcovar = covar, n.perm = NPERM, verbose = FALSE)
+thr <- c(nocovar = summary(perm_nc, alpha = 0.05)[1], family = summary(perm_fc, alpha = 0.05)[1])
+pk <- function(one) { i <- which.max(one$lod); c(lod = one$lod[i], cM = one$pos[i]) }
+cm_to_bp <- function(cm) approx(mk$cm, mk$pos, xout = cm, rule = 2)$y
+res <- data.table(model = c("no covariate", "+ family"),
+                  `5 % LOD threshold` = round(thr, 2),
+                  `max LOD` = round(c(pk(one_nc)["lod"], pk(one_fc)["lod"]), 2),
+                  `peak (cM)` = round(c(pk(one_nc)["cM"], pk(one_fc)["cM"]), 1),
+                  `peak (Mb, v5)` = round(cm_to_bp(c(pk(one_nc)["cM"], pk(one_fc)["cM"])) / 1e6, 2),
+                  `QTL (FWER 0.05)` = c(sum(one_nc$lod > thr[1]) > 0, sum(one_fc$lod > thr[2]) > 0))
+knitr::kable(res)
+```
+
+## 4. LOD profile
+
+```{r profile, fig.width = 10, fig.height = 4}
+prof <- rbind(data.table(pos = one_nc$pos, lod = one_nc$lod, model = "no covariate"),
+              data.table(pos = one_fc$pos, lod = one_fc$lod, model = "+ family"))
+cct_cm <- approx(mk$pos, mk$cm, xout = ZMCCT10, rule = 2)$y
+pal <- c("no covariate" = "grey60", "+ family" = "#2c6fbb")
+ggplot(prof, aes(pos, lod, colour = model)) +
+  geom_line(linewidth = 0.6) +
+  geom_hline(yintercept = thr[1], linetype = "dashed", colour = pal[["no covariate"]]) +
+  geom_hline(yintercept = thr[2], linetype = "dashed", colour = pal[["+ family"]]) +
+  geom_vline(xintercept = cct_cm, colour = "darkorange", alpha = 0.7) +
+  annotate("text", x = cct_cm, y = max(thr) * 1.02, label = "ZmCCT10", hjust = -0.1, size = 3.2, colour = "darkorange") +
+  scale_colour_manual(values = pal) +
+  labs(x = "chr10 (TeoNAM cM)", y = "LOD", colour = NULL,
+       title = sprintf("DTA — Haley–Knott, %d lines, TeoNAM JLM grid (%d markers)", nind(cross), totmar(cross)),
+       subtitle = "dashed = 5 % genome-wide threshold, 1,000 permutations (chr10 only)")
+```
+
+## 5. Per-family additive scans
+
+As zealhmm: additive regression of DTA on the HMM expected dosage (B-allele count) within each family, LOD = n/2 · log10(RSS0 / RSS1);
+a marker is tested only if ≥ 5 % of the family is introgressed there and every present genotype class has ≥ 3 lines.
+
+```{r perfamily, fig.width = 10, fig.height = 4}
+pr <- cross$geno[["10"]]$prob
+dose <- pr[, , 2] + 2 * pr[, , 3]
+hard <- t(apply(pr, 1:2, which.max) - 1L)
+pos_cm <- attr(pr, "map")
+byfam <- rbindlist(lapply(levels(fam), function(f) {
+  idx <- which(fam == f); yy <- y[idx]; rss0 <- sum((yy - mean(yy))^2)
+  rbindlist(lapply(seq_along(pos_cm), function(j) {
+    h <- hard[j, idx]; tb <- table(factor(h, levels = 0:2))
+    okm <- mean(h > 0) >= INTRO_MIN && all(tb[tb > 0] >= MIN_CLASS)
+    lod <- if (okm) { x <- dose[idx, j]; length(idx) / 2 * log10(rss0 / sum(resid(lm(yy ~ x))^2)) } else NA_real_
+    data.table(family = f, pos = pos_cm[j], lod = lod, n_intro = sum(h > 0))
+  }))
+}))
+ggplot(byfam, aes(pos, lod)) +
+  geom_line(colour = "#2c6fbb", na.rm = TRUE) +
+  geom_vline(xintercept = cct_cm, colour = "darkorange", alpha = 0.7) +
+  facet_wrap(~family, ncol = 1) +
+  labs(x = "chr10 (TeoNAM cM)", y = "LOD (additive, within family)",
+       title = "Per-family additive scans (gaps = markers failing the introgression / class-size filter)")
+knitr::kable(byfam[, .(`tested positions` = sum(!is.na(lod)), `max LOD` = round(max(lod, na.rm = TRUE), 2),
+                       `at cM` = round(pos[which.max(lod)], 1), `max lines introgressed` = max(n_intro)), by = family])
+```
+
+## 6. Allele effect at the pooled peak
+
+```{r effect, fig.width = 6, fig.height = 3.5}
+j <- which.max(one_fc$lod)
+g <- factor(c("B73", "HET", "donor")[hard[j, ] + 1], levels = c("B73", "HET", "donor"))
+ggplot(data.table(g, y, fam), aes(g, y, colour = fam)) +
+  geom_jitter(width = 0.15, height = 0, size = 1.5) +
+  stat_summary(fun = mean, geom = "crossbar", width = 0.4, colour = "black") +
+  labs(x = sprintf("genotype at %.1f cM (%.2f Mb)", one_fc$pos[j], cm_to_bp(one_fc$pos[j]) / 1e6), y = "DTA BLUE (days)", colour = NULL)
+```
+
+## 7. Reading
+
+```{r reading, results = "asis"}
+cat(sprintf("- Pooled scan: max LOD %.2f (with family) against a 5 %% threshold of %.2f; %s.\n",
+            pk(one_fc)["lod"], thr[2], if (pk(one_fc)["lod"] > thr[2]) "**a QTL passes the threshold**" else "no QTL passes the threshold"))
+cat(sprintf("- At ZmCCT10 (%.1f cM) the LOD is %.2f with family.\n", cct_cm, one_fc$lod[which.min(abs(one_fc$pos - cct_cm))]))
+cat("- Like the GWAS (notebook 02), the scan is limited by few introgressed lines per locus in two families on one chromosome;",
+    "the threshold here is chromosome-wide (chr10 only), so it is lower than a genome-wide one would be.\n")
+```
