@@ -605,7 +605,7 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
   "Waves of libraries".
   - **Production plan — DRAFT 2026-10-01, UNCONFIRMED: replace every estimate below with the Gate 2 measurements** (user: the
     production runs must match the Gate 2 estimates; **budget a week of computing** until the partial-run data say otherwise).
-    - *Raw data* (hazel job 1020154, stat + plate-tar headers; `agent/20261002_013000_raw_sizes_result.txt`): **80 libraries,
+    - *Raw data* (hazel job 1020154, stat + plate-tar headers; `docs/runs/raw_sizes_20261001.tsv`): **80 libraries,
       2,283 samples, 6,935 GB** — BC1 32 libraries / 384 samples / 4,972 GB (80–362 GB each; 1A–1F and 4E deepest), batch-1 16
       plates / 1,515 / 1,457 GB (41–154 GB), batch-2 32 rows / 384 / 506 GB (9–22 GB). Gate 2's 12 libraries: 1,268 GB.
     - *Compute model* (from the Gate 2 traces so far: w01 BC1 2A / 2F / 3B and gate2_3A, allocated CPU-h): ALIGN_MARKDUP ≈ 0.85
