@@ -80,8 +80,9 @@ inputs, envs and measured resources from `docs/REQUIREMENTS.md`. Module/config c
   missing image fails the task (no pull at run time). Seqera SIFs: `curl` the https blob URL; GHCR images: `apptainer pull
   --disable-cache <cache>/<name>.img docker://<image>`. `nextflow inspect -profile hazel …` lists every process's image.
 - **/share deletes files not read for 30 days** (no backup): an image no task has read for a month, or the launcher env,
-  can disappear. Never touch files to reset the clock. After a pause of > 30 days, an "image not found" task failure, or
-  "nextflow env not built", run `sbatch scripts/restore_images.sbatch` (from the checkout; xfer) first: it fetches each
+  can disappear. Never touch files to reset the clock. `scripts/submit_head_job.sbatch` checks it before nextflow starts
+  (`restore_images.sbatch --check`, stat only) and stops with `check: MISSING ...`; then run
+  `sbatch scripts/restore_images.sbatch` (from the checkout; xfer) and resubmit: it fetches each
   image the modules' `container` lines name that is missing from the cache, checks the commands inside each fetched SIF
   (`--check-all`: every SIF), and rebuilds an absent launcher prefix. Idempotent; it never removes anything but its own
   partial download (a bad cached file or a broken launcher is reported, exit 1). Log
