@@ -116,6 +116,11 @@ Categories:
   for every Nextflow / Java / classpath change. Most start-up is script compilation and parameter validation, which it
   cannot cache. `ZG_RES_JOBS` (the resource check's pool, 4) is not measured the same way.
 - Each hazel test run's run card names its run dirs, and the write-up of the run ends with the cleanup listing for them.
+- **Gate 0 stubs on minimal inputs** (user, 2026-09-30): a stub task is instant, but each one is its own Slurm job
+  (≈ 3 s to submit, polled every 10 s), so a stub's time is its task count. `--entry markdup_import` on the default
+  `meta/dev_import.csv` (96 CRAMs, ≈ 372 tasks) took ≈ 25 min (job 1004870); its Gate 0 uses
+  `docs/runs/gate0/cram_gate0_import.csv` (3 rows, one per input kind, ≈ 2 min). Every Gate 0 card names its inputs and
+  keeps them to a few units.
 - **Fast gates: a `gate` profile + one head job per chain** (user, 2026-09-30). After the polling fix a Gate 0/1 chain is
   still mostly overhead (genotype Gate 1: critical path ≈ 3-4 min of work, longest task CRISP 76 s): every task is its own
   Slurm job, and the 7 entries are 7 head jobs, each queued after the previous one and each paying ≈ 40 s of Nextflow

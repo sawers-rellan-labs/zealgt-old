@@ -22,7 +22,7 @@ commands and `Rscript -e 'library(logger)'` (short QOS job).
 | run_id | profile | entry / params | store / key |
 |---|---|---|---|
 | `switch_cram_g0_demux` | `hazel,stub` `-stub` | read_demultiplexing, 1A (chains into stage 2) | the run's `store_stub` |
-| `switch_cram_g0_import` | `hazel,stub` `-stub` | markdup_import, `meta/dev_import.csv` | the run's `store_stub` |
+| `switch_cram_g0_import` | `hazel,stub` `-stub` | markdup_import, `--import_sheet docs/runs/gate0/cram_gate0_import.csv` | the run's `store_stub` |
 | `switch_geno_g0_<entry>` x 7 | `hazel,stub` `-stub` | `docs/runs/gate0/genotype_gate0_<entry>.yml` | `nf_work/switch_geno_g0/store_stub`, key `switch_g0` |
 | `switch_cram_g1` | `hazel,short` | read_demultiplexing, 1A, `--force_demux 1A --subsample 1000000` | the run's own store / checkpoint |
 | `switch_geno_g1_<entry>` x 7 | `hazel,short` | `docs/runs/genotype_gate1_mex2.yml` | `nf_work/switch_geno_g1/store`, key `gate1_mex2_switch_r1` |
@@ -30,6 +30,11 @@ commands and `Rscript -e 'library(logger)'` (short QOS job).
 The genotype chains run one head job per entry in stage order (`--dependency=afterok`;
 `agent/20260930_171500_submit_genotype_chain.sh` with `apptainer_hazel` dropped from its profile strings). Both Gate 1s
 start after every Gate 0 succeeds, and run at the same time.
+
+**Gate 0 import sheet.** `docs/runs/gate0/cram_gate0_import.csv`: 3 rows of `meta/dev_import.csv` covering the input
+kinds (B73_skim10, a BAM; PN5_SID464, a BC2S3 line CRAM; S_2A_11, a BC1 CRAM), ≈ 12 stub tasks, ≈ 2 min. Added after the
+first run of this card (2026-09-30, job 1004870) used the default sheet: 96 CRAMs x 4 processes ≈ 372 Slurm jobs of
+instant stub tasks, ≈ 25 min of submission and polling. Never run a Gate 0 stub on the full dev sheet.
 
 **Cost.** Gate 0: a few minutes per entry. CRAM Gate 1 ≈ 26 min (`containers_g1`: 25:51); genotype Gate 1 ≈ 21 min (`_r2`).
 
