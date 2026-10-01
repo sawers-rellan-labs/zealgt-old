@@ -1,6 +1,6 @@
 # demux_batch1_g1 — batch-1 DEMUX fix: Gate 1 (BZea5, small) + full-lane memory probe
 
-**Status:** draft 2026-10-01, awaiting the user's approval (user chose "probe plus small Gate 1").
+**Status:** approved by the user 2026-10-01 ("probe plus small Gate 1"; "go").
 
 ## Purpose
 CRAM Gate 2 w01 (2026-09-29): batch-1 DEMUX (BZea5, 96 barcodes, 192 outputs) was OOM-killed at 2 GB and at 4 GB, memory
