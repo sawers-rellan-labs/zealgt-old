@@ -232,12 +232,13 @@ message names the entry to run first. `--workflow genotype` without `--entry` is
 Submit one head job per entry, in stage order, each after the previous one has finished:
 
 ```bash
-ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype \
-    /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/scripts/submit_head_job.sbatch <run_id> -profile hazel,short \
-    -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/<run>.yml --entry <entry>'
+ssh hazel 'sbatch --export=ALL,ZG_REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt \
+    /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/scripts/submit_head_job.sbatch <run_id> -profile hazel,short \
+    -params-file /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/<run>.yml --entry <entry>'
 ```
 
-`ZG_REPO` points the head job at the checkout to run. The default is the CRAM checkout `ZEAL/zealgt`.
+`ZG_REPO` points the head job at the checkout to run. The default is the main checkout `ZEAL/zealgt`; set it only to run a
+branch from its own checkout.
 
 ## Testing
 

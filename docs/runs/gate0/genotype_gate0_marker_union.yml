@@ -6,7 +6,7 @@
 # <store>/genotype/<genotype_store_key>/ and refuses to start when they are missing). One head job per entry, after the
 # previous one has finished:
 #   bash agent/20260929_020100_submit_genotype_gate0.sh \
-#     /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/docs/runs/gate0/genotype_gate0_{entry}.yml marker_union
+#     /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/gate0/genotype_gate0_{entry}.yml marker_union
 # (the launcher adds --workflow genotype --run_id genotype_gate0_marker_union --outdir .../genotype_gate0/marker_union/outdir; there
 # is no `full` mode any more: --workflow genotype without --entry is refused at initialisation).
 # Checks: exit 0; 0 "Creating env" lines in .nextflow.log; outputs under store/genotype/<key>/ (design §1.3 layout);
@@ -24,14 +24,14 @@ regions: "chr10:1-20000000"
 # inputs. store_genotype_dev = the genotype-only markdup_import of meta/dev_import.csv (job 972246, 2026-09-28); the
 # genotype sheet resolves <cram_store>/cram_import/<id>.{cram,cram.crai,CollectWgsMetrics.coverage_metrics,provenance.json}.
 # B73_ERR3288215 is not in that store (its CollectWgsMetrics does not fit the short QOS), so only B73_skim10 is named.
-genotype_input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/meta/genotype_dev.csv
+genotype_input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/meta/genotype_dev.csv
 cram_store: /rsstu/users/r/rrellan/BZea/ZEAL/store_genotype_dev
 b73_controls: B73_skim10
 fasta: /rsstu/users/r/rrellan/BZea/ZEAL/reference/B73.fa
 lowcopy_bed: /rsstu/users/r/rrellan/BZea/ZEAL/results/pilot_1B_chr10/union/union_chr10.bed
 # stub only: fixture files from the clone, so the panel-QC and prior paths are wired (no stub reads them)
-qc_panel: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/tests/fixtures/genotype/panel.tsv
-mappability_priors: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt-genotype/tests/fixtures/genotype/priors
+qc_panel: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/tests/fixtures/genotype/panel.tsv
+mappability_priors: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/tests/fixtures/genotype/priors
 reference_donor_tables: "Zx.0570_P2=/rsstu/users/r/rrellan/BZea/ZEAL/results/bench_zx0570_chr10/step4/Zx.0570_P2.sites.tsv.gz"
 reference_donor_taxa: "Zx.0570_P2=mexicana"
 
