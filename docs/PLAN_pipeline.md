@@ -503,8 +503,10 @@ Rules for v2:
    frees no space while the checkpoint holds the hardlinked pairs (the space moves to the checkpoint), only the demux FASTQs.
    More than N libraries (Gate 3) therefore run as **waves** of ≤ N libraries, one run each, with the user's consented cleanup
    of the finished wave's checkpoint and `work/` (rule 4's cleanup file) between two waves (§6).
-4. **Cleanup.** The pipeline never removes anything. A library's checkpoint FASTQs are removed **only after all its CRAMs are stored and
-   verified** (rule 2), and **only with the user's consent** (`CLAUDE.md`): every run with stage 2 (chained or alone) reports it per
+4. **Cleanup.** The pipeline never removes anything in development and gate runs. **Production is the exception (user, 2026-10-01;
+   §6 "Production plan"): the production run, launched by the user, removes a library's intermediates itself once all its CRAMs are
+   stored and verified — launching it is the consent.** A library's checkpoint FASTQs are removed **only after all its CRAMs are stored and
+   verified** (rule 2), and outside production **only with the user's consent** (`CLAUDE.md`): every run with stage 2 (chained or alone) reports it per
    library in the log and in `<checkpoint>/<library>/cleanup_status.tsv` (tab-separated `sample cram cram_bytes verified fastq_1
    fastq_1_bytes fastq_2 fastq_2_bytes`, one row per sample; verified = CRAM + `.crai` + CRAM 3 EOF), ending in `# checkpoint <dir>:
    removable (N files, X GB) — remove only with the user's consent` (N counts the FASTQs) or `# checkpoint <dir>: keep: k of n CRAMs
@@ -605,6 +607,14 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
   "Waves of libraries".
   - **Production plan — DRAFT 2026-10-01, UNCONFIRMED: replace every estimate below with the Gate 2 measurements** (user: the
     production runs must match the Gate 2 estimates; **budget a week of computing** until the partial-run data say otherwise).
+    - **Unattended, decided (user, 2026-10-01): production is one submission that runs to the end; submitting it is the
+      permission — no consent or review step between waves.** This supersedes the between-wave consent above for production.
+      Waves are internal batching only, to stay under the `/share` quota (all 80 libraries' `work/` at ≈ 3 × raw ≈ 21 TB > 20 TB).
+      The run itself removes a library's intermediates (its `work/` files and FASTQ checkpoint) once its CRAMs are stored and
+      verified (`zgIsStored`), then starts the next batch; on any failed task or unverified CRAM it removes nothing for that
+      library and stops with the reason. §5 rule 3 (nothing removed automatically) stays for development runs and for manual
+      removals by an agent; the production run's own verified cleanup is part of what the user launches. To build and test on
+      the remaining Gate 2 waves, so production runs a tested path.
     - *Raw data* (hazel job 1020154, stat + plate-tar headers; `docs/runs/raw_sizes_20261001.tsv`): **80 libraries,
       2,283 samples, 6,935 GB** — BC1 32 libraries / 384 samples / 4,972 GB (80–362 GB each; 1A–1F and 4E deepest), batch-1 16
       plates / 1,515 / 1,457 GB (41–154 GB), batch-2 32 rows / 384 / 506 GB (9–22 GB). Gate 2's 12 libraries: 1,268 GB.
