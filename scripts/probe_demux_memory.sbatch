@@ -73,6 +73,9 @@ while kill -0 "$app" 2>/dev/null; do
     read -r ca pz ot < <(ps -o rss=,comm= -p "$(job_pids)" 2>/dev/null | awk '{ if ($2 ~ /^cutadapt|^python/) c += $1; else if ($2 == "pigz") p += $1; else o += $1 }
                                                          END { printf "%d %d %d\n", c / 1024, p / 1024, o / 1024 }')
     dm=$(du -sm demux 2>/dev/null | cut -f1) || true; dm=${dm:-0}     # demux/ appears only once the script made it
+    # cumulative CPU per process (ps `times` = user + sys seconds); the last value seen per pid is kept in cpu_by_pid.tsv
+    ps -o pid=,ppid=,times=,comm=,args= -p "$(job_pids)" 2>/dev/null | awk -v t="$now" '{ a = ""; for (i = 5; i <= NF && i <= 9; i++) a = a " " $i
+        printf "%s\t%s\t%s\t%s\t%s\t%s\n", t, $1, $2, $3, $4, a }' >> cpu_samples.tsv || true
     printf '%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n' "$now" "$cur" "$anon" "$file" "$ca" "$pz" "$ot" "$dm" >> memory.tsv
     [ "$anon" -le "$peak_anon" ] || peak_anon=$anon
     if [ $(( now - last_log )) -ge 60 ]; then
@@ -85,5 +88,24 @@ rc=0; wait "$app" || rc=$?
 log "DEMUX exit $rc after $(( $(date +%s) - start )) s; peak anon ${peak_anon} MB of the ${SLURM_MEM_PER_NODE:-?} MB request"
 log "outputs: $(ls demux/*.fastq.gz 2>/dev/null | wc -l) .fastq.gz, $(du -sm demux 2>/dev/null | cut -f1) MB; other files in demux/: $(ls demux | grep -vc '\.fastq\.gz$' || true)"
 tail -5 .command.err | sed 's/^/  stderr: /'
+# CPU by role: the last sample of each pid (a process that lived < 10 s is missed). cutadapt's main process is the cutadapt
+# whose parent is not a cutadapt; its children are the reader and the -j workers (the reader is the first child started).
+awk -F'\t' '{ last[$2] = $0 } END { for (p in last) print last[p] }' cpu_samples.tsv | sort -t$'\t' -k2,2n > cpu_by_pid.tsv || true
+awk -F'\t' '
+    { pid[NR] = $2; ppid[NR] = $3; cpu[NR] = $4; comm[NR] = $5; args[NR] = $6; isc[$2] = ($5 == "cutadapt") }
+    END {
+        for (i = 1; i <= NR; i++) {
+            if (comm[i] == "cutadapt") r = isc[ppid[i]] ? "cutadapt child (reader / worker)" : "cutadapt main"
+            else if (comm[i] == "pigz" && args[i] ~ / -d/) r = "pigz -d (decompress)"
+            else if (comm[i] == "pigz") r = "pigz -1 (compress outputs)"
+            else if (comm[i] ~ /^igzip|^gzip/) r = comm[i] " (decompress)"
+            else if (comm[i] == "tar") r = "tar (member extraction)"
+            else r = "other (" comm[i] ")"
+            s[r] += cpu[i]; n[r]++; tot += cpu[i]
+            if (comm[i] == "cutadapt" && isc[ppid[i]]) printf "  cutadapt child pid %s: %.1f CPU-min\n", pid[i], cpu[i] / 60
+        }
+        for (r in s) printf "  %-34s %3d procs %7.1f CPU-min %5.1f %%\n", r, n[r], s[r] / 60, 100 * s[r] / tot
+        printf "  %-34s %3s       %7.1f CPU-min (sampled; sacct TotalCPU is the reference)\n", "total", "", tot / 60
+    }' cpu_by_pid.tsv | sed 's/^/  cpu: /' || true
 grep -E 'Total read pairs processed|Pairs written|Read 1 with adapter' ./*.cutadapt.log 2>/dev/null | sed 's/^/  cutadapt: /' || true
 exit "$rc"
