@@ -503,8 +503,10 @@ Rules for v2:
    frees no space while the checkpoint holds the hardlinked pairs (the space moves to the checkpoint), only the demux FASTQs.
    More than N libraries (Gate 3) therefore run as **waves** of ≤ N libraries, one run each, with the user's consented cleanup
    of the finished wave's checkpoint and `work/` (rule 4's cleanup file) between two waves (§6).
-4. **Cleanup.** The pipeline never removes anything. A library's checkpoint FASTQs are removed **only after all its CRAMs are stored and
-   verified** (rule 2), and **only with the user's consent** (`CLAUDE.md`): every run with stage 2 (chained or alone) reports it per
+4. **Cleanup.** The pipeline never removes anything in development and gate runs. **Production is the exception (user, 2026-10-01;
+   §6 "Production plan"): the production run, launched by the user, removes a library's intermediates itself once all its CRAMs are
+   stored and verified — launching it is the consent.** A library's checkpoint FASTQs are removed **only after all its CRAMs are stored and
+   verified** (rule 2), and outside production **only with the user's consent** (`CLAUDE.md`): every run with stage 2 (chained or alone) reports it per
    library in the log and in `<checkpoint>/<library>/cleanup_status.tsv` (tab-separated `sample cram cram_bytes verified fastq_1
    fastq_1_bytes fastq_2 fastq_2_bytes`, one row per sample; verified = CRAM + `.crai` + CRAM 3 EOF), ending in `# checkpoint <dir>:
    removable (N files, X GB) — remove only with the user's consent` (N counts the FASTQs) or `# checkpoint <dir>: keep: k of n CRAMs
@@ -569,6 +571,41 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
   bound says explicitly how many libraries' FASTQs are then held on `/share` (≈ 0.83 × raw each, §5: 0.36 / 0.75 / 1.05 TB after waves
   w01-w03 of `docs/runs/cram_gate2_w0{1,2,3}.md`; user 2026-09-29: keep the checkpoints, `--max_libraries` 4 / 8 / 12). The stage-1 `work/` of a wave
   may still be cleaned with consent (the checkpoint files are hardlinks and stay).
+  - **Status (2026-09-29 ~19:45): paused by the user** — containerization comes next; Gate 2 is debugged afterwards on the
+    containerized pipeline. b73 **done** (both B73 controls stored, head 992885 COMPLETED 1 h 26). w01 (head 992883): the BC1 part
+    (2A, 2F, 3B) ran into `ZEAL/store` and was **stopped by the user at 19:43** (graceful; 23 of 36 CRAMs stored, the rest
+    alignable from the kept FASTQ checkpoint; ALIGN_MARKDUP peaks 32.4–36.2 of 48 GB); **BZea5 not done**: batch-1 DEMUX
+    OOM-killed at 2 GB and at 4 GB (sacct OUT_OF_MEMORY, `oom_kill event`), each time followed by a hang until the time limit.
+    Cause of the kill: cutadapt 4.9 `-j 4` with 192 `.gz` outputs keeps one xopen/isal writer thread + buffers per output in its
+    main process (~0.8–1.15 GB fixed); the growth seen at 4 GB did not reproduce on the laptop (unexplained). Cause of the hang: the
+    OOM killer kills only cutadapt's main process; its orphaned reader/workers deadlock and keep the pipe into `tee .command.err`
+    open. **Fix on branch `gate2-bug` (not on main; unverified on hazel):** cutadapt writes plain FASTQ into one FIFO per output,
+    compressed by one `pigz -1 -p 1` each; cutadapt runs in its own process group and a non-zero exit kills the group and passes the
+    exit code on (137 → memory retry); batch-1 DEMUX memory 3 GB × attempt. Laptop: memory flat at 3 M vs 12 M pairs; a killed
+    cutadapt fails the task in 1 s. Open on that branch: full `run_checks.sh` fails 2 stub tests on the laptop cutadapt shim's
+    version (4.9 vs 5.2, unrelated to DEMUX); CodeRabbit's one finding (clean up the compressors in the EXIT trap) not acted on.
+    Notes: hazel's Slurm MaxRSS (cgroup v2 `memory.current`) includes page cache, so it is not the process peak. Measured numbers: `docs/REQUIREMENTS.md` §4 "CRAM Gate 2 wave 1". w02 / w03
+    **not submitted**; to be re-planned after containerization (option: split by library type — one BC1-only run, one batch-1-only
+    run — since only batch-1 DEMUX is blocked). Checkpoint after w01's BC1 part measured 0.80–0.81 × raw (estimate 0.83).
+  - **TODO(Gate 2 after containerization):**
+    1. **Done 2026-10-01** (branch `demux-batch1-fix`; run card `docs/runs/demux_batch1_g1.md`, numbers in docs/REQUIREMENTS.md §4):
+       the `gate2-bug` fix merged, the EXIT-trap finding fixed, the stub shim was a stale local copy; Gate 1 (BZea5, 1 M pairs per
+       lane) passed and a full-lane probe ran flat at 533 MB anon for 224 M pairs (53 min 35 at 4 cpus). Was: merge the `gate2-bug` DEMUX fix (fix the stub shim, address the EXIT-trap finding), then re-measure batch-1 DEMUX memory and
+       time at full size on hazel (peak vs pairs at two subsample sizes first, lesson below; use the process RSS, not sacct MaxRSS);
+       expected ~50 min per ~228 M-pair lane. The DEMUX script change reruns DEMUX → MERGE_LANES → CUTADAPT for any relaunched
+       library: take finished BC1 libraries (2A, 2F, 3B) through `--entry read_alignment` from the checkpoint instead;
+    2. confirm the ALIGN_MARKDUP 48 GB rule on the deepest samples, 2B / 2H (131–140 M pairs);
+    3. confirm CUTADAPT's time closure at full size on the remaining libraries (w01 BC1: ≤ 11 min 39, under the 15 min floor);
+    4. re-derive every resource request under containers (image pull / start-up, memory accounting) before re-planning w02 / w03;
+    5. MARKDUP_IMPORT: ERR3288215 (15.5×) peaked at 93 % of the 12 GB kill line — check the reserve before deeper imports.
+    6. **Reference by its full name** (user, 2026-10-01; in the same batch as the production changes, before the next wave, so
+       one Gate 0 + one CodeRabbit cover both): `params.fasta` = `ZEAL/reference/Zm-B73-REFERENCE-NAM-5.0.fa` (new links in
+       `ZEAL/reference/` to `ref/Zm-B73-REFERENCE-NAM-5.0.fa` and to the existing minibwa index / `.dict`; `B73.fa` stays),
+       provenance records the assembly name and the FASTA checksum. Today the CRAM headers (`UR:`, `@PG`) and the provenance say only
+       the alias `B73.fa` (→ `../../ref/Zm-B73-REFERENCE-NAM-5.0.fa`); the `@SQ M5:` checksums pin the sequences. The 38 CRAMs
+       stored before the change (w01/w01r BC1 + the 2 B73 controls) stay as they are; note it in `meta/PROVENANCE.md`. Changes
+       the hash of every reference-reading task (no stored CRAM reruns: the store check skips them; the genotype session's
+       cached dev runs recompute their reference steps — tell it beforehand).
 - **Genotype workflow Gate 1 / Gate 2** on those CRAMs (genotype session's gates; Gate 2 = the development donors in full).
 - **Gate 3 · full dataset in waves, on the user's go**, once the Gate 2 numbers justify the allocation. CRAM workflow: **waves** of ≤ `--max_libraries` libraries,
   one `read_demultiplexing` run (own `--run_id`) per wave (§5 rule 3). Between two waves: the wave's head job has ended, its log
@@ -578,6 +615,37 @@ development donors' libraries → the genotype workflow's Gate 1 / Gate 2 on tho
   wave, whose guard counts the checkpoint dirs still present. Not a semaphore inside one big run: it would bound concurrency,
   not the FASTQs held on `/share`, because nothing is removed automatically (§5 rule 3). Operator steps: docs/usage.md
   "Waves of libraries".
+  - **Production plan — DRAFT 2026-10-01, UNCONFIRMED: replace every estimate below with the Gate 2 measurements** (user: the
+    production runs must match the Gate 2 estimates; **budget a week of computing** until the partial-run data say otherwise).
+    - **Unattended, decided (user, 2026-10-01): production is one submission that runs to the end; submitting it is the
+      permission — no consent or review step between waves.** This supersedes the between-wave consent above for production.
+      Waves are internal batching only, to stay under the `/share` quota (all 80 libraries' `work/` at ≈ 3 × raw ≈ 21 TB > 20 TB).
+      The run itself removes a library's intermediates (its `work/` files and FASTQ checkpoint) once its CRAMs are stored and
+      verified (`zgIsStored`), then starts the next batch; on any failed task or unverified CRAM it removes nothing for that
+      library and stops with the reason. §5 rule 3 (nothing removed automatically) stays for development runs and for manual
+      removals by an agent; the production run's own verified cleanup is part of what the user launches. To build and test on
+      the remaining Gate 2 waves, so production runs a tested path.
+    - *Raw data* (hazel job 1020154, stat + plate-tar headers; `docs/runs/raw_sizes_20261001.tsv`): **80 libraries,
+      2,283 samples, 6,935 GB** — BC1 32 libraries / 384 samples / 4,972 GB (80–362 GB each; 1A–1F and 4E deepest), batch-1 16
+      plates / 1,515 / 1,457 GB (41–154 GB), batch-2 32 rows / 384 / 506 GB (9–22 GB). Gate 2's 12 libraries: 1,268 GB.
+    - *Compute model* (from the Gate 2 traces so far: w01 BC1 2A / 2F / 3B and gate2_3A, allocated CPU-h): ALIGN_MARKDUP ≈ 0.85
+      CPU-h per raw GB (0.7–1.0), DEMUX + CUTADAPT + FASTQC ≈ 0.13 per raw GB, per sample a fixed part: ≈ 0.2 CPU-h for a small
+      sample (Gate 1 batch-1, ~20 k pairs: ALIGN_MARKDUP start-up ≈ 30 s at 8 cpu, PICARD 6.7 min), up to ≈ 0.6 for full-size BC1
+      (PICARD's 21–32 min walk); batch-1 DEMUX ≈ 3.6 CPU-h per lane (probe, 224 M pairs in 54 min at 4 cpu). **Total ≈ 7,500 CPU-h
+      (6,500–9,500)** (6,935 GB × 0.98 + 384 × 0.6 + 1,899 × 0.2 + batch-1 DEMUX) — first estimate 9,100 with a guessed 1 CPU-h
+      per sample; the Gate 2 set ≈ 1,400 CPU-h (its run cards planned 2,000–2,300, with the old Trimmomatic and retry costs).
+    - *Limits* (live, 2026-10-01): QOS `short` 768 cpu per user, 2 h; `normal` 1,024 cpu per user, 4 days per job; no group cap
+      on account `maize_cpu`; `p_maize` priority 100, 4 days, but 32 cpu for the whole group (head jobs, the longest tasks);
+      `/share` group quota 20 TB (1.5 TB used) and 1 M files (371 K used). Disk is not the binding limit: every checkpoint kept
+      ≈ 5.6 TB; a wave's `work/` peaks at ≈ 3 × its raw.
+    - *Wall time*: at ~400 cores at once ≈ 23 h of pure compute; with waves (slowest sample per wave, queue waits) ≈ 4 waves ×
+      8–10 h ≈ 2 days, 3–4 days at half the capacity, plus the human steps between waves. Longest single task: a 4E sample
+      (~30 GiB trimmed) asks ~10 h of ALIGN_MARKDUP (24 h limit). **No job may exceed 4 days** (QOS maximum): every wave has its own
+      head job (`--time=4-00:00:00`; consider `--qos=p_maize`), and the slowest expected wave must fit well inside it.
+    - *To confirm before the waves are cut* (Gate 2 w01r, w02, w03, all under containers): ALIGN_MARKDUP CPU-h and wall per GiB,
+      incl. the deepest samples (2B / 2H); batch-1 DEMUX and stage 2 at full size (BZea5/6/8/9); per-sample fixed costs; queue
+      wait and the concurrency actually obtained (trace submit → start); `/share` peak per wave (`du` during the wave). Then fit the
+      model to them, apply it to the 80 measured sizes, and write the waves (libraries, raw GB, expected wall, disk peak) here.
 
 Lessons turned into checks (2026-09-28):
 - **Check the resolved resources, not the config text.** At Gate 2, TRIMMOMATIC's own `withName: 'TRIMMOMATIC' { time = 12.h }` in
@@ -598,6 +666,15 @@ Lessons turned into checks (2026-09-28):
   an admission semaphore (at most N libraries in stage 1 at once) let a long request hold every library's FASTQs; it was replaced
   by the `--max_libraries` run guard plus waves with a consented cleanup between them, and each run now prints the exact cleanup
   commands (never runs them) so the between-wave step is a check of listed paths, not a hunt through `work/`.
+
+Lessons from CRAM Gate 2 wave 1 (2026-09-29):
+- **A small subsample hides memory that grows with the data.** Batch-1 DEMUX passed Gate 1 at 4 M pairs per lane peaking at 1.6 of
+  2 GB (80 %), then was OOM-killed at full size at 2 GB and again at 4 GB. So Gate 1 must check memory growth for every task whose
+  peak is near its request (say > 50 %): peak RSS against pairs at two subsample sizes (e.g. 1 M and 4 M); a peak that grows is
+  extrapolated to the full library, or bounded, before Gate 2.
+- **A hung task after an OOM kill hides the failure for the whole time limit.** Both BZea5 DEMUX tasks sat at 0 CPU with no
+  `.exitcode` for 2 h (then exit 140) instead of failing in ~80 s. A killed member of a pipe or of a process tree must end the task;
+  watch for tasks at 0 CPU after an `OUT_OF_MEMORY` in `sacct`/`sstat`.
 
 ## 7. Open decisions (summary)
 §4 #2, #3, #5–#7, #12, #14 (proposed test: in the QC set, trace each ALT read at the disputed sites to its source position in the

@@ -1,6 +1,8 @@
 # cram_gate2_w01r — CRAM Gate 2, wave 1 restart: the 13 missing BC1 CRAMs from the FASTQ checkpoint
 
-**Status:** approved by the user 2026-10-01; submit after the PR is merged and `ZEAL/zealgt` is pulled.
+**Status:** approved by the user 2026-10-01; **done 2026-10-01**: head 1018340 COMPLETED in 2 h 46 (14:54–17:40), 0 failed
+tasks, all at attempt 1; **all 36 CRAMs of 2A / 2F / 3B stored and verified**; ALIGN_MARKDUP 1 h 34 – 2 h 09, peaks 32.4–36.5 of
+48 GB (docs/REQUIREMENTS.md §4). The checkpoint `fastq_checkpoint/{2A,2F,3B}` is no longer needed for these CRAMs.
 
 ## Purpose
 w01 (head 992883, `docs/runs/cram_gate2_w01.md`) was stopped by the user on 2026-09-29 at 19:43 for the container switch,

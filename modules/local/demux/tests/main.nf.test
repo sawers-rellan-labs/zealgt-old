@@ -131,7 +131,9 @@ nextflow_process {
                 // mates stay in step
                 { assert (1..3).every { i -> names("PB1_SID${i}.LIBB1.LIBB1_S1_L001_R1.fastq.gz") == names("PB1_SID${i}.LIBB1.LIBB1_S1_L001_R2.fastq.gz") } },
                 // the extracted members are gone from the task dir (EXIT trap)
-                { assert !taskdir.listFiles().any { f -> f.name.startsWith('LIBB1.LIBB1_S1_L001_R') } }
+                { assert !taskdir.listFiles().any { f -> f.name.startsWith('LIBB1.LIBB1_S1_L001_R') } },
+                // the plain-FASTQ FIFOs cutadapt wrote into are gone too (EXIT trap); only the .fastq.gz remain
+                { assert new File(taskdir, 'demux').listFiles().collect { f -> f.name }.every { n -> n.endsWith('.fastq.gz') } }
             )
         }
     }
