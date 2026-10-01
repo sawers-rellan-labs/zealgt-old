@@ -27,6 +27,8 @@ set -eo pipefail
 TASK="${1:?usage: sbatch scripts/probe_demux_memory.sbatch <DEMUX task dir> <probe dir>}"
 OUT="${2:?usage: sbatch scripts/probe_demux_memory.sbatch <DEMUX task dir> <probe dir>}"
 log() { echo "$(date '+%F %T') probe_demux: $*"; }
+# absolute paths before any cd (the probe runs inside OUT; the task's binds are absolute): realpath -m does not need OUT to exist
+TASK="$(realpath -m "$TASK")"; OUT="$(realpath -m "$OUT")"
 [ -f "$TASK/.command.sh" ] && [ -f "$TASK/.command.run" ] || { log "ERROR: not a task dir: $TASK"; exit 1; }
 grep -q 'cutadapt' "$TASK/.command.sh" && grep -q 'mkfifo' "$TASK/.command.sh" || { log "ERROR: not a DEMUX task (FIFO layout): $TASK"; exit 1; }
 [ ! -e "$OUT" ] || { log "ERROR: probe dir exists (choose a new one): $OUT"; exit 1; }
