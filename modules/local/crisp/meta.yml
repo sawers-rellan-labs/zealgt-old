@@ -114,7 +114,7 @@ output:
           description: Name of the tool
       - "1a9027e":
           type: string
-          description: The pinned commit of the tool (modules/local/crisp/build.sh; CRISP prints no version)
+          description: The pinned commit of the tool (CRISP_COMMIT in modules/local/crisp/Dockerfile; CRISP prints no version)
   versions_htslib:
     - - ${task.process}:
           type: string
@@ -135,7 +135,7 @@ topics:
           description: Name of the tool
       - "1a9027e":
           type: string
-          description: The pinned commit of the tool (modules/local/crisp/build.sh; CRISP prints no version)
+          description: The pinned commit of the tool (CRISP_COMMIT in modules/local/crisp/Dockerfile; CRISP prints no version)
     - - ${task.process}:
           type: string
           description: Name of the process
