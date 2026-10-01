@@ -112,6 +112,12 @@
                     "description": "read_demultiplexing: the run is refused when the requested libraries plus the libraries already holding a checkpoint dir under --fastq_checkpoint are more than this (PLAN §5 rule 3: nothing is removed automatically, so this bounds the FASTQs on disk). The requested libraries run concurrently.",
                     "minimum": 1
                 },
+                "remove_verified_checkpoints": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Production only (-profile ...,production): at the end of a successful run, remove the FASTQ checkpoint of every library whose CRAMs are all stored and verified. Off for development and gate runs (PLAN §5 rule 4).",
+                    "fa_icon": "fas fa-broom"
+                },
                 "subsample": {
                     "type": [
                         "integer",

@@ -126,6 +126,8 @@ workflow PIPELINE_COMPLETION {
         launch_dir   : workflow.launchDir.toString(),
         work_dir     : workflow.workDir.toString(),
         code_version : zgCodeVersion(),
+        remove_verified_checkpoints : params.remove_verified_checkpoints as boolean,
+        checkpoint_root : file(params.fastq_checkpoint).toAbsolutePath().normalize().toString(),
     ] : null
     // this run's stage-1 task dirs, gathered while the run goes (the channel has ended when onComplete runs)
     def task_dirs = Collections.synchronizedList([])
@@ -140,6 +142,11 @@ workflow PIPELINE_COMPLETION {
         if (cleanup) {
             def reports = zgCheckpointCleanupReport(cleanup)
             zgCleanupCommands(cleanup, reports, task_dirs.toList().unique())
+            // production only (--remove_verified_checkpoints, conf/production.config): a successful run removes the checkpoint of
+            // every library whose CRAMs are all stored and verified (PLAN §5 rule 4, production exception)
+            if (cleanup.remove_verified_checkpoints && workflow.success) {
+                zgRemoveVerifiedCheckpoints(cleanup, reports)
+            }
         }
 
     }
@@ -720,6 +727,39 @@ def zgCheckpointCleanupReport(Map ctx) {
         dir.resolve('cleanup_status.tsv').text = (lines + ["# ${status}"]).join('\n') + '\n'
         log.info("zealgt: ${status} (${dir}/cleanup_status.tsv)")
         return [library: lib, dir: dir.toString(), removable: n_ok == rows.size(), status: status, rows: rows]
+    }
+}
+
+//
+// Production (--remove_verified_checkpoints; PLAN §5 rule 4 production exception, user 2026-10-01): after a successful run, the
+// checkpoint dir of each library the report marks removable (every CRAM stored and verified) is removed: only a dir directly
+// under the checkpoint root, only the regular files directly in it (no recursion, symlinks not followed), then the dir itself
+// if it is empty. A library marked keep, or any dir outside the root, is never touched. Each step is logged.
+//
+def zgRemoveVerifiedCheckpoints(Map ctx, List reports) {
+    def root = java.nio.file.Paths.get(ctx.checkpoint_root)
+    reports.findAll { rep -> rep.removable }.each { rep ->
+        def dir = java.nio.file.Paths.get(rep.dir).toAbsolutePath().normalize()
+        if (dir.parent != root || java.nio.file.Files.isSymbolicLink(dir) || !java.nio.file.Files.isDirectory(dir)) {
+            log.warn("zealgt: checkpoint ${dir}: not removed (not a directory directly under ${root})")
+            return
+        }
+        def n = 0
+        def bytes = 0L
+        java.nio.file.Files.list(dir).withCloseable { st ->
+            st.toList().each { f ->
+                if (java.nio.file.Files.isRegularFile(f, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                    bytes += java.nio.file.Files.size(f)
+                    java.nio.file.Files.delete(f)
+                    n += 1
+                }
+            }
+        }
+        def empty = java.nio.file.Files.list(dir).withCloseable { st -> !st.findAny().isPresent() }
+        if (empty) {
+            java.nio.file.Files.delete(dir)
+        }
+        log.info("zealgt: checkpoint ${dir}: removed ${n} files (${String.format('%.2f', bytes / 1e9)} GB)${empty ? ' and the dir' : '; dir kept: not empty'} — every CRAM of ${rep.library} is stored and verified (production, --remove_verified_checkpoints)")
     }
 }
 
