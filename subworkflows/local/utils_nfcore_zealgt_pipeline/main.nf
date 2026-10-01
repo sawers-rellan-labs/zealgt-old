@@ -144,7 +144,7 @@ workflow PIPELINE_COMPLETION {
             zgCleanupCommands(cleanup, reports, task_dirs.toList().unique())
             // production only (--remove_verified_checkpoints, conf/production.config): a successful run removes the checkpoint of
             // every library whose CRAMs are all stored and verified (PLAN §5 rule 4, production exception)
-            if (cleanup.remove_verified_checkpoints && workflow.success) {
+            if (cleanup.remove_verified_checkpoints && zgRunSucceeded()) {
                 zgRemoveVerifiedCheckpoints(cleanup, reports)
             }
         }
@@ -728,6 +728,12 @@ def zgCheckpointCleanupReport(Map ctx) {
         log.info("zealgt: ${status} (${dir}/cleanup_status.tsv)")
         return [library: lib, dir: dir.toString(), removable: n_ok == rows.size(), status: status, rows: rows]
     }
+}
+
+// Did the run succeed? Read in a top-level function: inside the onComplete closure of PIPELINE_COMPLETION `workflow` is null
+// (Gate 0, 2026-10-01), as for the template's completionSummary, which reads it the same way.
+def zgRunSucceeded() {
+    return workflow.success
 }
 
 //
